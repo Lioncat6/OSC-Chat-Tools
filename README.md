@@ -7,6 +7,8 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 
 ## Open up `osc-chat-tools.py` in your favorite Python debugger to run it.  
 
+### Side note... the song functionality will show whatever the last thing you were listening to was... including a website or video you were watching. So be careful.
+
 # Keyboard Shortcuts (PC ONLY)
 - **`P`** Toggle Chatbox
 - **`[`** Cycle Mode (Currently modes 1-10)
