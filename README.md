@@ -1,5 +1,5 @@
 # OSC Chat Tools 
-Some shitty osc script I made for Vrchat
+Some shitty osc script I made for Vrchat\n
 Feature Requests are encouraged. You need something added? Let me know
 
 OCT Is a standalone Python script used for interacting with Vrchat's OSC
