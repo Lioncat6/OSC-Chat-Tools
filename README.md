@@ -13,3 +13,8 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 
 # Config 
 ### Configuration is currently located inside the Python script itself, so to edit it, you'll need to open the file in a text editor
+
+# Coming soon:
+ - UI
+ - Heartrate data support
+ - Other fun shit!
