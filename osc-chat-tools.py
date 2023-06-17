@@ -1,32 +1,8 @@
-#######################################################################################
-#CONFIG SETTINGS:
-
-#1 time + specs + song
-#2 time + song
-#3 song
-#4 time
-#5 message Script
-#6 Message + time
-#7 AFK
-#8 Just Message
-#9 Text File Parser
-#10 Song + msg
-DisplayMode = 10
-
-#File path of the file to read 
-FileToRead = 'test.txt'
-
-#Message to display for all of the above message options
-#To add a new animation frame (each one is 1.5s) wrap your text with `sendMsg('<MESSAGE>')`
-def msgConf(): #Leave This Line Alone! 
-  sendMsg('Test frame one')
-  sendMsg('Test frame two')
-  sendMsg('Test frame three')
-#CONFIG END  
-#######################################################################################
 import os
 import time
 from threading import Thread
+import ast
+import sys
 
 if not os.path.isfile('please-do-not-delete.txt'):
   os.system("pip install python-osc")
@@ -35,24 +11,47 @@ if not os.path.isfile('please-do-not-delete.txt'):
   os.system("pip install keyboard")
   os.system("pip install asyncio")
   os.system("pip install psutil")
+  os.system("pip install PySimpleGUI")
   with open('please-do-not-delete.txt', 'w') as f:
-      f.write('This File is for osc chat tools by lioncat6. This file marks that the necessary python modules have been installed in order for this script to run. Please do not delete it unless you are troubleshooting an issue.')
+      f.write('[]')
 
+import PySimpleGUI as sg
 import argparse
 from datetime import datetime
 from pythonosc import udp_client
 import keyboard
 import asyncio
 import psutil
-
+import webbrowser
 from winsdk.windows.media.control import \
     GlobalSystemMediaTransportControlsSessionManager as MediaManager
 
+run = True
 playMsg = True
 cpuInt = int(psutil.cpu_percent(.1)*10)
 textParseIterator = 0
+version = " Version 1.10"
+message_delay = 1.5
+msgOutput = ''
+topTextToggle = False
+topTimeToggle = False
+topSongToggle = False
+topCPUToggle = False
+topRAMToggle = False
+topNoneToggle = True
 
-
+bottomTextToggle = False
+bottomTimeToggle = False
+bottomSongToggle = False
+bottomCPUToggle = False
+bottomRAMToggle = False
+bottomNoneToggle = True
+messageString = ''
+afk = False
+FileToRead = ''
+scrollText = False
+scrollTexTSpeed = 6
+globalConf = []
 async def get_media_info():
     sessions = await MediaManager.request_async()
 
@@ -82,9 +81,308 @@ async def get_media_info():
     # See references for more information.
     raise Exception('TARGET_PROGRAM is not the current media session')
 
+if os.path.isfile('please-do-not-delete.txt'):
+  with open('please-do-not-delete.txt', 'r') as f:
+    try:
+      fixed_list = ast.literal_eval(f.read())
+      #LIST GUIDE: 
+      """topTextToggle
+      topTimeToggle
+      topSongToggle
+      topCPUToggle
+      topRAMToggle
+      topNoneToggle
+      bottomTextToggle
+      bottomTimeToggle
+      bottomSongToggle
+      bottomCPUToggle
+      bottomRAMToggle
+      bottomNoneToggle
+      message_delay
+      messageString
+      FileToRead
+      scrollText"""
+      if len(fixed_list) == 16:
+        topTextToggle = fixed_list[0]
+        topTimeToggle = fixed_list[1]
+        topSongToggle = fixed_list[2]
+        topCPUToggle = fixed_list[3]
+        topRAMToggle = fixed_list[4]
+        topNoneToggle = fixed_list[5]
+        bottomTextToggle = fixed_list[6]
+        bottomTimeToggle = fixed_list[7]
+        bottomSongToggle = fixed_list[8]
+        bottomCPUToggle = fixed_list[9]
+        bottomRAMToggle = fixed_list[10]
+        bottomNoneToggle = fixed_list[11]
+        message_delay = fixed_list[12]
+        messageString = fixed_list[13]
+        FileToRead = fixed_list[14]
+        scrollText = fixed_list[15]
+      globalConf = fixed_list
+    except:
+      globalConf = []
+def uiThread():
+  global version
+  global msgOutput
+  global message_delay
+  global topTextToggle
+  global topTimeToggle
+  global topSongToggle
+  global topCPUToggle
+  global topRAMToggle
+  global topNoneToggle
+  global bottomTextToggle
+  global bottomTimeToggle
+  global bottomSongToggle
+  global bottomCPUToggle
+  global bottomRAMToggle
+  global bottomNoneToggle
+  global messageString
+  global playMsg
+  global run
+  global afk
+  global FileToRead
+  global scrollText
+  layout_layout = [[sg.Column(
+              [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold'))],
+              [sg.Column([
+                  [sg.Checkbox('Text file read - defined in the options tab\n(This will disable everything else)', default=False, key='scroll', enable_events= True, background_color='dark slate blue')]
+              ], key='topConf', background_color='dark slate blue', size=(379, 50))],
+              [sg.Column([
+                  [sg.Text('Configure top half of chatbox:', font=('Arial', 10, 'bold'))],
+                  [sg.Checkbox('Text - Defined in the options tab', default=False, key='topText', enable_events= True)],
+                  [sg.Checkbox('Time', default=False, key='topTime', enable_events= True)],
+                  [sg.Checkbox('Song - Uses Windows\' MediaManager to request song info \n Does NOT pull directly from spotify', default=False, key='topSong', enable_events= True)],
+                  [sg.Checkbox('CPU', default=False, key='topCPU', enable_events= True)],
+                  [sg.Checkbox('RAM', default=False, key='topRAM', enable_events= True)],
+                  [sg.Checkbox('None (Uncheck to select others)', default=True, key='topNone', enable_events= True)]
+              ], key='topConf')],
+              [sg.Column([
+                  [sg.Text('Configure bottom half of chatbox:', font=('Arial', 10, 'bold'), background_color='peru')],
+                  [sg.Checkbox('Text - Defined in the options tab', default=False, key='bottomText', enable_events= True, background_color='peru')],
+                  [sg.Checkbox('Time', default=False, key='bottomTime', enable_events= True, background_color='peru')],
+                  [sg.Checkbox('Song - Uses Windows\' MediaManager to request song info \n Does NOT pull directly from spotify', default=False, key='bottomSong', enable_events= True, background_color='peru')],
+                  [sg.Checkbox('CPU', default=False, key='bottomCPU', enable_events= True, background_color='peru')],
+                  [sg.Checkbox('RAM', default=False, key='bottomRAM', enable_events= True, background_color='peru')],
+                  [sg.Checkbox('None (Uncheck to select others)', default=True, key='bottomNone', enable_events= True, background_color='peru')]
+              ], key='bottomConf', background_color='peru')]
+              ]
+  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='darkseagreen')]]
 
+  options_layout =  [[sg.Column(
+              [[sg.Text('Configure chatbox behavior', background_color='DarkSlateGray4', font=('Arial', 12, 'bold'))],
+              [sg.Column([
+                  [sg.Text('Text to display for the message. One frame per line')],
+                  [sg.Multiline(default_text='OSC Chat Tools\nBy Lioncat6',
+                      size=(50, 10), key='messageInput')]
+              ], size=(379, 200))],
+              [sg.Column([
+                  [sg.Text('File to use for the text file read functionality')],
+                  [sg.Button('Open File'), sg.Text('', key='message_file_path_display')]
+              ], size=(379, 70))],
+              [sg.Column([
+                  [sg.Text('Delay between frame updates, in seconds')],
+                  [sg.Slider(range=(1.5, 10), default_value=1.5, resolution=0.1, orientation='horizontal', size=(40, 15), key="msgDelay")]
+              ], size=(379, 70))]
+              ]
+  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='DarkSlateGray4')]]
 
+  help_layout = [[sg.Column(
+              [[sg.Text('Layout Guide - Coming Soon', background_color='turquoise4', font=('Arial', 12, 'bold'))],
+              
+              ]
+  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='turquoise4')]]
+  
+  preview_layout = [[sg.Column(
+              [[sg.Text('Preview (Not Perfect)', background_color='DarkGreen', font=('Arial', 12, 'bold'))],
+              [sg.Column([
+                [sg.Text('', key = 'messagePreviewFill', font=('Arial', 12 ), auto_size_text=True, size=(21, 100), justification='center')]
+              ], size=(379, 150))]
+              ]
+  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='DarkGreen')]]
+  menu_def = [['&File', ['A&pply', '&Reset', '---', 'Open Config File', '---','E&xit' ]],
+          ['&Help', ['&About', '---', 'Submit Feedback', '---', 'Open &Github Page', '&Check For Updates']]]
+  topMenuBar = sg.Menu(menu_def, key="menuBar")
+  right_click_menu = ['&Right', ['You thought']]
+  layout = [
+      [[topMenuBar]],
+      [   
+          sg.TabGroup([[
+                  sg.Tab('Layout', layout_layout, background_color='darkseagreen'),
+                  sg.Tab('Options', options_layout, background_color='DarkSlateGray4'),
+                  sg.Tab('Preview', preview_layout, background_color='DarkGreen'),
+                  sg.Tab('Layout Guide', help_layout, background_color='turquoise4')
+              ]], 
+              key='mainTabs', tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True
+          )
+      ],
+      [sg.Button('Apply'), sg.Button('Reset'), sg.Text(version), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru')]]
 
+  window = sg.Window('OSC Chat Tools', layout,
+                  default_element_size=(12, 1), resizable=True, finalize= True, size=(540, 600), right_click_menu=right_click_menu)
+  window.set_min_size((500, 350))
+  
+  def pullVars():
+    global playMsg
+    global msgOutput
+    if os.path.isfile('please-do-not-delete.txt'):
+      if len(globalConf) == 16:
+        window['topText'].update(value=topTextToggle)
+        window['topTime'].update(value=topTimeToggle)
+        window['topSong'].update(value=topSongToggle)
+        window['topCPU'].update(value=topCPUToggle)
+        window['topRAM'].update(value=topRAMToggle)
+        window['topNone'].update(value=topNoneToggle)
+        window['bottomText'].update(value=bottomTextToggle)
+        window['bottomTime'].update(value=bottomTimeToggle)
+        window['bottomSong'].update(value=bottomSongToggle)
+        window['bottomCPU'].update(value=bottomCPUToggle)
+        window['bottomRAM'].update(value=bottomRAMToggle)
+        window['bottomNone'].update(value=bottomNoneToggle )
+        window['msgDelay'].update(value=message_delay)
+        window['messageInput'].update(value=messageString)
+        window['message_file_path_display'].update(value=FileToRead)
+        window['scroll'].update(value=scrollText)
+    while run:
+      if run:
+        try:
+          window['messagePreviewFill'].update(value=msgOutput)
+        except Exception as e:
+          print(e)
+      time.sleep(.1)
+      if playMsg:
+        window['runThing'].update(value=True)
+      else:
+        window['runThing'].update(value=False)
+  pullVarsThread = Thread(target=pullVars)
+  pullVarsThread.start()
+  while True:
+      event, values = window.read()
+      #print(event, values)
+      if event == sg.WIN_CLOSED or event == "Exit" or event == "You thought":
+          break
+      if values['topNone']:
+          window['topText'].update(value=False)
+          window['topTime'].update(value=False)
+          window['topSong'].update(value=False)
+          window['topCPU'].update(value=False)
+          window['topRAM'].update(value=False)
+      if values['bottomNone']:
+          window['bottomText'].update(value=False)
+          window['bottomTime'].update(value=False)
+          window['bottomSong'].update(value=False)
+          window['bottomCPU'].update(value=False)
+          window['bottomRAM'].update(value=False)
+      if (not event == "topNone") and (not values['topText'] and not values['topTime'] and not values['topSong'] and not values['topCPU'] and not values['topRAM']):
+          window['topNone'].update(value=True)
+      if (not event == "bottomNone") and (not values['bottomText'] and not values['bottomTime'] and not values['bottomSong'] and not values['bottomCPU'] and not values['bottomRAM']):
+          window['bottomNone'].update(value=True)
+      if (event == "topText" or event == "topTime" or event == "topSong" or  event == "topCPU" or event == "topRAM"):
+          window['topNone'].update(value=False)
+          if not values[event]:
+              window[event].update(value=False)
+              if (not values['topText'] and not values['topTime'] and not values['topSong'] and not values['topCPU'] and not values['topRAM']):
+                  window["topNone"].update(value=True)
+          else:
+              window[event].update(value=True)
+      if (event == "bottomText" or event == "bottomTime" or event == "bottomSong" or  event == "bottomCPU" or event == "bottomRAM"):
+          window['bottomNone'].update(value=False)
+          if not values[event]:
+              window[event].update(value=False)
+              if (not values['bottomText'] and not values['bottomTime'] and not values['bottomSong'] and not values['bottomCPU'] and not values['bottomRAM']):
+                  window["bottomNone"].update(value=True)
+          else:
+              window[event].update(value=True)
+      if values['scroll']:
+          if window['message_file_path_display'].get() == '':
+            window['scroll'].update(value=False)
+            sg.popup('Please select a file in the options tab before enabling this option!')
+          else:
+            window['bottomText'].update(value=False)
+            window['bottomTime'].update(value=False)
+            window['bottomSong'].update(value=False)
+            window['bottomCPU'].update(value=False)
+            window['bottomRAM'].update(value=False)
+            window['topText'].update(value=False)
+            window['topTime'].update(value=False)
+            window['topSong'].update(value=False)
+            window['topCPU'].update(value=False)
+            window['topRAM'].update(value=False)
+            window['topNone'].update(value=True)
+            window['bottomNone'].update(value=True)
+      if event == 'Reset':
+          answer = sg.popup_yes_no("Are you sure?\nThis will erase all of your entered text and reset the configuration file!")
+          if answer == "Yes":
+            window['bottomText'].update(value=False)
+            window['bottomTime'].update(value=False)
+            window['bottomSong'].update(value=False)
+            window['bottomCPU'].update(value=False)
+            window['bottomRAM'].update(value=False)
+            window['topText'].update(value=False)
+            window['topTime'].update(value=False)
+            window['topSong'].update(value=False)
+            window['topCPU'].update(value=False)
+            window['topRAM'].update(value=False)
+            window['topNone'].update(value=True)
+            window['bottomNone'].update(value=True)
+            window['messageInput'].update(value='OSC Chat Tools\nBy Lioncat6')
+            window['msgDelay'].update(value=1.5)
+      if event == 'Open File':
+          message_file_path = sg.popup_get_file('Select a File', title='Select a File')
+          window['message_file_path_display'].update(value=message_file_path)
+      if event == 'Apply':
+          topTextToggle = values['topText']
+          topTimeToggle = values['topTime']
+          topSongToggle = values['topSong']
+          topCPUToggle = values['topCPU']
+          topRAMToggle = values['topRAM']
+          topNoneToggle = values['topNone']
+          bottomTextToggle = values['bottomText']
+          bottomTimeToggle = values['bottomTime']
+          bottomSongToggle = values['bottomSong']
+          bottomCPUToggle = values['bottomCPU']
+          bottomRAMToggle = values['bottomRAM']
+          bottomNoneToggle = values['bottomNone']
+          message_delay = values['msgDelay']
+          messageString = values['messageInput']
+          FileToRead = window['message_file_path_display'].get()
+          scrollText = values['scroll']
+          with open('please-do-not-delete.txt', 'w') as f:
+            try:
+              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText]))
+            except Exception as e:
+              sg.popup('Error saving config to file:\n'+str(e))
+      if event == 'Check For Updates':
+        sg.popup('Coming Soon!')
+      if event == 'Open Github Page':
+        webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools')
+      if event == 'About':
+        about_popop_layout =  [[sg.Text('OSC Chat Tools by', font=('Arial', 11, 'bold'), pad=(0, 20)), sg.Text('Lioncat6', font=('Arial', 12, 'bold'), text_color='lime')],[sg.Text('Modules Used:',font=('Arial', 11, 'bold'))], [sg.Text('- PySimpleGUI\n - argparse\n - datetimedatetime\n - pythonoscudp_client\n - keyboard\n - asyncio\n - psutil\n - webbrowser\n - winsdk.windows.media.control\n')], [sg.Text('Python Version: '+str(sys.version))], [sg.Button('Ok')]]
+        about_window = sg.Window('About', about_popop_layout)
+        event, values = about_window.read()
+        about_window.close()
+      if event == 'runThing':
+        msgPlayToggle()
+      if event == 'Open Config File':
+        os.system("start " + 'please-do-not-delete.txt')
+      if event == 'Submit Feedback':
+        webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/issues')
+  window.close()
+  playMsg = False
+  run = False
+
+def processMessage(a):
+  returnList = []
+  if messageString.count('\n')>0:
+    posForLoop = 0
+    for x in range(messageString.count('\n')):
+      returnList.append(messageString[posForLoop:messageString.find('\n', posForLoop+1)].replace('\n', ''))
+      posForLoop = messageString.find('\n', posForLoop+1)
+    returnList.append(messageString[posForLoop:len(messageString)].replace('\n', ''))
+  else:
+    returnList.append(messageString)
+  return returnList
 
 if __name__ == "__main__":
 
@@ -100,7 +398,26 @@ if __name__ == "__main__":
 
   def sendMsg(a):
     global cpuInt
+    global msgOutput
+    global message_delay
+    global topTextToggle
+    global topTimeToggle
+    global topSongToggle
+    global topCPUToggle
+    global topRAMToggle
+    global topNoneToggle
+    global bottomTextToggle
+    global bottomTimeToggle
+    global bottomSongToggle
+    global bottomCPUToggle
+    global bottomRAMToggle
+    global bottomNoneToggle
+    global messageString
+    global playMsg
+    global run
     if playMsg:
+      
+      #preassembles
       now = datetime.now()
       current_hour = now.strftime("%H")
       current_minute = now.strftime("%M")
@@ -111,58 +428,77 @@ if __name__ == "__main__":
           dayThing = "AM"
       if int(current_hour) == 0:
           current_hour = 12
-      
-      
-      #song shit \/
       current_media_info = asyncio.run(get_media_info())
-      songInfo="🎵"+current_media_info['title']+" by "+current_media_info['artist']+"🎵"
-      letsGetThatTime =str(current_hour)+":"+current_minute+dayThing
-      if DisplayMode == 1:
-        part1= "╔═════════════╗ "+letsGetThatTime+" Cpu: "+ str(int(psutil.cpu_percent(.1)*10))+"% Ram: "+str(int(psutil.virtual_memory()[2]))+"% ╠═════════════╣ "
-      elif DisplayMode ==2 or DisplayMode == 6:
-        part1= "╔═════════════╗ "+letsGetThatTime+"  ╠═════════════╣ "
-      elif DisplayMode ==3 or DisplayMode ==5 or DisplayMode ==7 :
-        part1= "╔═════════════╗ "
-      else: 
-        part1= "╔═════════════╗ "+letsGetThatTime
-      if DisplayMode == 4 or DisplayMode ==7:
-        part2= " ╚═════════════╝"
-        client.send_message("/chatbox/input", [ part1+a+part2, True, False])
-      elif DisplayMode == 5 or DisplayMode == 6:
-        part2= " "+"╚═════════════╝"
-        client.send_message("/chatbox/input", [ part1+a+part2, True, False])
-      elif DisplayMode == 8 or DisplayMode == 9:
-        client.send_message("/chatbox/input", [ a, True, False])
-      elif DisplayMode == 10:
-        part1= "╔═════════════╗ "+a+"  ╠═════════════╣ "
-        part2= "Listening To: "+songInfo+"ㅤ╚═════════════╝"
-        client.send_message("/chatbox/input", [ part1+part2, True, False])
-      else:
-        part2= "Listening To: "+songInfo+"ㅤ╚═════════════╝"
-        client.send_message("/chatbox/input", [ part1+part2, True, False])
+      songInfo=" Listening to: 🎵"+current_media_info['title']+" by "+current_media_info['artist']+"🎵"
+      letsGetThatTime =" "+str(current_hour)+":"+current_minute+dayThing
+      cpu = " Cpu: "+ str(cpuInt)+"%"
+      ram = " Ram: "+str(int(psutil.virtual_memory()[2]))+"%"
       
-      #print(part1+a+part2)
-      if DisplayMode == 9:
-        for x in range(60):
-          time.sleep(.1)
-          if not playMsg:
-            break
+      
+      #message Assembler:
+      if not scrollText:
+        if topNoneToggle or bottomNoneToggle:
+          toSend = ''
+          if topSongToggle or bottomSongToggle:
+            toSend = toSend+songInfo
+          if topCPUToggle or bottomCPUToggle:
+            toSend = toSend+cpu
+          if topRAMToggle or bottomRAMToggle:
+            toSend = toSend+ram
+          if topTimeToggle or bottomTimeToggle:
+            toSend = toSend+letsGetThatTime
+          if topTextToggle or bottomTextToggle:
+            toSend = toSend + a
+          msgOutput = '╔═════════════╗'+toSend+' ╚═════════════╝'
+        else:
+          toSendTop = ''
+          toSendbottom = ''
+          if topSongToggle:
+            toSendTop = toSendTop+songInfo
+          if topCPUToggle:
+            toSendTop = toSendTop+cpu
+          if topRAMToggle:
+            toSendTop = toSendTop+ram
+          if topTimeToggle:
+            toSendTop = toSendTop+letsGetThatTime
+          if topTextToggle :
+            toSendTop = toSendTop + a
+          if bottomSongToggle:
+            toSendbottom = toSendbottom+songInfo
+          if bottomCPUToggle:
+            toSendbottom = toSendbottom+cpu
+          if bottomRAMToggle:
+            toSendbottom = toSendbottom+ram
+          if bottomTimeToggle:
+            toSendbottom = toSendbottom+letsGetThatTime
+          if bottomTextToggle :
+            toSendbottom = toSendbottom + a
+          msgOutput = '╔═════════════╗'+toSendTop+" ╠═════════════╣"+toSendbottom+' ╚═════════════╝'
       else:
-        for x in range(15):
-          time.sleep(.1)
-          if not playMsg:
-            break
+        msgOutput = a
+      if playMsg:
+        client.send_message("/chatbox/input", [ str(msgOutput), True, False])
+        #print(str(msgOutput))
+
+      for x in range(int(message_delay*10)):
+        time.sleep(.1)
+        if not playMsg:
+          break
 
 def runmsg():
   global textParseIterator
   global playMsg
+  global afk
+  global FileToRead
+  global scrollText
   while playMsg:
-    if DisplayMode == 1 or DisplayMode == 2 or DisplayMode == 3 or DisplayMode == 5 or DisplayMode == 6 or DisplayMode ==8 or DisplayMode ==10:
-      msgConf()
-    elif DisplayMode == 7:
+    if not afk and not scrollText:
+      for x in processMessage(messageString):
+        sendMsg(" "+x)
+    elif afk:
       sendMsg('AFK')
       sendMsg('ㅤ')
-    elif DisplayMode == 9:
+    elif scrollText:
       fileToOpen = open(FileToRead, "r")
       fileText = fileToOpen.read()
       if textParseIterator + 144 < len(fileText):
@@ -177,16 +513,25 @@ def runmsg():
   client.send_message("/chatbox/input", [ " ", True, False])
     
 def msgPlayCheck():
-  global playMsg
   if keyboard.is_pressed('p'):
-    if playMsg:
+    msgPlayToggle()
+    
+def msgPlayToggle():
+  global playMsg
+  if playMsg:
       playMsg = False
       time.sleep(.5)
-    else:
-      playMsg = True  
-      msgThread = Thread(target=runmsg)
-      msgThread.start()
-      time.sleep(.5) 
+  else:
+    playMsg = True  
+    msgThread = Thread(target=runmsg)
+    msgThread.start()
+    cpuThread = Thread(target=cpuCheck)
+    cpuThread.start()
+    time.sleep(.5) 
+def cpuCheck():
+  while playMsg:
+    global cpuInt
+    cpuInt = int(psutil.cpu_percent(2)*10)
 
 def restartMsg():
   global playMsg
@@ -196,20 +541,13 @@ def restartMsg():
   msgThread = Thread(target=runmsg)
   msgThread.start()
 
-def confCheck():
-  global DisplayMode
-  if keyboard.is_pressed('['):
-    if DisplayMode <=9:
-      DisplayMode = DisplayMode + 1
-      #restartMsg()
-      time.sleep(.3)
-    else:
-      DisplayMode = 1
-      #restartMsg()
-      time.sleep(.3)
+
+cpuThread = Thread(target=cpuCheck)
+cpuThread.start()
 msgThread = Thread(target=runmsg)
 msgThread.start()
-while True:
+mainUI = Thread(target=uiThread)
+mainUI.start()
+while run:
   msgPlayCheck()
-  confCheck()
   time.sleep(.01)
