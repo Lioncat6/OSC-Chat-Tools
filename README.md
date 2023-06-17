@@ -20,4 +20,11 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 # Coming soon:
  - ~~UI~~(Done!)
  - Heartrate data support
+ - Speech To Text
+ - GPU Stats
+ - Framerate
+ - Ping
+ - VR/Desktop Display
+ - Voice mute status
+ - AFK message activated with a keyboard shortcut
  - Other fun shit!
