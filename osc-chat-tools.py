@@ -5,14 +5,14 @@ import ast
 import sys
 
 if not os.path.isfile('please-do-not-delete.txt'):
-  os.system("pip install python-osc")
+  """os.system("pip install python-osc")
   os.system("pip install argparse")
   os.system("pip install datetime")
   os.system("pip install keyboard")
   os.system("pip install asyncio")
   os.system("pip install psutil")
-  os.system("pip install PySimpleGUI")
-  with open('please-do-not-delete.txt', 'w') as f:
+  os.system("pip install PySimpleGUI")"""
+  with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
       f.write('[]')
 
 import PySimpleGUI as sg
@@ -25,33 +25,42 @@ import psutil
 import webbrowser
 from winsdk.windows.media.control import \
     GlobalSystemMediaTransportControlsSessionManager as MediaManager
-
+import winsdk.windows.media.control as wmc
 run = True
 playMsg = True
-cpuInt = int(psutil.cpu_percent(.1)*10)
+cpuInt = int(psutil.cpu_percent())
 textParseIterator = 0
 version = " Version 1.10"
 message_delay = 1.5
 msgOutput = ''
-topTextToggle = False
-topTimeToggle = False
-topSongToggle = False
-topCPUToggle = False
-topRAMToggle = False
-topNoneToggle = True
+topTextToggle = False #in conf
+topTimeToggle = False #in conf
+topSongToggle = False #in conf
+topCPUToggle = False #in conf
+topRAMToggle = False #in conf
+topNoneToggle = True #in conf
 
-bottomTextToggle = False
-bottomTimeToggle = False
-bottomSongToggle = False
-bottomCPUToggle = False
-bottomRAMToggle = False
-bottomNoneToggle = True
-messageString = ''
+bottomTextToggle = False #in conf
+bottomTimeToggle = False #in conf
+bottomSongToggle = False #in conf
+bottomCPUToggle = False #in conf
+bottomRAMToggle = False #in conf
+bottomNoneToggle = True #in conf
+messageString = '' #in conf
 afk = False
-FileToRead = ''
-scrollText = False
+FileToRead = '' #in conf
+scrollText = False #in conf
 scrollTexTSpeed = 6
-globalConf = []
+globalConf = [] 
+hideSong = False #in conf
+hideMiddle = False #in conf
+hideOutside = False #in conf
+showPaused = True #in conf
+songDisplay = ' Listening to: 🎵{title} by {artist}🎵' #in conf
+songName = ''
+showOnChange = False #in conf
+songChangeTicks = 1 #in conf
+tickCount = 2
 async def get_media_info():
     sessions = await MediaManager.request_async()
 
@@ -80,29 +89,21 @@ async def get_media_info():
     # available ones. I just haven't implemented this here for my use case.
     # See references for more information.
     raise Exception('TARGET_PROGRAM is not the current media session')
-
+  
+async def getMediaSession():
+    sessions = await MediaManager.request_async()
+    session = sessions.get_current_session()
+    return session
+def mediaIs(state):
+    session = asyncio.run(getMediaSession())
+    if session == None:
+        return False
+    return int(wmc.GlobalSystemMediaTransportControlsSessionPlaybackStatus[state]) == session.get_playback_info().playback_status
 if os.path.isfile('please-do-not-delete.txt'):
-  with open('please-do-not-delete.txt', 'r') as f:
+  with open('please-do-not-delete.txt', 'r', encoding="utf-8") as f:
     try:
       fixed_list = ast.literal_eval(f.read())
-      #LIST GUIDE: 
-      """topTextToggle
-      topTimeToggle
-      topSongToggle
-      topCPUToggle
-      topRAMToggle
-      topNoneToggle
-      bottomTextToggle
-      bottomTimeToggle
-      bottomSongToggle
-      bottomCPUToggle
-      bottomRAMToggle
-      bottomNoneToggle
-      message_delay
-      messageString
-      FileToRead
-      scrollText"""
-      if len(fixed_list) == 16:
+      if len(fixed_list) == 23:
         topTextToggle = fixed_list[0]
         topTimeToggle = fixed_list[1]
         topSongToggle = fixed_list[2]
@@ -119,6 +120,13 @@ if os.path.isfile('please-do-not-delete.txt'):
         messageString = fixed_list[13]
         FileToRead = fixed_list[14]
         scrollText = fixed_list[15]
+        hideSong = fixed_list[16]
+        hideMiddle = fixed_list[17]
+        hideOutside = fixed_list[18]
+        showPaused = fixed_list[19]
+        songDisplay = fixed_list[20]
+        showOnChange = fixed_list[21]
+        songChangeTicks = fixed_list[22]
       globalConf = fixed_list
     except:
       globalConf = []
@@ -144,6 +152,14 @@ def uiThread():
   global afk
   global FileToRead
   global scrollText
+  global hideSong
+  global hideMiddle
+  global hideOutside
+  global showPaused
+  global songDisplay
+  global songName
+  global showOnChange
+  global songChangeTicks
   layout_layout = [[sg.Column(
               [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold'))],
               [sg.Column([
@@ -173,10 +189,10 @@ def uiThread():
   options_layout =  [[sg.Column(
               [[sg.Text('Configure chatbox behavior', background_color='DarkSlateGray4', font=('Arial', 12, 'bold'))],
               [sg.Column([
-                  [sg.Text('Text to display for the message. One frame per line')],
+                  [sg.Text('Text to display for the message. One frame per line\nTo send a blank frame, use an asterisk(*) by itself on a line.')],
                   [sg.Multiline(default_text='OSC Chat Tools\nBy Lioncat6',
                       size=(50, 10), key='messageInput')]
-              ], size=(379, 200))],
+              ], size=(379, 220))],
               [sg.Column([
                   [sg.Text('File to use for the text file read functionality')],
                   [sg.Button('Open File'), sg.Text('', key='message_file_path_display')]
@@ -184,7 +200,24 @@ def uiThread():
               [sg.Column([
                   [sg.Text('Delay between frame updates, in seconds')],
                   [sg.Slider(range=(1.5, 10), default_value=1.5, resolution=0.1, orientation='horizontal', size=(40, 15), key="msgDelay")]
-              ], size=(379, 70))]
+              ], size=(379, 70))],
+              [sg.Column([
+                  [sg.Text('Template to use for song display.\nVariables = {artist}, {title}, {album_title}')],
+                  [sg.Input(key='songDisplay', size=(50, 1))]
+              ], size=(379, 80))],
+              [sg.Column([
+                  [sg.Text('Misc. Settings:')],
+                  [sg.Checkbox('Show \"(paused)\" after song when song is paused', default=True, key='showPaused', enable_events= True)],
+                  [sg.Checkbox('Hide song when music is paused', default=False, key='hideSong', enable_events= True)],
+                  [sg.Checkbox('Remove middle divider (when applicable)', default=False, key='hideMiddle', enable_events= True)],
+                  [sg.Checkbox('Remove outside dividers (when applicable)', default=False, key='hideOutside', enable_events= True)],
+              ], size=(379, 150))],
+              [sg.Column([
+                  [sg.Text('Only Show on song change settings:')],
+                  [sg.Checkbox('Only show music on song change', default=False, key='showOnChange', enable_events=True)],
+                  [sg.Text('Amount of frames to wait before the song name disappears')],
+                  [sg.Slider(range=(1, 5), default_value=2, resolution=1, orientation='horizontal', size=(40, 15), key="songChangeTicks")]
+              ], size=(379, 130))]
               ]
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='DarkSlateGray4')]]
 
@@ -193,6 +226,15 @@ def uiThread():
               
               ]
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='turquoise4')]]
+  
+  preset_layout = [[sg.Column(
+              [[sg.Text('Presets', background_color='SteelBlue4', font=('Arial', 12, 'bold'))],
+                [sg.Column([
+                  [sg.Text('Preassembled Presets')],
+                  [sg.Checkbox('Show music while playing, no borders', default=False, key='hideSong', enable_events= True)]
+                ])]
+              ]
+  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='SteelBlue4')]]
   
   preview_layout = [[sg.Column(
               [[sg.Text('Preview (Not Perfect)', background_color='DarkGreen', font=('Arial', 12, 'bold'))],
@@ -217,17 +259,39 @@ def uiThread():
               key='mainTabs', tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True
           )
       ],
-      [sg.Button('Apply'), sg.Button('Reset'), sg.Text(version), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru')]]
+      [sg.Button('Apply'), sg.Button('Reset'), sg.Text(version), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru'), sg.Checkbox('AFK', default=False, key='afk', enable_events= True, background_color='#cb7cef')]]
 
   window = sg.Window('OSC Chat Tools', layout,
                   default_element_size=(12, 1), resizable=True, finalize= True, size=(540, 600), right_click_menu=right_click_menu)
   window.set_min_size((500, 350))
   
+  def resetVars():
+    window['bottomText'].update(value=False)
+    window['bottomTime'].update(value=False)
+    window['bottomSong'].update(value=False)
+    window['bottomCPU'].update(value=False)
+    window['bottomRAM'].update(value=False)
+    window['topText'].update(value=False)
+    window['topTime'].update(value=False)
+    window['topSong'].update(value=False)
+    window['topCPU'].update(value=False)
+    window['topRAM'].update(value=False)
+    window['topNone'].update(value=True)
+    window['bottomNone'].update(value=True)
+    window['messageInput'].update(value='OSC Chat Tools\nBy Lioncat6')
+    window['msgDelay'].update(value=1.5)
+    window['songDisplay'].update(value=' Listening to: 🎵{title} by {artist}🎵')
+    window['showOnChange'].update(value=False)
+    window['songChangeTicks'].update(value=2)
+    window['hideOutside'].update(value=False)
+    window['hideMiddle'].update(value=False)
+    window['showPaused'].update(value=True)
+    window['hideSong'].update(value=False)
   def pullVars():
     global playMsg
     global msgOutput
     if os.path.isfile('please-do-not-delete.txt'):
-      if len(globalConf) == 16:
+      if len(globalConf) == 23:
         window['topText'].update(value=topTextToggle)
         window['topTime'].update(value=topTimeToggle)
         window['topSong'].update(value=topSongToggle)
@@ -244,6 +308,15 @@ def uiThread():
         window['messageInput'].update(value=messageString)
         window['message_file_path_display'].update(value=FileToRead)
         window['scroll'].update(value=scrollText)
+        window['hideSong'].update(value=hideSong)
+        window['hideMiddle'].update(value=hideMiddle)
+        window['hideOutside'].update(value=hideOutside)
+        window['showPaused'].update(value=showPaused)
+        window['songDisplay'].update(value=songDisplay)
+        window['showOnChange'].update(value=showOnChange)
+        window['songChangeTicks'].update(value=songChangeTicks)
+      else:
+        resetVars()
     while run:
       if run:
         try:
@@ -314,20 +387,7 @@ def uiThread():
       if event == 'Reset':
           answer = sg.popup_yes_no("Are you sure?\nThis will erase all of your entered text and reset the configuration file!")
           if answer == "Yes":
-            window['bottomText'].update(value=False)
-            window['bottomTime'].update(value=False)
-            window['bottomSong'].update(value=False)
-            window['bottomCPU'].update(value=False)
-            window['bottomRAM'].update(value=False)
-            window['topText'].update(value=False)
-            window['topTime'].update(value=False)
-            window['topSong'].update(value=False)
-            window['topCPU'].update(value=False)
-            window['topRAM'].update(value=False)
-            window['topNone'].update(value=True)
-            window['bottomNone'].update(value=True)
-            window['messageInput'].update(value='OSC Chat Tools\nBy Lioncat6')
-            window['msgDelay'].update(value=1.5)
+            resetVars()
       if event == 'Open File':
           message_file_path = sg.popup_get_file('Select a File', title='Select a File')
           window['message_file_path_display'].update(value=message_file_path)
@@ -348,9 +408,16 @@ def uiThread():
           messageString = values['messageInput']
           FileToRead = window['message_file_path_display'].get()
           scrollText = values['scroll']
-          with open('please-do-not-delete.txt', 'w') as f:
+          hideSong = values['hideSong']
+          hideMiddle = values['hideMiddle']
+          hideOutside = values['hideOutside']
+          showPaused = values['showPaused']
+          songDisplay = values['songDisplay']
+          showOnChange = values['showOnChange']
+          songChangeTicks = values['songChangeTicks']
+          with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText]))
+              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
       if event == 'Check For Updates':
@@ -415,6 +482,10 @@ if __name__ == "__main__":
     global messageString
     global playMsg
     global run
+    global songName
+    global songDisplay
+    global songChangeTicks
+    global tickCount
     if playMsg:
       
       #preassembles
@@ -429,18 +500,38 @@ if __name__ == "__main__":
       if int(current_hour) == 0:
           current_hour = 12
       current_media_info = asyncio.run(get_media_info())
-      songInfo=" Listening to: 🎵"+current_media_info['title']+" by "+current_media_info['artist']+"🎵"
+
+      artist = current_media_info['artist']
+      title = current_media_info['title']
+      album_title = current_media_info['album_title']  
+      if mediaIs('PLAYING') or (not showPaused):
+        songInfo= songDisplay.format(artist=artist,title=title,album_title=album_title)
+      else:
+        songInfo=songDisplay.format(artist=artist,title=title,album_title=album_title)+" (paused)"
       letsGetThatTime =" "+str(current_hour)+":"+current_minute+dayThing
-      cpu = " Cpu: "+ str(cpuInt)+"%"
+      cpu = " Cpu: "+ str(psutil.cpu_percent())+"%"
       ram = " Ram: "+str(int(psutil.virtual_memory()[2]))+"%"
       
       
       #message Assembler:
-      if not scrollText:
+      if not scrollText and not afk:
         if topNoneToggle or bottomNoneToggle:
           toSend = ''
           if topSongToggle or bottomSongToggle:
-            toSend = toSend+songInfo
+            if showOnChange:
+              if tickCount != 0:
+                toSend = toSend+songInfo
+                songName = current_media_info['title']
+                tickCount = tickCount -1
+              if current_media_info['title'] != songName:
+                toSend = toSend+songInfo
+                songName = current_media_info['title']
+                tickCount = songChangeTicks -1
+            else:
+              if not (hideSong and mediaIs('PAUSED')):
+                toSend = toSend+songInfo
+              else: 
+                toSend = ''
           if topCPUToggle or bottomCPUToggle:
             toSend = toSend+cpu
           if topRAMToggle or bottomRAMToggle:
@@ -449,12 +540,31 @@ if __name__ == "__main__":
             toSend = toSend+letsGetThatTime
           if topTextToggle or bottomTextToggle:
             toSend = toSend + a
-          msgOutput = '╔═════════════╗'+toSend+' ╚═════════════╝'
+          if toSend != '':
+            if not hideOutside:
+              msgOutput = '╔═════════════╗'+toSend+' ╚═════════════╝'
+            else:
+              msgOutput = toSend
+          else:
+            msgOutput = ''
         else:
           toSendTop = ''
-          toSendbottom = ''
+          toSendBottom = ''
           if topSongToggle:
-            toSendTop = toSendTop+songInfo
+            if showOnChange:
+              if tickCount != 0:
+                toSendTop = toSendTop+songInfo
+                songName = current_media_info['title']
+                tickCount = tickCount -1
+              if current_media_info['title'] != songName:
+                toSendTop = toSendTop+songInfo
+                songName = current_media_info['title']
+                tickCount = songChangeTicks -1
+            else:
+              if not (hideSong and mediaIs('PAUSED')):
+                toSendTop = toSendTop+songInfo
+              else: 
+                toSendTop = ''
           if topCPUToggle:
             toSendTop = toSendTop+cpu
           if topRAMToggle:
@@ -464,22 +574,53 @@ if __name__ == "__main__":
           if topTextToggle :
             toSendTop = toSendTop + a
           if bottomSongToggle:
-            toSendbottom = toSendbottom+songInfo
+            if showOnChange:
+              if tickCount != 0:
+                toSendBottom = toSendBottom+songInfo
+                songName = current_media_info['title']
+                tickCount = tickCount -1
+              if current_media_info['title'] != songName:
+                toSendBottom = toSendBottom+songInfo
+                songName = current_media_info['title']
+                tickCount = songChangeTicks -1
+            else:
+              if not (hideSong and mediaIs('PAUSED')):
+                toSendBottom = toSendBottom+songInfo
+              else: 
+                toSendBottom = ''
           if bottomCPUToggle:
-            toSendbottom = toSendbottom+cpu
+            toSendBottom = toSendBottom+cpu
           if bottomRAMToggle:
-            toSendbottom = toSendbottom+ram
+            toSendBottom = toSendBottom+ram
           if bottomTimeToggle:
-            toSendbottom = toSendbottom+letsGetThatTime
+            toSendBottom = toSendBottom+letsGetThatTime
           if bottomTextToggle :
-            toSendbottom = toSendbottom + a
-          msgOutput = '╔═════════════╗'+toSendTop+" ╠═════════════╣"+toSendbottom+' ╚═════════════╝'
+            toSendBottom = toSendBottom + a
+          if not(toSendBottom == '' or toSendTop == ''):
+            if not hideOutside and not hideMiddle:
+              msgOutput = '╔═════════════╗'+toSendTop+" ╠═════════════╣"+toSendBottom+' ╚═════════════╝'
+            elif hideOutside and not hideMiddle:
+              msgOutput = toSendTop+" ╠═════════════╣"+toSendBottom+' '
+            elif not hideOutside and hideMiddle:
+              msgOutput = '╔═════════════╗'+toSendTop+" "+toSendBottom+' ╚═════════════╝'
+            elif hideOutside and hideMiddle:
+              msgOutput = toSendTop+" "+toSendBottom+' '
+          elif toSendBottom == '' and toSendTop == '':
+            msgOutput = ''
+          elif toSendBottom == '' or toSendTop == '':
+            if not hideOutside and not hideMiddle:
+              msgOutput = '╔═════════════╗'+toSendTop+toSendBottom+' ╚═════════════╝'
+            elif hideOutside and not hideMiddle:
+              msgOutput = toSendTop+toSendBottom+' '
+            elif not hideOutside and hideMiddle:
+              msgOutput = '╔═════════════╗'+toSendTop+toSendBottom+' ╚═════════════╝'
+            elif hideOutside and hideMiddle:
+              msgOutput = toSendTop+toSendBottom+' '
       else:
         msgOutput = a
       if playMsg:
         client.send_message("/chatbox/input", [ str(msgOutput), True, False])
         #print(str(msgOutput))
-
       for x in range(int(message_delay*10)):
         time.sleep(.1)
         if not playMsg:
@@ -494,7 +635,10 @@ def runmsg():
   while playMsg:
     if not afk and not scrollText:
       for x in processMessage(messageString):
-        sendMsg(" "+x)
+        if x == "*":
+          sendMsg(" ㅤ")
+        else:
+          sendMsg(" "+x)
     elif afk:
       sendMsg('AFK')
       sendMsg('ㅤ')
@@ -510,7 +654,7 @@ def runmsg():
     else:
       sendMsg('')
     
-  client.send_message("/chatbox/input", [ " ", True, False])
+  client.send_message("/chatbox/input", [ "", True, False])
     
 def msgPlayCheck():
   if keyboard.is_pressed('p'):
@@ -525,13 +669,13 @@ def msgPlayToggle():
     playMsg = True  
     msgThread = Thread(target=runmsg)
     msgThread.start()
-    cpuThread = Thread(target=cpuCheck)
-    cpuThread.start()
+    """cpuThread = Thread(target=cpuCheck)
+    cpuThread.start()"""
     time.sleep(.5) 
-def cpuCheck():
+"""def cpuCheck():
   while playMsg:
     global cpuInt
-    cpuInt = int(psutil.cpu_percent(2)*10)
+    cpuInt = int(psutil.cpu_percent(2)*10)"""
 
 def restartMsg():
   global playMsg
@@ -542,8 +686,8 @@ def restartMsg():
   msgThread.start()
 
 
-cpuThread = Thread(target=cpuCheck)
-cpuThread.start()
+"""cpuThread = Thread(target=cpuCheck)
+cpuThread.start()"""
 msgThread = Thread(target=runmsg)
 msgThread.start()
 mainUI = Thread(target=uiThread)
