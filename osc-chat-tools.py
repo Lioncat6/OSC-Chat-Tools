@@ -163,11 +163,11 @@ def uiThread():
   layout_layout = [[sg.Column(
               [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold'))],
               [sg.Column([
-                  [sg.Checkbox('Text file read - defined in the options tab\n(This will disable everything else)', default=False, key='scroll', enable_events= True, background_color='dark slate blue')]
+                  [sg.Checkbox('Text file read - defined in the behavior tab\n(This will disable everything else)', default=False, key='scroll', enable_events= True, background_color='dark slate blue')]
               ], key='topConf', background_color='dark slate blue', size=(379, 50))],
               [sg.Column([
                   [sg.Text('Configure top half of chatbox:', font=('Arial', 10, 'bold'))],
-                  [sg.Checkbox('Text - Defined in the options tab', default=False, key='topText', enable_events= True)],
+                  [sg.Checkbox('Text - Defined in the behavior tab', default=False, key='topText', enable_events= True)],
                   [sg.Checkbox('Time', default=False, key='topTime', enable_events= True)],
                   [sg.Checkbox('Song - Uses Windows\' MediaManager to request song info \n Does NOT pull directly from spotify', default=False, key='topSong', enable_events= True)],
                   [sg.Checkbox('CPU', default=False, key='topCPU', enable_events= True)],
@@ -176,7 +176,7 @@ def uiThread():
               ], key='topConf')],
               [sg.Column([
                   [sg.Text('Configure bottom half of chatbox:', font=('Arial', 10, 'bold'), background_color='peru')],
-                  [sg.Checkbox('Text - Defined in the options tab', default=False, key='bottomText', enable_events= True, background_color='peru')],
+                  [sg.Checkbox('Text - Defined in the behavior tab', default=False, key='bottomText', enable_events= True, background_color='peru')],
                   [sg.Checkbox('Time', default=False, key='bottomTime', enable_events= True, background_color='peru')],
                   [sg.Checkbox('Song - Uses Windows\' MediaManager to request song info \n Does NOT pull directly from spotify', default=False, key='bottomSong', enable_events= True, background_color='peru')],
                   [sg.Checkbox('CPU', default=False, key='bottomCPU', enable_events= True, background_color='peru')],
@@ -186,7 +186,7 @@ def uiThread():
               ]
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='darkseagreen')]]
 
-  options_layout =  [[sg.Column(
+  behavior_layout =  [[sg.Column(
               [[sg.Text('Configure chatbox behavior', background_color='DarkSlateGray4', font=('Arial', 12, 'bold'))],
               [sg.Column([
                   [sg.Text('Text to display for the message. One frame per line\nTo send a blank frame, use an asterisk(*) by itself on a line.')],
@@ -252,7 +252,7 @@ def uiThread():
       [   
           sg.TabGroup([[
                   sg.Tab('Layout', layout_layout, background_color='darkseagreen'),
-                  sg.Tab('Options', options_layout, background_color='DarkSlateGray4'),
+                  sg.Tab('Behavior', behavior_layout, background_color='DarkSlateGray4'),
                   sg.Tab('Preview', preview_layout, background_color='DarkGreen'),
                   sg.Tab('Layout Guide', help_layout, background_color='turquoise4')
               ]], 
@@ -370,7 +370,7 @@ def uiThread():
       if values['scroll']:
           if window['message_file_path_display'].get() == '':
             window['scroll'].update(value=False)
-            sg.popup('Please select a file in the options tab before enabling this option!')
+            sg.popup('Please select a file in the behavior tab before enabling this option!')
           else:
             window['bottomText'].update(value=False)
             window['bottomTime'].update(value=False)
