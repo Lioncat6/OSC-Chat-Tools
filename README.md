@@ -2,12 +2,20 @@
 Some shitty osc script I made for Vrchat. Now with UI!
 - Feature Requests are encouraged. You need something added? Let me know
 
+*That picture is outdated but I can't be f-ed to change it*
 ![Preview](https://github.com/Lioncat6/OSC-Chat-Tools/blob/8e8b062ca4bd965b968cfe6db76df92926af305b/preview.png)
 
 OCT Is a standalone Python script used for interacting with Vrchat's OSC
-### ~~Just make sure Python is installed on your system, and the code will take care of the rest! [Install Python](https://www.python.org/downloads/)~~ Update: Python is not required to be installed on your system
+### Python is not required to be installed on your system
 
-
+# Installation:
+## Exe file
+ - https://github.com/Lioncat6/OSC-Chat-Tools/releases/latest
+## Build it yourself
+ - In a command prompt window in the folder the `osc-chat-tools.py` is located in:
+ - `pip install PyInstaller`
+ - `python -m PyInstaller -wF osc-chat-tools.py`
+ - The resulting exe will be located in the `dist` folder
 
 ## Open up `osc-chat-tools.exe` and the code will do the rest!
 
@@ -16,7 +24,7 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 # Keyboard Shortcuts (PC ONLY)
 - **`P`** Toggle Chatbox
 
-# Config 
+# Config - last updated for 1.1.0
 ### [https://youtu.be/an7PLpDf5kE](https://youtu.be/an7PLpDf5kE)
 
 # Coming soon:
