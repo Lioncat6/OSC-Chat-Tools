@@ -30,7 +30,7 @@ run = True
 playMsg = True
 cpuInt = int(psutil.cpu_percent())
 textParseIterator = 0
-version = " Version 1.10"
+version = " Version 1.2.0"
 message_delay = 1.5
 msgOutput = ''
 topTextToggle = False #in conf
@@ -435,6 +435,8 @@ def uiThread():
         os.system("start " + 'please-do-not-delete.txt')
       if event == 'Submit Feedback':
         webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/issues')
+      if event == 'afk':
+        afk = values['afk']
   window.close()
   playMsg = False
   run = False
@@ -616,6 +618,8 @@ if __name__ == "__main__":
               msgOutput = '╔═════════════╗'+toSendTop+toSendBottom+' ╚═════════════╝'
             elif hideOutside and hideMiddle:
               msgOutput = toSendTop+toSendBottom+' '
+      elif afk:
+        msgOutput = '╔═════════════╗'+a+' ╚═════════════╝'
       else:
         msgOutput = a
       if playMsg:
