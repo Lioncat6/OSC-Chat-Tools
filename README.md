@@ -2,8 +2,12 @@
 Some shitty osc script I made for Vrchat. Now with UI!
 - Feature Requests are encouraged. You need something added? Let me know
 
+![Preview](https://github.com/Lioncat6/OSC-Chat-Tools/blob/8e8b062ca4bd965b968cfe6db76df92926af305b/preview.png)
+
 OCT Is a standalone Python script used for interacting with Vrchat's OSC
-### Just make sure Python is installed on your system, and the code will take care of the rest! [Install Python](https://www.python.org/downloads/)
+### ~~Just make sure Python is installed on your system, and the code will take care of the rest! [Install Python](https://www.python.org/downloads/)~~ Update: Python is not required to be installed on your system
+
+
 
 ## Open up `osc-chat-tools.exe` and the code will do the rest!
 
@@ -18,4 +22,11 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 # Coming soon:
  - ~~UI~~(Done!)
  - Heartrate data support
+ - Speech To Text
+ - GPU Stats
+ - Framerate
+ - Ping
+ - VR/Desktop Display
+ - Voice mute status
+ - AFK message activated with a keyboard shortcut
  - Other fun shit!
