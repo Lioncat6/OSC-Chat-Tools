@@ -2,6 +2,7 @@
 Some shitty osc script I made for Vrchat. Now with UI!
 - Feature Requests are encouraged. You need something added? Let me know
 
+*That picture is outdated but I can't be f-ed to change it*
 ![Preview](https://github.com/Lioncat6/OSC-Chat-Tools/blob/8e8b062ca4bd965b968cfe6db76df92926af305b/preview.png)
 
 OCT Is a standalone Python script used for interacting with Vrchat's OSC
