@@ -17,7 +17,7 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 # Keyboard Shortcuts (PC ONLY)
 - **`P`** Toggle Chatbox
 
-# Config 
+# Config - last updated for 1.1.0
 ### [https://youtu.be/an7PLpDf5kE](https://youtu.be/an7PLpDf5kE)
 
 # Coming soon:
