@@ -12,7 +12,7 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 ## Exe file
  - https://github.com/Lioncat6/OSC-Chat-Tools/releases/latest
 ## Build it yourself
- - Install all of the required Python modules (pip install {module name}):
+ - Install all of the required Python modules (`pip install {module name}`):
    - PySimpleGUI
    - argparse
    - datetime
