@@ -11,7 +11,7 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 # Installation:
 ## Exe file
  - https://github.com/Lioncat6/OSC-Chat-Tools/releases/latest
-## Build it yourself\
+## Build it yourself
  - Install python [https://www.python.org/downloads/](https://www.python.org/downloads/)
  - Install all of the required Python modules (`pip install {module name}`):
    - PySimpleGUI
