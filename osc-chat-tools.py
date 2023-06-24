@@ -227,11 +227,10 @@ def uiThread():
               ]
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='turquoise4')]]
   
-  preset_layout = [[sg.Column(
-              [[sg.Text('Presets', background_color='SteelBlue4', font=('Arial', 12, 'bold'))],
+  options_layout = [[sg.Column(
+              [[sg.Text('Configure Program', background_color='SteelBlue4', font=('Arial', 12, 'bold'))],
                 [sg.Column([
-                  [sg.Text('Preassembled Presets')],
-                  [sg.Checkbox('Show music while playing, no borders', default=False, key='hideSong', enable_events= True)]
+                  [sg.Checkbox('Minimize on startup', default=False, key='minimizeOnStart', enable_events= True)]
                 ])]
               ]
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='SteelBlue4')]]
@@ -242,6 +241,7 @@ def uiThread():
                 [sg.Text('', key = 'messagePreviewFill', font=('Arial', 12 ), auto_size_text=True, size=(21, 100), justification='center')]
               ], size=(379, 150))]
               ]
+  
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='DarkGreen')]]
   menu_def = [['&File', ['A&pply', '&Reset', '---', 'Open Config File', '---','E&xit' ]],
           ['&Help', ['&About', '---', 'Submit Feedback', '---', 'Open &Github Page', '&Check For Updates']]]
@@ -254,7 +254,7 @@ def uiThread():
                   sg.Tab('Layout', layout_layout, background_color='darkseagreen'),
                   sg.Tab('Behavior', behavior_layout, background_color='DarkSlateGray4'),
                   sg.Tab('Preview', preview_layout, background_color='DarkGreen'),
-                  sg.Tab('Layout Guide', help_layout, background_color='turquoise4')
+                  sg.Tab('Options', help_layout, background_color='turquoise4')
               ]], 
               key='mainTabs', tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True
           )
