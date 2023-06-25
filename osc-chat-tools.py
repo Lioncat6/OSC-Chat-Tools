@@ -456,7 +456,7 @@ def uiThread():
       if event == 'runThing':
         msgPlayToggle()
       if event == 'Open Config File':
-        os.system("start " + window+ 'please-do-not-delete.txt')
+        os.system("start "+ 'please-do-not-delete.txt')
       if event == 'Submit Feedback':
         webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/issues')
       if event == 'afk':
