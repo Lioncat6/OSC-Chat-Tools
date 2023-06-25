@@ -62,6 +62,8 @@ showOnChange = False #in conf
 songChangeTicks = 1 #in conf
 tickCount = 2
 minimizeOnStart = False
+keybind_run = 'p'
+keybind_afk = 'end'
 async def get_media_info():
     sessions = await MediaManager.request_async()
 
@@ -104,7 +106,7 @@ if os.path.isfile('please-do-not-delete.txt'):
   with open('please-do-not-delete.txt', 'r', encoding="utf-8") as f:
     try:
       fixed_list = ast.literal_eval(f.read())
-      if len(fixed_list) == 24:
+      if len(fixed_list) == 26:
         topTextToggle = fixed_list[0]
         topTimeToggle = fixed_list[1]
         topSongToggle = fixed_list[2]
@@ -129,6 +131,8 @@ if os.path.isfile('please-do-not-delete.txt'):
         showOnChange = fixed_list[21]
         songChangeTicks = fixed_list[22]
         minimizeOnStart = fixed_list[23]
+        keybind_run = fixed_list[24]
+        keybind_afk = fixed_list[25]
       globalConf = fixed_list
     except:
       globalConf = []
@@ -163,6 +167,8 @@ def uiThread():
   global showOnChange
   global songChangeTicks
   global minimizeOnStart
+  global keybind_run
+  global keybind_afk
   layout_layout = [[sg.Column(
               [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold'))],
               [sg.Column([
@@ -226,7 +232,11 @@ def uiThread():
 
   keybindings_layout = [[sg.Column(
               [[sg.Text('Keybindings Configuration', background_color='turquoise4', font=('Arial', 12, 'bold'))],
-              
+               [sg.Text('You must press Apply for new keybinds to take affect!', background_color='turquoise4')],
+                [sg.Column([
+                  [sg.Text('Toggle Run'), sg.Frame('',[[sg.Text('Unbound', key='keybind_run', background_color='DarkSlateGray4', pad=(10, 0))]],background_color='DarkSlateGray4'), sg.Button('Bind Key', key='run_binding')],
+                  [sg.Text('Toggle Afk'), sg.Frame('',[[sg.Text('Unbound', key='keybind_afk', background_color='DarkSlateGray4', pad=(10, 0))]],background_color='DarkSlateGray4'), sg.Button('Bind Key', key='afk_binding')]
+                ], expand_x=True, size=(379, 70))]
               ]
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='turquoise4')]]
   
@@ -234,7 +244,7 @@ def uiThread():
               [[sg.Text('Configure Program', background_color='SteelBlue4', font=('Arial', 12, 'bold'))],
                 [sg.Column([
                   [sg.Checkbox('Minimize on startup', default=False, key='minimizeOnStart', enable_events= True)]
-                ])]
+                ], size=(379, 35))]
               ]
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='SteelBlue4')]]
   
@@ -292,11 +302,13 @@ def uiThread():
     window['showPaused'].update(value=True)
     window['hideSong'].update(value=False)
     window['minimizeOnStart'].update(value=False)
+    window['keybind_run'].update(value='p')
+    window['keybind_afk'].update(value='end')
   def pullVars():
     global playMsg
     global msgOutput
     if os.path.isfile('please-do-not-delete.txt'):
-      if len(globalConf) == 24:
+      if len(globalConf) == 26:
         window['topText'].update(value=topTextToggle)
         window['topTime'].update(value=topTimeToggle)
         window['topSong'].update(value=topSongToggle)
@@ -321,6 +333,8 @@ def uiThread():
         window['showOnChange'].update(value=showOnChange)
         window['songChangeTicks'].update(value=songChangeTicks)
         window['minimizeOnStart'].update(value=minimizeOnStart)
+        window['keybind_run'].update(value=keybind_run)
+        window['keybind_afk'].update(value=keybind_afk)
       else:
         resetVars()
     while run:
@@ -330,10 +344,9 @@ def uiThread():
         except Exception as e:
           print(e)
       time.sleep(.1)
-      if playMsg:
-        window['runThing'].update(value=True)
-      else:
-        window['runThing'].update(value=False)
+      window['runThing'].update(value=playMsg)
+      window['afk'].update(value=afk)
+      
   pullVarsThread = Thread(target=pullVars)
   pullVarsThread.start()
   if minimizeOnStart:
@@ -424,9 +437,11 @@ def uiThread():
           showOnChange = values['showOnChange']
           songChangeTicks = values['songChangeTicks']
           minimizeOnStart = values['minimizeOnStart']
+          keybind_run = window['keybind_run'].get()
+          keybind_afk = window['keybind_afk'].get()
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart]))
+              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
       if event == 'Check For Updates':
@@ -441,11 +456,45 @@ def uiThread():
       if event == 'runThing':
         msgPlayToggle()
       if event == 'Open Config File':
-        os.system("start " + 'please-do-not-delete.txt')
+        os.system("start " + window+ 'please-do-not-delete.txt')
       if event == 'Submit Feedback':
         webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/issues')
       if event == 'afk':
         afk = values['afk']
+      if event == 'run_binding':
+        run_binding_layout = [[sg.Text('Press any key to bind to \'Toggle Run\'')],[sg.Text('', key='preview_bind')],[sg.Button('Ok', disabled=True, key='Ok'), sg.Button('Cancel', disabled=True, key='Cancel')]]
+        run_binding_window = sg.Window('Bind \'Toggle Run\'', run_binding_layout, size=(300, 90), element_justification='center', no_titlebar=True, modal=True)
+        def checkPressThread():
+          run_binding_window['preview_bind'].update(value=keyboard.read_key())
+          run_binding_window['Ok'].update(disabled=False)
+          run_binding_window['Cancel'].update(disabled=False)
+        checkThread = Thread(target=checkPressThread)
+        checkThread.start()
+        while True:
+          event, values = run_binding_window.read()
+          if event == 'Cancel':
+            break
+          if event == 'Ok':
+            window['keybind_run'].update(value=run_binding_window['preview_bind'].get())
+            break
+        run_binding_window.close()
+      if event == 'afk_binding':
+        run_binding_layout = [[sg.Text('Press any key to bind to \'Toggle Afk\'')],[sg.Text('', key='preview_bind')],[sg.Button('Ok', disabled=True, key='Ok'), sg.Button('Cancel', disabled=True, key='Cancel')]]
+        run_binding_window = sg.Window('Bind \'Toggle Afk\'', run_binding_layout, size=(300, 90), element_justification='center', no_titlebar=True, modal=True)
+        def checkPressThread():
+          run_binding_window['preview_bind'].update(value=keyboard.read_key())
+          run_binding_window['Ok'].update(disabled=False)
+          run_binding_window['Cancel'].update(disabled=False)
+        checkThread = Thread(target=checkPressThread)
+        checkThread.start()
+        while True:
+          event, values = run_binding_window.read()
+          if event == 'Cancel':
+            break
+          if event == 'Ok':
+            window['keybind_afk'].update(value=run_binding_window['preview_bind'].get())
+            break
+        run_binding_window.close()
   window.close()
   playMsg = False
   run = False
@@ -670,9 +719,9 @@ def runmsg():
   client.send_message("/chatbox/input", [ "", True, False])
     
 def msgPlayCheck():
-  if keyboard.is_pressed('p'):
+  if keyboard.is_pressed(keybind_run):
     msgPlayToggle()
-    
+
 def msgPlayToggle():
   global playMsg
   if playMsg:
@@ -689,6 +738,15 @@ def msgPlayToggle():
   while playMsg:
     global cpuInt
     cpuInt = int(psutil.cpu_percent(2)*10)"""
+    
+def afkCheck():
+  if keyboard.is_pressed(keybind_afk):
+    afkToggle()
+    
+def afkToggle():
+  global afk
+  afk = not afk
+  time.sleep(.5) 
 
 def restartMsg():
   global playMsg
@@ -707,4 +765,5 @@ mainUI = Thread(target=uiThread)
 mainUI.start()
 while run:
   msgPlayCheck()
+  afkCheck()
   time.sleep(.01)
