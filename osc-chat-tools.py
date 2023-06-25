@@ -257,7 +257,7 @@ def uiThread():
                   sg.Tab('Layout', layout_layout, background_color='darkseagreen'),
                   sg.Tab('Behavior', behavior_layout, background_color='DarkSlateGray4'),
                   sg.Tab('Preview', preview_layout, background_color='DarkGreen'),
-                  sg.Tab('Keybindings', keybindings_layout, background_color=turquoise4),
+                  sg.Tab('Keybindings', keybindings_layout, background_color='turquoise4'),
                   sg.Tab('Options', options_layout, background_color='SteelBlue4')
               ]], 
               key='mainTabs', tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True
