@@ -61,6 +61,7 @@ songName = ''
 showOnChange = False #in conf
 songChangeTicks = 1 #in conf
 tickCount = 2
+minimizeOnStart = False
 async def get_media_info():
     sessions = await MediaManager.request_async()
 
@@ -103,7 +104,7 @@ if os.path.isfile('please-do-not-delete.txt'):
   with open('please-do-not-delete.txt', 'r', encoding="utf-8") as f:
     try:
       fixed_list = ast.literal_eval(f.read())
-      if len(fixed_list) == 23:
+      if len(fixed_list) == 24:
         topTextToggle = fixed_list[0]
         topTimeToggle = fixed_list[1]
         topSongToggle = fixed_list[2]
@@ -127,6 +128,7 @@ if os.path.isfile('please-do-not-delete.txt'):
         songDisplay = fixed_list[20]
         showOnChange = fixed_list[21]
         songChangeTicks = fixed_list[22]
+        minimizeOnStart = fixed_list[23]
       globalConf = fixed_list
     except:
       globalConf = []
@@ -160,6 +162,7 @@ def uiThread():
   global songName
   global showOnChange
   global songChangeTicks
+  global minimizeOnStart
   layout_layout = [[sg.Column(
               [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold'))],
               [sg.Column([
@@ -287,11 +290,12 @@ def uiThread():
     window['hideMiddle'].update(value=False)
     window['showPaused'].update(value=True)
     window['hideSong'].update(value=False)
+    window['minimizeOnStart'].update(value=False)
   def pullVars():
     global playMsg
     global msgOutput
     if os.path.isfile('please-do-not-delete.txt'):
-      if len(globalConf) == 23:
+      if len(globalConf) == 24:
         window['topText'].update(value=topTextToggle)
         window['topTime'].update(value=topTimeToggle)
         window['topSong'].update(value=topSongToggle)
@@ -315,6 +319,7 @@ def uiThread():
         window['songDisplay'].update(value=songDisplay)
         window['showOnChange'].update(value=showOnChange)
         window['songChangeTicks'].update(value=songChangeTicks)
+        window['minimizeOnStart'].update(value=minimizeOnStart)
       else:
         resetVars()
     while run:
@@ -330,6 +335,8 @@ def uiThread():
         window['runThing'].update(value=False)
   pullVarsThread = Thread(target=pullVars)
   pullVarsThread.start()
+  if minimizeOnStart:
+    window.minimize()  
   while True:
       event, values = window.read()
       #print(event, values)
@@ -415,9 +422,10 @@ def uiThread():
           songDisplay = values['songDisplay']
           showOnChange = values['showOnChange']
           songChangeTicks = values['songChangeTicks']
+          minimizeOnStart = values['minimizeOnStart']
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks]))
+              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
       if event == 'Check For Updates':
