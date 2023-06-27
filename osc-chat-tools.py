@@ -64,6 +64,10 @@ tickCount = 2
 minimizeOnStart = False
 keybind_run = 'p'
 keybind_afk = 'end'
+topBar = '╔═════════════╗'
+middleBar = '╠═════════════╣'
+bottomBar = '╚═════════════╝'
+
 async def get_media_info():
     sessions = await MediaManager.request_async()
 
@@ -106,7 +110,7 @@ if os.path.isfile('please-do-not-delete.txt'):
   with open('please-do-not-delete.txt', 'r', encoding="utf-8") as f:
     try:
       fixed_list = ast.literal_eval(f.read())
-      if len(fixed_list) == 26:
+      if len(fixed_list) == 29:
         topTextToggle = fixed_list[0]
         topTimeToggle = fixed_list[1]
         topSongToggle = fixed_list[2]
@@ -133,6 +137,9 @@ if os.path.isfile('please-do-not-delete.txt'):
         minimizeOnStart = fixed_list[23]
         keybind_run = fixed_list[24]
         keybind_afk = fixed_list[25]
+        topBar = fixed_list[26]
+        middleBar = fixed_list[27]
+        bottomBar = fixed_list[28]
       globalConf = fixed_list
     except:
       globalConf = []
@@ -169,6 +176,9 @@ def uiThread():
   global minimizeOnStart
   global keybind_run
   global keybind_afk
+  global topBar
+  global middleBar
+  global bottomBar
   layout_layout = [[sg.Column(
               [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold'))],
               [sg.Column([
@@ -214,6 +224,14 @@ def uiThread():
                   [sg.Text('Template to use for song display.\nVariables = {artist}, {title}, {album_title}')],
                   [sg.Input(key='songDisplay', size=(50, 1))]
               ], size=(379, 80))],
+              [sg.Column([
+                  [sg.Text('Top Divider:')],
+                  [sg.Input(key='topBar', size=(50, 1))],
+                  [sg.Text('Middle Divider:')],
+                  [sg.Input(key='middleBar', size=(50, 1))],
+                  [sg.Text('Bottom Divider:')],
+                  [sg.Input(key='bottomBar', size=(50, 1))],
+                ], size=(379, 160))],
               [sg.Column([
                   [sg.Text('Misc. Settings:')],
                   [sg.Checkbox('Show \"(paused)\" after song when song is paused', default=True, key='showPaused', enable_events= True)],
@@ -304,11 +322,14 @@ def uiThread():
     window['minimizeOnStart'].update(value=False)
     window['keybind_run'].update(value='p')
     window['keybind_afk'].update(value='end')
+    window['topBar'].update(value='╔═════════════╗')
+    window['middleBar'].update(value='╠═════════════╣')
+    window['bottomBar'].update(value='╚═════════════╝')
   def pullVars():
     global playMsg
     global msgOutput
     if os.path.isfile('please-do-not-delete.txt'):
-      if len(globalConf) == 26:
+      if len(globalConf) == 29:
         window['topText'].update(value=topTextToggle)
         window['topTime'].update(value=topTimeToggle)
         window['topSong'].update(value=topSongToggle)
@@ -335,6 +356,9 @@ def uiThread():
         window['minimizeOnStart'].update(value=minimizeOnStart)
         window['keybind_run'].update(value=keybind_run)
         window['keybind_afk'].update(value=keybind_afk)
+        window['topBar'].update(value=topBar)
+        window['middleBar'].update(value=middleBar)
+        window['bottomBar'].update(value=bottomBar)
       else:
         resetVars()
     while run:
@@ -439,9 +463,12 @@ def uiThread():
           minimizeOnStart = values['minimizeOnStart']
           keybind_run = window['keybind_run'].get()
           keybind_afk = window['keybind_afk'].get()
+          topBar = values['topBar']
+          middleBar = values['middleBar']
+          bottomBar = values['bottomBar']
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk]))
+              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
       if event == 'Check For Updates':
@@ -552,6 +579,9 @@ if __name__ == "__main__":
     global songDisplay
     global songChangeTicks
     global tickCount
+    global topBar
+    global middleBar
+    global bottomBar
     if playMsg:
       
       #preassembles
@@ -608,7 +638,7 @@ if __name__ == "__main__":
             toSend = toSend + a
           if toSend != '':
             if not hideOutside:
-              msgOutput = '╔═════════════╗'+toSend+' ╚═════════════╝'
+              msgOutput = topBar+toSend+" "+bottomBar
             else:
               msgOutput = toSend
           else:
@@ -664,26 +694,26 @@ if __name__ == "__main__":
             toSendBottom = toSendBottom + a
           if not(toSendBottom == '' or toSendTop == ''):
             if not hideOutside and not hideMiddle:
-              msgOutput = '╔═════════════╗'+toSendTop+" ╠═════════════╣"+toSendBottom+' ╚═════════════╝'
+              msgOutput = topBar+toSendTop+" "+middleBar+toSendBottom+" "+bottomBar
             elif hideOutside and not hideMiddle:
-              msgOutput = toSendTop+" ╠═════════════╣"+toSendBottom+' '
+              msgOutput = toSendTop+" "+middleBar+toSendBottom+' '
             elif not hideOutside and hideMiddle:
-              msgOutput = '╔═════════════╗'+toSendTop+" "+toSendBottom+' ╚═════════════╝'
+              msgOutput = topBar+toSendTop+" "+toSendBottom+" "+bottomBar
             elif hideOutside and hideMiddle:
               msgOutput = toSendTop+" "+toSendBottom+' '
           elif toSendBottom == '' and toSendTop == '':
             msgOutput = ''
           elif toSendBottom == '' or toSendTop == '':
             if not hideOutside and not hideMiddle:
-              msgOutput = '╔═════════════╗'+toSendTop+toSendBottom+' ╚═════════════╝'
+              msgOutput = topBar+toSendTop+toSendBottom+" "+bottomBar
             elif hideOutside and not hideMiddle:
               msgOutput = toSendTop+toSendBottom+' '
             elif not hideOutside and hideMiddle:
-              msgOutput = '╔═════════════╗'+toSendTop+toSendBottom+' ╚═════════════╝'
+              msgOutput = topBar+toSendTop+toSendBottom+" "+bottomBar
             elif hideOutside and hideMiddle:
               msgOutput = toSendTop+toSendBottom+' '
       elif afk:
-        msgOutput = '╔═════════════╗'+a+' ╚═════════════╝'
+        msgOutput = topBar+a+" "+bottomBar
       else:
         msgOutput = a
       if playMsg:
