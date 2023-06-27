@@ -456,10 +456,13 @@ def uiThread():
       if event == 'runThing':
         msgPlayToggle()
       if event == 'Open Config File':
-        try:
-          os.system("start "+ 'please-do-not-delete.txt')
-        except Exception as e:
-          sg.Popup('Error opening config file: '+e)
+        if os.path.isfile('please-do-not-delete.txt'):
+          try:
+            os.system("start "+ 'please-do-not-delete.txt')
+          except Exception as e:
+            sg.Popup('Error opening config file: '+e)
+        else:
+          sg.Popup('Error opening config file: File not found')
       if event == 'Submit Feedback':
         webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/issues')
       if event == 'afk':
