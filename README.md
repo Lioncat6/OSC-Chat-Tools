@@ -23,6 +23,7 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
    - psutil
    - webbrowser
    - winsdk
+   - websocket-client
  - In a command prompt window in the folder the `osc-chat-tools.py` is located in:
  - `pip install PyInstaller`
  - `python -m PyInstaller -wF osc-chat-tools.py`
@@ -38,14 +39,25 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 # Config - last updated for 1.1.0
 ### [https://youtu.be/an7PLpDf5kE](https://youtu.be/an7PLpDf5kE)
 
+# Features
+ - Split top/bottom layout with customizable dividers
+ - Animated text
+ - Current time
+ - Song info using the Windows media manager
+ - CPU Info
+ - RAM Info
+ - Heart rate info using Pulsoid (Get a token from the 'Tokens' section of the dashboard)
+ - AFK message activated with a keyboard shortcut
+ - Customizable keyboard shortcuts
+ - TONS of customizability
+
 # Coming soon:
- - ~~UI~~(Done!)
- - Heartrate data support
- - Speech To Text
+ - Heartrate data through stronmo (Cheaper alternative to Pulsoid)
+ - Speech To Text (Almost Done!)
+ - Overhaul of the top/bottom system to be replaced with a more modular one
  - GPU Stats
  - Framerate
  - Ping
  - VR/Desktop Display
  - Voice mute status
- - AFK message activated with a keyboard shortcut
  - Other fun shit!
