@@ -26,6 +26,9 @@ import webbrowser
 from winsdk.windows.media.control import \
     GlobalSystemMediaTransportControlsSessionManager as MediaManager
 import winsdk.windows.media.control as wmc
+from websocket import create_connection # websocket-client
+
+
 run = True
 playMsg = True
 cpuInt = int(psutil.cpu_percent())
@@ -56,21 +59,26 @@ hideSong = False #in conf
 hideMiddle = False #in conf
 hideOutside = False #in conf
 showPaused = True #in conf
-songDisplay = ' Listening to: 🎵{title} by {artist}🎵' #in conf
+songDisplay = ' 🎵{title} ᵇʸ {artist}🎵' #in conf
 songName = ''
 showOnChange = False #in conf
 songChangeTicks = 1 #in conf
-tickCount = 2
-minimizeOnStart = False
-keybind_run = 'p'
-keybind_afk = 'end'
-topBar = '╔═════════════╗'
-middleBar = '╠═════════════╣'
-bottomBar = '╚═════════════╝'
-
+tickCount = 2 #in conf
+minimizeOnStart = False #in conf
+keybind_run = 'p' #in conf
+keybind_afk = 'end' #in conf
+topBar = '╔═════════════╗' #in conf
+middleBar = '╠═════════════╣' #in conf
+bottomBar = '╚═════════════╝' #in conf
+topHRToggle = False #in conf
+bottomHRToggle = False #in conf
+pulsoidToken = '' #in conf
+hrConnected = False
+heartRate = 0
+errorExit = False
+windowAccess = None
 async def get_media_info():
     sessions = await MediaManager.request_async()
-
     # This source_app_user_model_id check and if statement is optional
     # Use it if you want to only get a certain player/program's media
     # (e.g. only chrome.exe's media not any other program's).
@@ -110,7 +118,7 @@ if os.path.isfile('please-do-not-delete.txt'):
   with open('please-do-not-delete.txt', 'r', encoding="utf-8") as f:
     try:
       fixed_list = ast.literal_eval(f.read())
-      if len(fixed_list) == 29:
+      if len(fixed_list) == 32:
         topTextToggle = fixed_list[0]
         topTimeToggle = fixed_list[1]
         topSongToggle = fixed_list[2]
@@ -140,6 +148,9 @@ if os.path.isfile('please-do-not-delete.txt'):
         topBar = fixed_list[26]
         middleBar = fixed_list[27]
         bottomBar = fixed_list[28]
+        topHRToggle = fixed_list[29]
+        bottomHRToggle = fixed_list[30]
+        pulsoidToken = fixed_list[31]
       globalConf = fixed_list
     except:
       globalConf = []
@@ -179,6 +190,11 @@ def uiThread():
   global topBar
   global middleBar
   global bottomBar
+  global topHRToggle
+  global bottomHRToggle
+  global pulsoidToken
+  global errorExit
+  global windowAccess
   layout_layout = [[sg.Column(
               [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold'))],
               [sg.Column([
@@ -191,6 +207,7 @@ def uiThread():
                   [sg.Checkbox('Song - Uses Windows\' MediaManager to request song info \n Does NOT pull directly from spotify', default=False, key='topSong', enable_events= True)],
                   [sg.Checkbox('CPU', default=False, key='topCPU', enable_events= True)],
                   [sg.Checkbox('RAM', default=False, key='topRAM', enable_events= True)],
+                  [sg.Checkbox('Heart Rate (Configure in Behavior)', default=False, key='topHRToggle', enable_events= True)],
                   [sg.Checkbox('None (Uncheck to select others)', default=True, key='topNone', enable_events= True)]
               ], key='topConf')],
               [sg.Column([
@@ -200,6 +217,7 @@ def uiThread():
                   [sg.Checkbox('Song - Uses Windows\' MediaManager to request song info \n Does NOT pull directly from spotify', default=False, key='bottomSong', enable_events= True, background_color='peru')],
                   [sg.Checkbox('CPU', default=False, key='bottomCPU', enable_events= True, background_color='peru')],
                   [sg.Checkbox('RAM', default=False, key='bottomRAM', enable_events= True, background_color='peru')],
+                  [sg.Checkbox('Heart Rate (Configure in Behavior)', default=False, key='bottomHRToggle', enable_events= True, background_color='peru')],
                   [sg.Checkbox('None (Uncheck to select others)', default=True, key='bottomNone', enable_events= True, background_color='peru')]
               ], key='bottomConf', background_color='peru')]
               ]
@@ -215,6 +233,10 @@ def uiThread():
               [sg.Column([
                   [sg.Text('File to use for the text file read functionality')],
                   [sg.Button('Open File'), sg.Text('', key='message_file_path_display')]
+              ], size=(379, 70))],
+              [sg.Column([
+                  [sg.Text('Pulsoid Token:')],
+                  [sg.Input(key='pulsoidToken', size=(50, 1))]
               ], size=(379, 70))],
               [sg.Column([
                   [sg.Text('Delay between frame updates, in seconds')],
@@ -312,7 +334,7 @@ def uiThread():
     window['bottomNone'].update(value=True)
     window['messageInput'].update(value='OSC Chat Tools\nBy Lioncat6')
     window['msgDelay'].update(value=1.5)
-    window['songDisplay'].update(value=' Listening to: 🎵{title} by {artist}🎵')
+    window['songDisplay'].update(value=' 🎵{title} ᵇʸ {artist}🎵')
     window['showOnChange'].update(value=False)
     window['songChangeTicks'].update(value=2)
     window['hideOutside'].update(value=False)
@@ -325,11 +347,14 @@ def uiThread():
     window['topBar'].update(value='╔═════════════╗')
     window['middleBar'].update(value='╠═════════════╣')
     window['bottomBar'].update(value='╚═════════════╝')
+    window['topHRToggle'].update(value='False')
+    window['bottomHRToggle'].update(value='False')
+    window['pulsoidToken'].update(value='')
   def pullVars():
     global playMsg
     global msgOutput
     if os.path.isfile('please-do-not-delete.txt'):
-      if len(globalConf) == 29:
+      if len(globalConf) == 32:
         window['topText'].update(value=topTextToggle)
         window['topTime'].update(value=topTimeToggle)
         window['topSong'].update(value=topSongToggle)
@@ -359,6 +384,10 @@ def uiThread():
         window['topBar'].update(value=topBar)
         window['middleBar'].update(value=middleBar)
         window['bottomBar'].update(value=bottomBar)
+        window['topHRToggle'].update(value=topHRToggle)
+        window['bottomHRToggle'].update(value=bottomHRToggle)
+        window['pulsoidToken'].update(value=pulsoidToken)
+        
       else:
         resetVars()
     while run:
@@ -375,6 +404,7 @@ def uiThread():
   pullVarsThread.start()
   if minimizeOnStart:
     window.minimize()  
+  windowAccess = window
   while True:
       event, values = window.read()
       #print(event, values)
@@ -386,32 +416,39 @@ def uiThread():
           window['topSong'].update(value=False)
           window['topCPU'].update(value=False)
           window['topRAM'].update(value=False)
+          window['topHRToggle'].update(value=False)
       if values['bottomNone']:
           window['bottomText'].update(value=False)
           window['bottomTime'].update(value=False)
           window['bottomSong'].update(value=False)
           window['bottomCPU'].update(value=False)
           window['bottomRAM'].update(value=False)
-      if (not event == "topNone") and (not values['topText'] and not values['topTime'] and not values['topSong'] and not values['topCPU'] and not values['topRAM']):
+          window['bottomHRToggle'].update(value=False)
+      if (not event == "topNone") and (not values['topText'] and not values['topTime'] and not values['topSong'] and not values['topCPU'] and not values['topRAM'] and not values['topHRToggle']):
           window['topNone'].update(value=True)
-      if (not event == "bottomNone") and (not values['bottomText'] and not values['bottomTime'] and not values['bottomSong'] and not values['bottomCPU'] and not values['bottomRAM']):
+      if (not event == "bottomNone") and (not values['bottomText'] and not values['bottomTime'] and not values['bottomSong'] and not values['bottomCPU'] and not values['bottomRAM'] and not values['bottomHRToggle']):
           window['bottomNone'].update(value=True)
-      if (event == "topText" or event == "topTime" or event == "topSong" or  event == "topCPU" or event == "topRAM"):
+      if (event == "topText" or event == "topTime" or event == "topSong" or  event == "topCPU" or event == "topRAM" or event == 'topHRToggle'):
           window['topNone'].update(value=False)
           if not values[event]:
               window[event].update(value=False)
-              if (not values['topText'] and not values['topTime'] and not values['topSong'] and not values['topCPU'] and not values['topRAM']):
+              if (not values['topText'] and not values['topTime'] and not values['topSong'] and not values['topCPU'] and not values['topRAM'] and not values['topHRToggle']):
                   window["topNone"].update(value=True)
           else:
               window[event].update(value=True)
-      if (event == "bottomText" or event == "bottomTime" or event == "bottomSong" or  event == "bottomCPU" or event == "bottomRAM"):
+      if (event == "bottomText" or event == "bottomTime" or event == "bottomSong" or  event == "bottomCPU" or event == "bottomRAM" or event == 'bottomHRToggle'):
           window['bottomNone'].update(value=False)
           if not values[event]:
               window[event].update(value=False)
-              if (not values['bottomText'] and not values['bottomTime'] and not values['bottomSong'] and not values['bottomCPU'] and not values['bottomRAM']):
+              if (not values['bottomText'] and not values['bottomTime'] and not values['bottomSong'] and not values['bottomCPU'] and not values['bottomRAM'] and not values['bottomHRToggle']):
                   window["bottomNone"].update(value=True)
           else:
               window[event].update(value=True)
+      if event == 'topHRToggle' or event == 'bottomHRToggle':
+        if window['pulsoidToken'].get() == '':
+          window['bottomHRToggle'].update(value=False)
+          window['topHRToggle'].update(value=False)
+          sg.popup('Please enter a pulsoid token in the behavior tab!')
       if values['scroll']:
           if window['message_file_path_display'].get() == '':
             window['scroll'].update(value=False)
@@ -427,6 +464,8 @@ def uiThread():
             window['topSong'].update(value=False)
             window['topCPU'].update(value=False)
             window['topRAM'].update(value=False)
+            window['topHRToggle'].update(value=False)
+            window['bottomHRToggle'].update(value=False)
             window['topNone'].update(value=True)
             window['bottomNone'].update(value=True)
       if event == 'Reset':
@@ -466,17 +505,28 @@ def uiThread():
           topBar = values['topBar']
           middleBar = values['middleBar']
           bottomBar = values['bottomBar']
+          topHRToggle = values['topHRToggle']
+          bottomHRToggle = values['bottomHRToggle']
+          pulsoidToken = values['pulsoidToken']
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar]))
+              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, topHRToggle, bottomHRToggle, pulsoidToken]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
+          """print('Popup Open') #Popup Shit is broken 
+          apply_popup_layout = [[sg.Text('Applied!')]]
+          apply_popup_window = sg.Window('Applied!', apply_popup_layout, size=(300, 90), element_justification='center', no_titlebar=True, modal=False, finalize=True)
+          apply_popup_window.bring_to_front()
+          time.sleep(1)
+          apply_popup_window.close()
+          print('Popup Close')"""
+          
       if event == 'Check For Updates':
         sg.popup('Coming Soon!')
       if event == 'Open Github Page':
         webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools')
       if event == 'About':
-        about_popop_layout =  [[sg.Text('OSC Chat Tools by', font=('Arial', 11, 'bold'), pad=(0, 20)), sg.Text('Lioncat6', font=('Arial', 12, 'bold'), text_color='lime')],[sg.Text('Modules Used:',font=('Arial', 11, 'bold'))], [sg.Text('- PySimpleGUI\n - argparse\n - datetimedatetime\n - pythonoscudp_client\n - keyboard\n - asyncio\n - psutil\n - webbrowser\n - winsdk.windows.media.control\n')], [sg.Text('Python Version: '+str(sys.version))], [sg.Button('Ok')]]
+        about_popop_layout =  [[sg.Text('OSC Chat Tools by', font=('Arial', 11, 'bold'), pad=(0, 20)), sg.Text('Lioncat6', font=('Arial', 12, 'bold'), text_color='lime')],[sg.Text('Modules Used:',font=('Arial', 11, 'bold'))], [sg.Text('- PySimpleGUI\n - argparse\n - datetime\n - pythonosc (udp_client)\n - keyboard\n - asyncio\n - psutil\n - webbrowser\n - winsdk (windows.media.control)\n - websocket-client')], [sg.Text('Python Version: '+str(sys.version))], [sg.Button('Ok')]]
         about_window = sg.Window('About', about_popop_layout)
         event, values = about_window.read()
         about_window.close()
@@ -528,10 +578,15 @@ def uiThread():
             window['keybind_afk'].update(value=run_binding_window['preview_bind'].get())
             break
         run_binding_window.close()
+      if event == 'mediaManagerError':
+        sg.popup_error('Media Manager Failure. Please restart your system.\n\nIf this problem persists, please report an issue on github: https://github.com/Lioncat6/OSC-Chat-Tools/issues', keep_on_top="True")
+        break
+      if event == 'pulsoidError':
+        playMsg = False
+        sg.popup('Pulsoid Error: Please double check your token in the behavior tab and then toggle run to try again.\n\nIf this problem persists, please report an issue on github: https://github.com/Lioncat6/OSC-Chat-Tools/issues')
   window.close()
   playMsg = False
   run = False
-
 def processMessage(a):
   returnList = []
   if messageString.count('\n')>0:
@@ -554,8 +609,7 @@ if __name__ == "__main__":
   args = parser.parse_args()                                                                                        
 
   client = udp_client.SimpleUDPClient(args.ip, args.port)
-
-
+ 
   def sendMsg(a):
     global cpuInt
     global msgOutput
@@ -582,8 +636,11 @@ if __name__ == "__main__":
     global topBar
     global middleBar
     global bottomBar
+    global topHRToggle
+    global bottomHRToggle
+    global pulsoidToken
+    global errorExit
     if playMsg:
-      
       #preassembles
       now = datetime.now()
       current_hour = now.strftime("%H")
@@ -594,21 +651,28 @@ if __name__ == "__main__":
       else:
           dayThing = "AM"
       if int(current_hour) == 0:
-          current_hour = 12
-      current_media_info = asyncio.run(get_media_info())
-
-      artist = current_media_info['artist']
-      title = current_media_info['title']
-      album_title = current_media_info['album_title']  
-      if mediaIs('PLAYING') or (not showPaused):
+          current_hour = 12  
+      try:
+        current_media_info = asyncio.run(get_media_info())
+        artist = current_media_info['artist']
+        title = current_media_info['title']
+        album_title = current_media_info['album_title'] 
+        mediaPlaying = mediaIs('PLAYING')
+      except Exception as e:
+        artist = 'Error'
+        title = 'Error'
+        album_title = 'Error'
+        mediaPlaying = False
+        if windowAccess != None:
+            windowAccess.write_event_value('mediaManagerError', '')
+      if mediaPlaying or (not showPaused):
         songInfo= songDisplay.format(artist=artist,title=title,album_title=album_title)
       else:
         songInfo=songDisplay.format(artist=artist,title=title,album_title=album_title)+" (paused)"
       letsGetThatTime =" "+str(current_hour)+":"+current_minute+dayThing
       cpu = " Cpu: "+ str(psutil.cpu_percent())+"%"
       ram = " Ram: "+str(int(psutil.virtual_memory()[2]))+"%"
-      
-      
+      hrInfo = " 💓"+str(heartRate)
       #message Assembler:
       if not scrollText and not afk:
         if topNoneToggle or bottomNoneToggle:
@@ -624,7 +688,7 @@ if __name__ == "__main__":
                 songName = current_media_info['title']
                 tickCount = songChangeTicks -1
             else:
-              if not (hideSong and mediaIs('PAUSED')):
+              if not (hideSong and not mediaPlaying):
                 toSend = toSend+songInfo
               else: 
                 toSend = ''
@@ -636,6 +700,8 @@ if __name__ == "__main__":
             toSend = toSend+letsGetThatTime
           if topTextToggle or bottomTextToggle:
             toSend = toSend + a
+          if topHRToggle or bottomHRToggle:
+            toSend = toSend + hrInfo
           if toSend != '':
             if not hideOutside:
               msgOutput = topBar+toSend+" "+bottomBar
@@ -657,7 +723,7 @@ if __name__ == "__main__":
                 songName = current_media_info['title']
                 tickCount = songChangeTicks -1
             else:
-              if not (hideSong and mediaIs('PAUSED')):
+              if not (hideSong and not mediaPlaying):
                 toSendTop = toSendTop+songInfo
               else: 
                 toSendTop = ''
@@ -667,8 +733,10 @@ if __name__ == "__main__":
             toSendTop = toSendTop+ram
           if topTimeToggle:
             toSendTop = toSendTop+letsGetThatTime
-          if topTextToggle :
+          if topTextToggle:
             toSendTop = toSendTop + a
+          if topHRToggle:
+            toSendTop = toSendTop + hrInfo
           if bottomSongToggle:
             if showOnChange:
               if tickCount != 0:
@@ -680,7 +748,7 @@ if __name__ == "__main__":
                 songName = current_media_info['title']
                 tickCount = songChangeTicks -1
             else:
-              if not (hideSong and mediaIs('PAUSED')):
+              if not (hideSong and not mediaPlaying):
                 toSendBottom = toSendBottom+songInfo
               else: 
                 toSendBottom = ''
@@ -692,6 +760,8 @@ if __name__ == "__main__":
             toSendBottom = toSendBottom+letsGetThatTime
           if bottomTextToggle :
             toSendBottom = toSendBottom + a
+          if bottomHRToggle:
+            toSendBottom = toSendBottom + hrInfo
           if not(toSendBottom == '' or toSendTop == ''):
             if not hideOutside and not hideMiddle:
               msgOutput = topBar+toSendTop+" "+middleBar+toSendBottom+" "+bottomBar
@@ -724,6 +794,35 @@ if __name__ == "__main__":
         if not playMsg:
           break
 
+def hrConnectionThread():
+  while run:
+    global hrConnected
+    global heartRate
+    global pulsoidToken
+    if (topHRToggle or bottomHRToggle) and playMsg:
+      if not hrConnected:
+        try:
+          ws = create_connection("wss://dev.pulsoid.net/api/v1/data/real_time?access_token="+pulsoidToken+"&response_mode=text_plain_only_heart_rate")
+          hrConnected = True
+          def pulsoidListen():
+            global heartRate
+            for event in ws:
+              heartRate = event
+              if not run or not hrConnected:
+                break
+          pulsoidListenThread = Thread(target=pulsoidListen)
+          pulsoidListenThread.start()
+          print('Pulsoid Connection Started...')
+        except:
+          if windowAccess != None:
+            if playMsg:
+              windowAccess.write_event_value('pulsoidError', '')
+    if ((not topHRToggle and not bottomHRToggle) or not playMsg) and hrConnected:
+      hrConnected = False
+      print('Pulsoid Connection Stopped')
+    time.sleep(.5)
+hrConnectionThreadRun = Thread(target=hrConnectionThread)
+hrConnectionThreadRun.start()
 def runmsg():
   global textParseIterator
   global playMsg
