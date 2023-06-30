@@ -36,7 +36,11 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 # Keyboard Shortcuts (PC ONLY)
 - **`P`** Toggle Chatbox
 
-# Config - last updated for 1.1.0
+# TO GET A PULSOID TOKEN
+ - Coming soon: Pulsoid App link.
+ - https://pulsoid.net/ui/keys - If you have a BRO Subscrivtion
+
+# Guide- last updated for 1.1.0
 ### [https://youtu.be/an7PLpDf5kE](https://youtu.be/an7PLpDf5kE)
 
 # Features
