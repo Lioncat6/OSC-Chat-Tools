@@ -74,7 +74,7 @@ topHRToggle = False #in conf
 bottomHRToggle = False #in conf
 pulsoidToken = '' #in conf
 hrConnected = False
-heartRate = 0
+heartRate = 1
 errorExit = False
 windowAccess = None
 async def get_media_info():
@@ -816,6 +816,17 @@ def hrConnectionThread():
                 break
           pulsoidListenThread = Thread(target=pulsoidListen)
           pulsoidListenThread.start()
+          def blinkHR():
+                while hrConnected and run and playMsg:
+                  client.send_message("/avatar/parameters/isHRBeat", True)
+                  time.sleep(.1)
+                  client.send_message("/avatar/parameters/isHRBeat", False)
+                  if 60/int(heartRate) > 5:
+                    time.sleep(1)
+                  else:
+                    time.sleep(60/int(heartRate))
+          blinkHRThread = Thread(target=blinkHR)
+          blinkHRThread.start()
           print('Pulsoid Connection Started...')
         except:
           if windowAccess != None:
