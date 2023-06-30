@@ -799,6 +799,7 @@ def hrConnectionThread():
     global hrConnected
     global heartRate
     global pulsoidToken
+    global client
     if (topHRToggle or bottomHRToggle) and playMsg:
       if not hrConnected:
         try:
@@ -808,6 +809,9 @@ def hrConnectionThread():
             global heartRate
             for event in ws:
               heartRate = event
+              client.send_message("/avatar/parameters/isHRActive", True)
+              client.send_message("/avatar/parameters/isHRConnected", True)
+              client.send_message("/avatar/parameters/HR", int(event))
               if not run or not hrConnected:
                 break
           pulsoidListenThread = Thread(target=pulsoidListen)
@@ -820,9 +824,10 @@ def hrConnectionThread():
     if ((not topHRToggle and not bottomHRToggle) or not playMsg) and hrConnected:
       hrConnected = False
       print('Pulsoid Connection Stopped')
-    time.sleep(.5)
+    time.sleep(.3)
 hrConnectionThreadRun = Thread(target=hrConnectionThread)
 hrConnectionThreadRun.start()
+
 def runmsg():
   global textParseIterator
   global playMsg
