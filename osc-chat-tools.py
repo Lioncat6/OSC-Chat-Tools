@@ -77,6 +77,7 @@ hrConnected = False
 heartRate = 1
 errorExit = False
 windowAccess = None
+avatarHR = False #in conf
 async def get_media_info():
     sessions = await MediaManager.request_async()
     # This source_app_user_model_id check and if statement is optional
@@ -118,7 +119,7 @@ if os.path.isfile('please-do-not-delete.txt'):
   with open('please-do-not-delete.txt', 'r', encoding="utf-8") as f:
     try:
       fixed_list = ast.literal_eval(f.read())
-      if len(fixed_list) == 32:
+      if len(fixed_list)== 33:
         topTextToggle = fixed_list[0]
         topTimeToggle = fixed_list[1]
         topSongToggle = fixed_list[2]
@@ -151,6 +152,7 @@ if os.path.isfile('please-do-not-delete.txt'):
         topHRToggle = fixed_list[29]
         bottomHRToggle = fixed_list[30]
         pulsoidToken = fixed_list[31]
+        avatarHR = fixed_list[32]
       globalConf = fixed_list
     except:
       globalConf = []
@@ -195,11 +197,15 @@ def uiThread():
   global pulsoidToken
   global errorExit
   global windowAccess
+  global avatarHR
   layout_layout = [[sg.Column(
               [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold'))],
               [sg.Column([
                   [sg.Checkbox('Text file read - defined in the behavior tab\n(This will disable everything else)', default=False, key='scroll', enable_events= True, background_color='dark slate blue')]
               ], key='topConf', background_color='dark slate blue', size=(379, 50))],
+              [sg.Column([
+                  [sg.Checkbox('Pass through heartrate avatar parameters\nwithout showing it in the chatbox', default=False, key='avatarHR', enable_events= True, background_color='SteelBlue4')]
+              ], key='topConf', background_color='SteelBlue4', size=(379, 50))],
               [sg.Column([
                   [sg.Text('Configure top half of chatbox:', font=('Arial', 10, 'bold'))],
                   [sg.Checkbox('Text - Defined in the behavior tab', default=False, key='topText', enable_events= True)],
@@ -350,11 +356,12 @@ def uiThread():
     window['topHRToggle'].update(value='False')
     window['bottomHRToggle'].update(value='False')
     window['pulsoidToken'].update(value='')
+    window['SteelBlue4'].update(value=False)
   def pullVars():
     global playMsg
     global msgOutput
     if os.path.isfile('please-do-not-delete.txt'):
-      if len(globalConf) == 32:
+      if len(globalConf)== 33:
         window['topText'].update(value=topTextToggle)
         window['topTime'].update(value=topTimeToggle)
         window['topSong'].update(value=topSongToggle)
@@ -387,6 +394,7 @@ def uiThread():
         window['topHRToggle'].update(value=topHRToggle)
         window['bottomHRToggle'].update(value=bottomHRToggle)
         window['pulsoidToken'].update(value=pulsoidToken)
+        window['avatarHR'].update(value=avatarHR)
         
       else:
         resetVars()
@@ -508,9 +516,10 @@ def uiThread():
           topHRToggle = values['topHRToggle']
           bottomHRToggle = values['bottomHRToggle']
           pulsoidToken = values['pulsoidToken']
+          avatarHR = values['avatarHR']
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, topHRToggle, bottomHRToggle, pulsoidToken]))
+              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, topHRToggle, bottomHRToggle, pulsoidToken, avatarHR]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
           """print('Popup Open') #Popup Shit is broken 
@@ -640,6 +649,7 @@ if __name__ == "__main__":
     global bottomHRToggle
     global pulsoidToken
     global errorExit
+    global avatarHR
     if playMsg:
       #preassembles
       now = datetime.now()
@@ -800,7 +810,7 @@ def hrConnectionThread():
     global heartRate
     global pulsoidToken
     global client
-    if (topHRToggle or bottomHRToggle) and playMsg:
+    if (topHRToggle or bottomHRToggle or avatarHR) and (playMsg or avatarHR):
       if not hrConnected:
         try:
           ws = create_connection("wss://dev.pulsoid.net/api/v1/data/real_time?access_token="+pulsoidToken+"&response_mode=text_plain_only_heart_rate")
@@ -817,14 +827,17 @@ def hrConnectionThread():
           pulsoidListenThread = Thread(target=pulsoidListen)
           pulsoidListenThread.start()
           def blinkHR():
-                while hrConnected and run and playMsg:
-                  client.send_message("/avatar/parameters/isHRBeat", True)
-                  time.sleep(.1)
-                  client.send_message("/avatar/parameters/isHRBeat", False)
-                  if 60/int(heartRate) > 5:
-                    time.sleep(1)
-                  else:
-                    time.sleep(60/int(heartRate))
+            global heartRate
+            while hrConnected and run and (playMsg or avatarHR):
+              client.send_message("/avatar/parameters/isHRBeat", True)
+              time.sleep(.1)
+              client.send_message("/avatar/parameters/isHRBeat", False)
+              if int(heartRate) <= 0:
+                heartRate = 1
+              if 60/int(heartRate) > 5:
+                time.sleep(1)
+              else:
+                time.sleep(60/int(heartRate))
           blinkHRThread = Thread(target=blinkHR)
           blinkHRThread.start()
           print('Pulsoid Connection Started...')
@@ -832,7 +845,7 @@ def hrConnectionThread():
           if windowAccess != None:
             if playMsg:
               windowAccess.write_event_value('pulsoidError', '')
-    if ((not topHRToggle and not bottomHRToggle) or not playMsg) and hrConnected:
+    if ((not topHRToggle and not bottomHRToggle and not avatarHR) or not (playMsg or avatarHR)) and hrConnected:
       hrConnected = False
       print('Pulsoid Connection Stopped')
     time.sleep(.3)
