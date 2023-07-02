@@ -1,8 +1,8 @@
 # OSC Chat Tools 
-Some shitty osc script I made for Vrchat. Now with UI!
+An osc script I made for Vrchat. Now with UI!
 - Feature Requests are encouraged. You need something added? Let me know
 
-*That picture is outdated but I can't be f-ed to change it*
+*That picture is outdated but I can't be bothered to change it*
 ![Preview](https://github.com/Lioncat6/OSC-Chat-Tools/blob/8e8b062ca4bd965b968cfe6db76df92926af305b/preview.png)
 
 OCT Is a standalone Python script used for interacting with Vrchat's OSC
@@ -38,7 +38,7 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 
 # TO GET A PULSOID TOKEN
  - Coming soon: Pulsoid App link.
- - https://pulsoid.net/ui/keys - If you have a BRO Subscrivtion
+ - https://pulsoid.net/ui/keys - If you have a BRO Subscription
 
 # Guide- last updated for 1.1.0
 ### [https://youtu.be/an7PLpDf5kE](https://youtu.be/an7PLpDf5kE)
