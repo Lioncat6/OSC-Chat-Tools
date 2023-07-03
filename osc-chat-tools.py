@@ -27,7 +27,8 @@ from winsdk.windows.media.control import \
     GlobalSystemMediaTransportControlsSessionManager as MediaManager
 import winsdk.windows.media.control as wmc
 from websocket import create_connection # websocket-client
-
+from pythonosc.dispatcher import Dispatcher
+from pythonosc import osc_server
 
 run = True
 playMsg = True
@@ -74,10 +75,57 @@ topHRToggle = False #in conf
 bottomHRToggle = False #in conf
 pulsoidToken = '' #in conf
 hrConnected = False
-heartRate = 1
+heartRate = 0
 errorExit = False
 windowAccess = None
 avatarHR = False #in conf
+hrBlink = True
+blinkOverride = False
+blinkSpeed  = .5
+useAfkKeybind = False
+toggleBeat = True
+##############
+isAfk = False
+isVR = False #Never used as the game never actually updates vrmode 
+isMute = False
+isInSeat = False
+voiceVolume = 0
+isUsingEarmuffs = False
+#################
+
+def afk_handler(unused_address, args):
+    global isAfk
+    isAfk = args
+    print('isAfk', isAfk)
+    
+def mute_handler(unused_address, args):
+    global isMute
+    isMute = args
+    print('isMute',isMute)
+    
+def inSeat_handler(unused_address, args):
+    global isInSeat
+    isInSeat = args
+    print('isInSeat',isInSeat)
+    
+def volume_handler(unused_address, args):
+    global voiceVolume
+    voiceVolume = args
+    #print('voiceVolume',voiceVolume)
+    
+def usingEarmuffs_handler(unused_address, args):
+    global isUsingEarmuffs
+    isUsingEarmuffs = args
+    print('isUsingEarmuffs', isUsingEarmuffs)
+    
+def vr_handler(unused_address, args):# The game never sends this value from what I've seen
+    global isVR
+    if args ==1:
+        isVR == True
+    else:
+        isVR == False
+    print('isVR', isVR)
+
 async def get_media_info():
     sessions = await MediaManager.request_async()
     # This source_app_user_model_id check and if statement is optional
@@ -119,7 +167,7 @@ if os.path.isfile('please-do-not-delete.txt'):
   with open('please-do-not-delete.txt', 'r', encoding="utf-8") as f:
     try:
       fixed_list = ast.literal_eval(f.read())
-      if len(fixed_list)== 33:
+      if len(fixed_list)== 37:
         topTextToggle = fixed_list[0]
         topTimeToggle = fixed_list[1]
         topSongToggle = fixed_list[2]
@@ -153,6 +201,10 @@ if os.path.isfile('please-do-not-delete.txt'):
         bottomHRToggle = fixed_list[30]
         pulsoidToken = fixed_list[31]
         avatarHR = fixed_list[32]
+        blinkOverride = fixed_list[33]
+        blinkSpeed = fixed_list[34]
+        useAfkKeybind = fixed_list[35]
+        toggleBeat = fixed_list[36]
       globalConf = fixed_list
     except:
       globalConf = []
@@ -198,6 +250,10 @@ def uiThread():
   global errorExit
   global windowAccess
   global avatarHR
+  global blinkOverride
+  global blinkSpeed
+  global useAfkKeybind
+  global toggleBeat
   layout_layout = [[sg.Column(
               [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold'))],
               [sg.Column([
@@ -241,10 +297,6 @@ def uiThread():
                   [sg.Button('Open File'), sg.Text('', key='message_file_path_display')]
               ], size=(379, 70))],
               [sg.Column([
-                  [sg.Text('Pulsoid Token:')],
-                  [sg.Input(key='pulsoidToken', size=(50, 1))]
-              ], size=(379, 70))],
-              [sg.Column([
                   [sg.Text('Delay between frame updates, in seconds')],
                   [sg.Slider(range=(1.5, 10), default_value=1.5, resolution=0.1, orientation='horizontal', size=(40, 15), key="msgDelay")]
               ], size=(379, 70))],
@@ -272,7 +324,16 @@ def uiThread():
                   [sg.Checkbox('Only show music on song change', default=False, key='showOnChange', enable_events=True)],
                   [sg.Text('Amount of frames to wait before the song name disappears')],
                   [sg.Slider(range=(1, 5), default_value=2, resolution=1, orientation='horizontal', size=(40, 15), key="songChangeTicks")]
-              ], size=(379, 130))]
+              ], size=(379, 130))],
+              [sg.Column([
+                  [sg.Text('Heartrate Settings:')],
+                  [sg.Text('Pulsoid Token:')],
+                  [sg.Input(key='pulsoidToken', size=(50, 1))],
+                  [sg.Checkbox('Heart Rate Beat', default=True, key='toggleBeat', enable_events=True)],
+                  [sg.Checkbox('Override Beat', default=False, key='blinkOverride', enable_events=True)],
+                  [sg.Text('Blink Speed (If Overridden)')],
+                  [sg.Slider(range=(0, 5), default_value=.5, resolution=.1, orientation='horizontal', size=(40, 15), key="blinkSpeed")]
+              ], size=(379, 210))]
               ]
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='DarkSlateGray4')]]
 
@@ -281,8 +342,10 @@ def uiThread():
                [sg.Text('You must press Apply for new keybinds to take affect!', background_color='turquoise4')],
                 [sg.Column([
                   [sg.Text('Toggle Run'), sg.Frame('',[[sg.Text('Unbound', key='keybind_run', background_color='DarkSlateGray4', pad=(10, 0))]],background_color='DarkSlateGray4'), sg.Button('Bind Key', key='run_binding')],
-                  [sg.Text('Toggle Afk'), sg.Frame('',[[sg.Text('Unbound', key='keybind_afk', background_color='DarkSlateGray4', pad=(10, 0))]],background_color='DarkSlateGray4'), sg.Button('Bind Key', key='afk_binding')]
-                ], expand_x=True, size=(379, 70))]
+                  [sg.Text('Imagine That there is a checkbox here :)')],
+                  [sg.Text('Toggle Afk'), sg.Frame('',[[sg.Text('Unbound', key='keybind_afk', background_color='DarkSlateGray4', pad=(10, 0))]],background_color='DarkSlateGray4'), sg.Button('Bind Key', key='afk_binding')],
+                  [sg.Checkbox('Use keybind (Otherwise, uses osc to check afk status)', default=False, enable_events=True, key='useAfkKeybind')]
+                ], expand_x=True, size=(379, 130))]
               ]
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='turquoise4')]]
   
@@ -316,7 +379,7 @@ def uiThread():
                   sg.Tab('Keybindings', keybindings_layout, background_color='turquoise4'),
                   sg.Tab('Options', options_layout, background_color='SteelBlue4')
               ]], 
-              key='mainTabs', tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True
+              key='mainTabs', tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True, size=(440, 300)
           )
       ],
       [sg.Button('Apply'), sg.Button('Reset'), sg.Text(version), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru'), sg.Checkbox('AFK', default=False, key='afk', enable_events= True, background_color='#cb7cef')]]
@@ -356,12 +419,16 @@ def uiThread():
     window['topHRToggle'].update(value='False')
     window['bottomHRToggle'].update(value='False')
     window['pulsoidToken'].update(value='')
-    window['SteelBlue4'].update(value=False)
+    window['avatarHR'].update(value=False)
+    window['blinkOverride'].update(value=False)
+    window['blinkSpeed'].update(value=.5)
+    window['useAfkKeybind'].update(value=False)
+    window['toggleBeat'].update(value=True)
   def pullVars():
     global playMsg
     global msgOutput
     if os.path.isfile('please-do-not-delete.txt'):
-      if len(globalConf)== 33:
+      if len(globalConf)== 37:
         window['topText'].update(value=topTextToggle)
         window['topTime'].update(value=topTimeToggle)
         window['topSong'].update(value=topSongToggle)
@@ -395,6 +462,7 @@ def uiThread():
         window['bottomHRToggle'].update(value=bottomHRToggle)
         window['pulsoidToken'].update(value=pulsoidToken)
         window['avatarHR'].update(value=avatarHR)
+        
         
       else:
         resetVars()
@@ -517,9 +585,13 @@ def uiThread():
           bottomHRToggle = values['bottomHRToggle']
           pulsoidToken = values['pulsoidToken']
           avatarHR = values['avatarHR']
+          blinkOverride = values['blinkOverride']
+          blinkSpeed = values['blinkSpeed']
+          useAfkKeybind = values['useAfkKeybind']
+          toggleBeat = values['toggleBeat']
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, topHRToggle, bottomHRToggle, pulsoidToken, avatarHR]))
+              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, topHRToggle, bottomHRToggle, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
           """print('Popup Open') #Popup Shit is broken 
@@ -610,14 +682,36 @@ def processMessage(a):
 
 if __name__ == "__main__":
 
-  parser = argparse.ArgumentParser()
-  parser.add_argument("--ip", default="127.0.0.1",
+  parser2 = argparse.ArgumentParser()
+  parser2.add_argument("--ip", default="127.0.0.1",
       help="The ip of the OSC server")
-  parser.add_argument("--port", type=int, default=9000,
+  parser2.add_argument("--port", type=int, default=9000,
       help="The port the OSC server is listening on")
-  args = parser.parse_args()                                                                                        
+  args2 = parser2.parse_args()                                                                                        
 
-  client = udp_client.SimpleUDPClient(args.ip, args.port)
+  client = udp_client.SimpleUDPClient(args2.ip, args2.port)
+ 
+  """parser = argparse.ArgumentParser()
+  parser.add_argument("--ip",
+      default="127.0.0.1", help="The ip to listen on")
+  parser.add_argument("--port",
+      type=int, default=9001, help="The port to listen on")
+  args = parser.parse_args()
+
+  dispatcher = Dispatcher()
+  dispatcher.map("/avatar/parameters/AFK", afk_handler)
+  dispatcher.map("/avatar/parameters/VRMode", vr_handler) # The game never sends this value from what I've seen
+  dispatcher.map("/avatar/parameters/MuteSelf", mute_handler)
+  dispatcher.map("/avatar/parameters/InStation", inSeat_handler)
+  dispatcher.map("/avatar/parameters/Voice", volume_handler)
+  dispatcher.map("/avatar/parameters/Earmuffs", usingEarmuffs_handler)
+  def oscListenServer():
+      server = osc_server.ThreadingOSCUDPServer(
+          (args.ip, args.port), dispatcher)
+      print("Serving on {}".format(server.server_address))
+      server.serve_forever()
+  oscListenServerThread = Thread(target=oscListenServer)
+  oscListenServerThread.start()"""
  
   def sendMsg(a):
     global cpuInt
@@ -650,6 +744,10 @@ if __name__ == "__main__":
     global pulsoidToken
     global errorExit
     global avatarHR
+    global blinkOverride
+    global blinkSpeed
+    global useAfkKeybind
+    global toggleBeat
     if playMsg:
       #preassembles
       now = datetime.now()
@@ -810,6 +908,10 @@ def hrConnectionThread():
     global heartRate
     global pulsoidToken
     global client
+    global blinkOverride
+    global blinkSpeed
+    global useAfkKeybind
+    global toggleBeat
     if (topHRToggle or bottomHRToggle or avatarHR) and (playMsg or avatarHR):
       if not hrConnected:
         try:
@@ -828,16 +930,23 @@ def hrConnectionThread():
           pulsoidListenThread.start()
           def blinkHR():
             global heartRate
+            global blinkOverride
+            global blinkSpeed
+            global toggleBeat
             while hrConnected and run and (playMsg or avatarHR):
-              client.send_message("/avatar/parameters/isHRBeat", True)
-              time.sleep(.1)
-              client.send_message("/avatar/parameters/isHRBeat", False)
-              if int(heartRate) <= 0:
-                heartRate = 1
-              if 60/int(heartRate) > 5:
-                time.sleep(1)
-              else:
-                time.sleep(60/int(heartRate))
+              if toggleBeat:
+                client.send_message("/avatar/parameters/isHRBeat", True)
+                time.sleep(.1)
+                client.send_message("/avatar/parameters/isHRBeat", False)
+                if blinkOverride:
+                  time.sleep(blinkSpeed)
+                else:
+                  if int(heartRate) <= 0:
+                    heartRate = 1
+                  if 60/int(heartRate) > 5:
+                    time.sleep(1)
+                  else:
+                    time.sleep(60/int(heartRate))
           blinkHRThread = Thread(target=blinkHR)
           blinkHRThread.start()
           print('Pulsoid Connection Started...')
@@ -904,8 +1013,15 @@ def msgPlayToggle():
     cpuInt = int(psutil.cpu_percent(2)*10)"""
     
 def afkCheck():
-  if keyboard.is_pressed(keybind_afk):
-    afkToggle()
+  global isAfk
+  global afk
+  if useAfkKeybind:
+    if keyboard.is_pressed(keybind_afk):
+      afkToggle()
+  elif isAfk:
+    afk = True
+  else:
+    afk = False
     
 def afkToggle():
   global afk
