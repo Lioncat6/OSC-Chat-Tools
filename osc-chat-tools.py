@@ -34,7 +34,7 @@ run = True
 playMsg = True
 cpuInt = int(psutil.cpu_percent())
 textParseIterator = 0
-version = " Version 1.3.0"
+version = " Version 1.3.69"
 message_delay = 1.5
 msgOutput = ''
 topTextToggle = False #in conf
@@ -365,6 +365,11 @@ def uiThread():
               ]
   
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='DarkGreen')]]
+  
+  osc_layout = [[sg.Column(
+              [[sg.Text('OSC Options - Coming Soon', background_color='turquoise4', font=('Arial', 12, 'bold'))]
+              ]  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='turquoise4')]]
+  
   menu_def = [['&File', ['A&pply', '&Reset', '---', 'Open Config File', '---','E&xit' ]],
           ['&Help', ['&About', '---', 'Submit Feedback', '---', 'Open &Github Page', '&Check For Updates']]]
   topMenuBar = sg.Menu(menu_def, key="menuBar")
@@ -377,7 +382,8 @@ def uiThread():
                   sg.Tab('Behavior', behavior_layout, background_color='DarkSlateGray4'),
                   sg.Tab('Preview', preview_layout, background_color='DarkGreen'),
                   sg.Tab('Keybindings', keybindings_layout, background_color='turquoise4'),
-                  sg.Tab('Options', options_layout, background_color='SteelBlue4')
+                  sg.Tab('Options', options_layout, background_color='SteelBlue4'),
+                  sg.Tab('OSC Options', osc_layout, background_color='turquoise4')
               ]], 
               key='mainTabs', tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True, size=(440, 300)
           )
@@ -461,9 +467,7 @@ def uiThread():
         window['topHRToggle'].update(value=topHRToggle)
         window['bottomHRToggle'].update(value=bottomHRToggle)
         window['pulsoidToken'].update(value=pulsoidToken)
-        window['avatarHR'].update(value=avatarHR)
-        
-        
+        window['avatarHR'].update(value=avatarHR) 
       else:
         resetVars()
     while run:
@@ -472,10 +476,11 @@ def uiThread():
           window['messagePreviewFill'].update(value=msgOutput)
         except Exception as e:
           print(e)
-      time.sleep(.1)
-      window['runThing'].update(value=playMsg)
-      window['afk'].update(value=afk)
-      
+        if run:
+          time.sleep(.1)
+        if run:
+          window['runThing'].update(value=playMsg)
+          window['afk'].update(value=afk)   
   pullVarsThread = Thread(target=pullVars)
   pullVarsThread.start()
   if minimizeOnStart:
@@ -660,7 +665,7 @@ def uiThread():
             break
         run_binding_window.close()
       if event == 'mediaManagerError':
-        sg.popup_error('Media Manager Failure. Please restart your system.\n\nIf this problem persists, please report an issue on github: https://github.com/Lioncat6/OSC-Chat-Tools/issues', keep_on_top="True")
+        sg.popup_error('Media Manager Failure. Please restart your system.\n\nIf this problem persists, please report an issue on github: https://github.com/Lioncat6/OSC-Chat-Tools/issues.\nFull Error:\n'+str(values[event]), keep_on_top="True")
         break
       if event == 'pulsoidError':
         playMsg = False
@@ -767,12 +772,18 @@ if __name__ == "__main__":
         album_title = current_media_info['album_title'] 
         mediaPlaying = mediaIs('PLAYING')
       except Exception as e:
-        artist = 'Error'
-        title = 'Error'
-        album_title = 'Error'
+        artist = 'Can\'t get artist'
+        title = 'Can\'t get title'
+        album_title = 'Can\'t get album title'
         mediaPlaying = False
-        if windowAccess != None:
-            windowAccess.write_event_value('mediaManagerError', '')
+        if 'TARGET_PROGRAM' in str(e):
+          pass
+        else:
+          if windowAccess != None:
+            try:
+                windowAccess.write_event_value('mediaManagerError', e)
+            except:
+              pass
       if mediaPlaying or (not showPaused):
         songInfo= songDisplay.format(artist=artist,title=title,album_title=album_title)
       else:
@@ -899,7 +910,7 @@ if __name__ == "__main__":
         #print(str(msgOutput))
       for x in range(int(message_delay*10)):
         time.sleep(.1)
-        if not playMsg:
+        if not playMsg or not run:
           break
 
 def hrConnectionThread():
@@ -950,10 +961,10 @@ def hrConnectionThread():
           blinkHRThread = Thread(target=blinkHR)
           blinkHRThread.start()
           print('Pulsoid Connection Started...')
-        except:
+        except Exception as e:
           if windowAccess != None:
             if playMsg:
-              windowAccess.write_event_value('pulsoidError', '')
+              windowAccess.write_event_value('pulsoidError', e)
     if ((not topHRToggle and not bottomHRToggle and not avatarHR) or not (playMsg or avatarHR)) and hrConnected:
       hrConnected = False
       print('Pulsoid Connection Stopped')
