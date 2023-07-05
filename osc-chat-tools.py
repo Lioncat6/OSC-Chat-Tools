@@ -3,6 +3,7 @@ import time
 from threading import Thread
 import ast
 import sys
+import requests
 
 if not os.path.isfile('please-do-not-delete.txt'):
   """os.system("pip install python-osc")
@@ -30,11 +31,12 @@ from websocket import create_connection # websocket-client
 from pythonosc.dispatcher import Dispatcher
 from pythonosc import osc_server
 
+
 run = True
 playMsg = True
 cpuInt = int(psutil.cpu_percent())
 textParseIterator = 0
-version = " Version 1.3.69"
+version = "1.3.69"
 message_delay = 1.5
 msgOutput = ''
 topTextToggle = False #in conf
@@ -79,19 +81,19 @@ heartRate = 0
 errorExit = False
 windowAccess = None
 avatarHR = False #in conf
-hrBlink = True
-blinkOverride = False
-blinkSpeed  = .5
-useAfkKeybind = False
-toggleBeat = True
-##############
+blinkOverride = False #in conf
+blinkSpeed  = .5 #in conf
+useAfkKeybind = False #in conf
+toggleBeat = True #in conf
+updatePrompt = True #in conf
+outOfDate = False
+
 isAfk = False
 isVR = False #Never used as the game never actually updates vrmode 
 isMute = False
 isInSeat = False
 voiceVolume = 0
 isUsingEarmuffs = False
-#################
 
 def afk_handler(unused_address, args):
     global isAfk
@@ -125,6 +127,46 @@ def vr_handler(unused_address, args):# The game never sends this value from what
     else:
         isVR == False
     print('isVR', isVR)
+
+def update_checker(a):
+  global updatePrompt
+  global outOfDate
+  global windowAccess
+  global version
+  url = 'https://api.github.com/repos/Lioncat6/OSC-Chat-Tools/releases'
+  response = requests.get(url)
+
+  if response.ok:
+        data = response.json()
+        if int(data[0]["tag_name"].replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', '')) != int(version.replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', '')):
+          if a:
+            windowAccess.write_event_value('popup', "A new version is available! "+ data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', '')+" > " + version.replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', ''))
+          print("A new version is available! "+ data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', '')+" > " + version.replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', ''))
+          if updatePrompt:
+            def updatePromptWaitThread():
+              while windowAccess == None:
+                time.sleep(.1)
+                pass
+              print('Sent')
+              windowAccess.write_event_value('updateAvailable', data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
+            updatePromptWaitThreadHandler = Thread(target=updatePromptWaitThread)
+            updatePromptWaitThreadHandler.start()
+          outOfDate = True
+          def waitThread():
+            while windowAccess == None:
+                time.sleep(.1)
+                pass
+            windowAccess.write_event_value('markOutOfDate', '')
+          waitThreadHandler = Thread(target=waitThread)
+          waitThreadHandler.start()
+        else:
+          if a:
+            windowAccess.write_event_value('popup', "Program is up to date! Version "+version)
+          print("Program is up to date! Version "+version)
+        
+  else:
+      print('Update Error occurred:', response.status_code)
+      
 
 async def get_media_info():
     sessions = await MediaManager.request_async()
@@ -167,7 +209,7 @@ if os.path.isfile('please-do-not-delete.txt'):
   with open('please-do-not-delete.txt', 'r', encoding="utf-8") as f:
     try:
       fixed_list = ast.literal_eval(f.read())
-      if len(fixed_list)== 37:
+      if len(fixed_list)== 38:
         topTextToggle = fixed_list[0]
         topTimeToggle = fixed_list[1]
         topSongToggle = fixed_list[2]
@@ -205,6 +247,7 @@ if os.path.isfile('please-do-not-delete.txt'):
         blinkSpeed = fixed_list[34]
         useAfkKeybind = fixed_list[35]
         toggleBeat = fixed_list[36]
+        updatePrompt = fixed_list[37]
       globalConf = fixed_list
     except:
       globalConf = []
@@ -254,6 +297,8 @@ def uiThread():
   global blinkSpeed
   global useAfkKeybind
   global toggleBeat
+  global updatePrompt
+  global outOfDate
   layout_layout = [[sg.Column(
               [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold'))],
               [sg.Column([
@@ -352,11 +397,11 @@ def uiThread():
   options_layout = [[sg.Column(
               [[sg.Text('Configure Program', background_color='SteelBlue4', font=('Arial', 12, 'bold'))],
                 [sg.Column([
-                  [sg.Checkbox('Minimize on startup', default=False, key='minimizeOnStart', enable_events= True)]
-                ], size=(379, 35))]
+                  [sg.Checkbox('Minimize on startup', default=False, key='minimizeOnStart', enable_events= True)],
+                  [sg.Checkbox('Show update prompt', default=True, key='updatePrompt', enable_events= True)]
+                ], size=(379, 60))]
               ]
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='SteelBlue4')]]
-  
   preview_layout = [[sg.Column(
               [[sg.Text('Preview (Not Perfect)', background_color='DarkGreen', font=('Arial', 12, 'bold'))],
               [sg.Column([
@@ -388,7 +433,7 @@ def uiThread():
               key='mainTabs', tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True, size=(440, 300)
           )
       ],
-      [sg.Button('Apply'), sg.Button('Reset'), sg.Text(version), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru'), sg.Checkbox('AFK', default=False, key='afk', enable_events= True, background_color='#cb7cef')]]
+      [sg.Button('Apply'), sg.Button('Reset'), sg.Text(" Version "+str(version), key='versionText'), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru'), sg.Checkbox('AFK', default=False, key='afk', enable_events= True, background_color='#cb7cef')]]
 
   window = sg.Window('OSC Chat Tools', layout,
                   default_element_size=(12, 1), resizable=True, finalize= True, size=(540, 600), right_click_menu=right_click_menu)
@@ -430,11 +475,12 @@ def uiThread():
     window['blinkSpeed'].update(value=.5)
     window['useAfkKeybind'].update(value=False)
     window['toggleBeat'].update(value=True)
+    window['updatePrompt'].update(value=True)
   def pullVars():
     global playMsg
     global msgOutput
     if os.path.isfile('please-do-not-delete.txt'):
-      if len(globalConf)== 37:
+      if len(globalConf) == 38:
         window['topText'].update(value=topTextToggle)
         window['topTime'].update(value=topTimeToggle)
         window['topSong'].update(value=topSongToggle)
@@ -468,6 +514,7 @@ def uiThread():
         window['bottomHRToggle'].update(value=bottomHRToggle)
         window['pulsoidToken'].update(value=pulsoidToken)
         window['avatarHR'].update(value=avatarHR) 
+        window['updatePrompt'].update(value=updatePrompt)
       else:
         resetVars()
     while run:
@@ -594,9 +641,10 @@ def uiThread():
           blinkSpeed = values['blinkSpeed']
           useAfkKeybind = values['useAfkKeybind']
           toggleBeat = values['toggleBeat']
+          updatePrompt = values['updatePrompt']
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, topHRToggle, bottomHRToggle, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat]))
+              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, topHRToggle, bottomHRToggle, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
           """print('Popup Open') #Popup Shit is broken 
@@ -608,7 +656,7 @@ def uiThread():
           print('Popup Close')"""
           
       if event == 'Check For Updates':
-        sg.popup('Coming Soon!')
+        update_checker(True)
       if event == 'Open Github Page':
         webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools')
       if event == 'About':
@@ -670,6 +718,26 @@ def uiThread():
       if event == 'pulsoidError':
         playMsg = False
         sg.popup('Pulsoid Error: Please double check your token in the behavior tab and then toggle run to try again.\n\nIf this problem persists, please report an issue on github: https://github.com/Lioncat6/OSC-Chat-Tools/issues')
+      if event == 'updateAvailable':
+        update_available_layout = [
+              [sg.Column([
+                [sg.Text('A new update is available!')],
+                [sg.Text(values['updateAvailable']+" > " + version.replace('v', ''))],
+                [sg.Text("\nYou can disable this popup in the options tab")]
+              ], element_justification='center')],
+              [sg.Button("Close"), sg.Button("Download")]]
+        updateWindow = sg.Window('Update Available!', update_available_layout, finalize=True)
+        while run:
+          event, values = updateWindow.read()
+          if event == sg.WIN_CLOSED or event == 'Close':
+            updateWindow.close()
+            break
+          if event == 'Download':
+            webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/releases/latest')
+      if event == 'markOutOfDate':
+        window['versionText'].update(value=window['versionText'].get()+" - New Update Available")
+      if event == 'popup':
+        sg.popup(values['popup'])
   window.close()
   playMsg = False
   run = False
@@ -1054,6 +1122,7 @@ msgThread = Thread(target=runmsg)
 msgThread.start()
 mainUI = Thread(target=uiThread)
 mainUI.start()
+update_checker(False)
 while run:
   msgPlayCheck()
   afkCheck()
