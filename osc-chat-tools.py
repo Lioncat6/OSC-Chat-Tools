@@ -5,6 +5,7 @@ import ast
 import sys
 import requests
 
+
 if not os.path.isfile('please-do-not-delete.txt'):
   """os.system("pip install python-osc")
   os.system("pip install argparse")
@@ -94,6 +95,7 @@ isMute = False
 isInSeat = False
 voiceVolume = 0
 isUsingEarmuffs = False
+
 
 def afk_handler(unused_address, args):
     global isAfk
@@ -995,16 +997,22 @@ def hrConnectionThread():
       if not hrConnected:
         try:
           ws = create_connection("wss://dev.pulsoid.net/api/v1/data/real_time?access_token="+pulsoidToken+"&response_mode=text_plain_only_heart_rate")
+          ws.settimeout(1) # Set a timeout of 1 second so the thread stops 
           hrConnected = True
           def pulsoidListen():
-            global heartRate
-            for event in ws:
-              heartRate = event
-              client.send_message("/avatar/parameters/isHRActive", True)
-              client.send_message("/avatar/parameters/isHRConnected", True)
-              client.send_message("/avatar/parameters/HR", int(event))
-              if not run or not hrConnected:
-                break
+              global heartRate
+              while True:
+                  try:
+                    event = ws.recv()
+                    heartRate = event
+                    client.send_message("/avatar/parameters/isHRActive", True)
+                    client.send_message("/avatar/parameters/isHRConnected", True)
+                    client.send_message("/avatar/parameters/HR", int(event))
+                  except:
+                    pass
+                  if not run or not hrConnected:
+                      break
+
           pulsoidListenThread = Thread(target=pulsoidListen)
           pulsoidListenThread.start()
           def blinkHR():
