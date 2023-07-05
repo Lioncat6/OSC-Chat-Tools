@@ -37,7 +37,7 @@ run = True
 playMsg = True
 cpuInt = int(psutil.cpu_percent())
 textParseIterator = 0
-version = "1.4.0"
+version = "1.4.1"
 message_delay = 1.5
 msgOutput = ''
 topTextToggle = False #in conf
@@ -58,7 +58,6 @@ afk = False
 FileToRead = '' #in conf
 scrollText = False #in conf
 scrollTexTSpeed = 6
-globalConf = [] 
 hideSong = False #in conf
 hideMiddle = False #in conf
 hideOutside = False #in conf
@@ -96,6 +95,7 @@ isInSeat = False
 voiceVolume = 0
 isUsingEarmuffs = False
 
+confVersion = '' #in conf
 
 def afk_handler(unused_address, args):
     global isAfk
@@ -141,15 +141,12 @@ def update_checker(a):
   if response.ok:
         data = response.json()
         if int(data[0]["tag_name"].replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', '')) != int(version.replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', '')):
-          if a:
-            windowAccess.write_event_value('popup', "A new version is available! "+ data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', '')+" > " + version.replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', ''))
-          print("A new version is available! "+ data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', '')+" > " + version.replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', ''))
+          print("A new version is available! "+ data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', '')+" > " + version.replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
           if updatePrompt:
             def updatePromptWaitThread():
               while windowAccess == None:
                 time.sleep(.1)
                 pass
-              print('Sent')
               windowAccess.write_event_value('updateAvailable', data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
             updatePromptWaitThreadHandler = Thread(target=updatePromptWaitThread)
             updatePromptWaitThreadHandler.start()
@@ -207,52 +204,26 @@ def mediaIs(state):
     if session == None:
         return False
     return int(wmc.GlobalSystemMediaTransportControlsSessionPlaybackStatus[state]) == session.get_playback_info().playback_status
+  
+confDataDict = { #this dictionary will always exclude position 0 which is the config version!
+  "1.4.1" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt'] 
+}
+
 if os.path.isfile('please-do-not-delete.txt'):
   with open('please-do-not-delete.txt', 'r', encoding="utf-8") as f:
     try:
       fixed_list = ast.literal_eval(f.read())
-      if len(fixed_list)== 38:
-        topTextToggle = fixed_list[0]
-        topTimeToggle = fixed_list[1]
-        topSongToggle = fixed_list[2]
-        topCPUToggle = fixed_list[3]
-        topRAMToggle = fixed_list[4]
-        topNoneToggle = fixed_list[5]
-        bottomTextToggle = fixed_list[6]
-        bottomTimeToggle = fixed_list[7]
-        bottomSongToggle = fixed_list[8]
-        bottomCPUToggle = fixed_list[9]
-        bottomRAMToggle = fixed_list[10]
-        bottomNoneToggle = fixed_list[11]
-        message_delay = fixed_list[12]
-        messageString = fixed_list[13]
-        FileToRead = fixed_list[14]
-        scrollText = fixed_list[15]
-        hideSong = fixed_list[16]
-        hideMiddle = fixed_list[17]
-        hideOutside = fixed_list[18]
-        showPaused = fixed_list[19]
-        songDisplay = fixed_list[20]
-        showOnChange = fixed_list[21]
-        songChangeTicks = fixed_list[22]
-        minimizeOnStart = fixed_list[23]
-        keybind_run = fixed_list[24]
-        keybind_afk = fixed_list[25]
-        topBar = fixed_list[26]
-        middleBar = fixed_list[27]
-        bottomBar = fixed_list[28]
-        topHRToggle = fixed_list[29]
-        bottomHRToggle = fixed_list[30]
-        pulsoidToken = fixed_list[31]
-        avatarHR = fixed_list[32]
-        blinkOverride = fixed_list[33]
-        blinkSpeed = fixed_list[34]
-        useAfkKeybind = fixed_list[35]
-        toggleBeat = fixed_list[36]
-        updatePrompt = fixed_list[37]
-      globalConf = fixed_list
+      if type(fixed_list[0]) is str:
+        confVersion = fixed_list[0]
+        confLoaderIterator = 1
+        for i, x in enumerate(confDataDict[fixed_list[0]]):
+          globals()[x] = fixed_list[i]
+          #print(f"{x} = {fixed_list[i]}")
+        print("Successfully Loaded config file version "+fixed_list[0])
+      else:
+        print('Config file is Too Old! Not Updating Values...')
     except:
-      globalConf = []
+      print('Config File Load Error! Not Updating Values...')
 def uiThread():
   global version
   global msgOutput
@@ -301,6 +272,7 @@ def uiThread():
   global toggleBeat
   global updatePrompt
   global outOfDate
+  global confVersion
   layout_layout = [[sg.Column(
               [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold'))],
               [sg.Column([
@@ -482,43 +454,40 @@ def uiThread():
     global playMsg
     global msgOutput
     if os.path.isfile('please-do-not-delete.txt'):
-      if len(globalConf) == 38:
-        window['topText'].update(value=topTextToggle)
-        window['topTime'].update(value=topTimeToggle)
-        window['topSong'].update(value=topSongToggle)
-        window['topCPU'].update(value=topCPUToggle)
-        window['topRAM'].update(value=topRAMToggle)
-        window['topNone'].update(value=topNoneToggle)
-        window['bottomText'].update(value=bottomTextToggle)
-        window['bottomTime'].update(value=bottomTimeToggle)
-        window['bottomSong'].update(value=bottomSongToggle)
-        window['bottomCPU'].update(value=bottomCPUToggle)
-        window['bottomRAM'].update(value=bottomRAMToggle)
-        window['bottomNone'].update(value=bottomNoneToggle )
-        window['msgDelay'].update(value=message_delay)
-        window['messageInput'].update(value=messageString)
-        window['message_file_path_display'].update(value=FileToRead)
-        window['scroll'].update(value=scrollText)
-        window['hideSong'].update(value=hideSong)
-        window['hideMiddle'].update(value=hideMiddle)
-        window['hideOutside'].update(value=hideOutside)
-        window['showPaused'].update(value=showPaused)
-        window['songDisplay'].update(value=songDisplay)
-        window['showOnChange'].update(value=showOnChange)
-        window['songChangeTicks'].update(value=songChangeTicks)
-        window['minimizeOnStart'].update(value=minimizeOnStart)
-        window['keybind_run'].update(value=keybind_run)
-        window['keybind_afk'].update(value=keybind_afk)
-        window['topBar'].update(value=topBar)
-        window['middleBar'].update(value=middleBar)
-        window['bottomBar'].update(value=bottomBar)
-        window['topHRToggle'].update(value=topHRToggle)
-        window['bottomHRToggle'].update(value=bottomHRToggle)
-        window['pulsoidToken'].update(value=pulsoidToken)
-        window['avatarHR'].update(value=avatarHR) 
-        window['updatePrompt'].update(value=updatePrompt)
-      else:
-        resetVars()
+      window['topText'].update(value=topTextToggle)
+      window['topTime'].update(value=topTimeToggle)
+      window['topSong'].update(value=topSongToggle)
+      window['topCPU'].update(value=topCPUToggle)
+      window['topRAM'].update(value=topRAMToggle)
+      window['topNone'].update(value=topNoneToggle)
+      window['bottomText'].update(value=bottomTextToggle)
+      window['bottomTime'].update(value=bottomTimeToggle)
+      window['bottomSong'].update(value=bottomSongToggle)
+      window['bottomCPU'].update(value=bottomCPUToggle)
+      window['bottomRAM'].update(value=bottomRAMToggle)
+      window['bottomNone'].update(value=bottomNoneToggle )
+      window['msgDelay'].update(value=message_delay)
+      window['messageInput'].update(value=messageString)
+      window['message_file_path_display'].update(value=FileToRead)
+      window['scroll'].update(value=scrollText)
+      window['hideSong'].update(value=hideSong)
+      window['hideMiddle'].update(value=hideMiddle)
+      window['hideOutside'].update(value=hideOutside)
+      window['showPaused'].update(value=showPaused)
+      window['songDisplay'].update(value=songDisplay)
+      window['showOnChange'].update(value=showOnChange)
+      window['songChangeTicks'].update(value=songChangeTicks)
+      window['minimizeOnStart'].update(value=minimizeOnStart)
+      window['keybind_run'].update(value=keybind_run)
+      window['keybind_afk'].update(value=keybind_afk)
+      window['topBar'].update(value=topBar)
+      window['middleBar'].update(value=middleBar)
+      window['bottomBar'].update(value=bottomBar)
+      window['topHRToggle'].update(value=topHRToggle)
+      window['bottomHRToggle'].update(value=bottomHRToggle)
+      window['pulsoidToken'].update(value=pulsoidToken)
+      window['avatarHR'].update(value=avatarHR) 
+      window['updatePrompt'].update(value=updatePrompt)
     while run:
       if run:
         try:
@@ -606,6 +575,7 @@ def uiThread():
           message_file_path = sg.popup_get_file('Select a File', title='Select a File')
           window['message_file_path_display'].update(value=message_file_path)
       if event == 'Apply':
+          confVersion = version
           topTextToggle = values['topText']
           topTimeToggle = values['topTime']
           topSongToggle = values['topSong']
@@ -646,7 +616,7 @@ def uiThread():
           updatePrompt = values['updatePrompt']
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, topHRToggle, bottomHRToggle, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt]))
+              f.write(str([confVersion, topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, topHRToggle, bottomHRToggle, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
           """print('Popup Open') #Popup Shit is broken 
@@ -737,7 +707,8 @@ def uiThread():
           if event == 'Download':
             webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/releases/latest')
       if event == 'markOutOfDate':
-        window['versionText'].update(value=window['versionText'].get()+" - New Update Available")
+        if not "Update" in window['versionText'].get():
+          window['versionText'].update(value=window['versionText'].get()+" - New Update Available")
       if event == 'popup':
         sg.popup(values['popup'])
   window.close()
