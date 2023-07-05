@@ -38,7 +38,7 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 
 # TO GET A PULSOID TOKEN
  - First set up a pulsoid account and link a device: https://pulsoid.net/registration
-    - Coming soon whenever (Pusloid looks at my request to create a third-party app): Pulsoid App link. 
+    - Coming soon (whenever Pusloid looks at my request to create a third-party app): Pulsoid App link. 
     - https://pulsoid.net/ui/keys - If you have a BRO Subscription
 
 # Guide- last updated for 1.1.0
