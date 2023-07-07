@@ -848,8 +848,11 @@ def uiThread():
   window.close()
   playMsg = False
   run = False
-  listenServer.shutdown()
-  listenServer.server_close()
+  try:
+    listenServer.shutdown()
+    listenServer.server_close()
+  except:
+    pass
   if logOutput:
     with open('OCT_debug_log.txt', 'a+', encoding="utf-8") as f:
         f.write("\n"+str(datetime.now())+" OCT Shutting down...")
