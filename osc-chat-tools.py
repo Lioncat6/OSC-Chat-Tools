@@ -1,6 +1,7 @@
 import os
 import time
-from threading import Thread
+#import threading
+from threading import Thread, Lock
 import ast
 import sys
 import requests
@@ -97,6 +98,9 @@ oscForewordPort = '9002' #in conf
 oscListen = True #in conf
 oscForeword = False #in conf
 
+output = ''
+logOutput = False  #in conf
+
 oscForewordPortMemory = ''
 oscForewordAddressMemory = ''
 runForewordServer = False
@@ -118,26 +122,30 @@ def afk_handler(unused_address, args):
     global isAfk
     isAfk = args
     print('isAfk', isAfk)
+    outputLog('isAfk', isAfk)
     
 def mute_handler(unused_address, args):
     global isMute
     isMute = args
     print('isMute',isMute)
+    outputLog('isMute',isMute)
     
 def inSeat_handler(unused_address, args):
     global isInSeat
     isInSeat = args
     print('isInSeat',isInSeat)
+    outputLog('isInSeat',isInSeat)
     
 def volume_handler(unused_address, args):
     global voiceVolume
     voiceVolume = args
     #print('voiceVolume',voiceVolume)
-    
+    #outputLog('voiceVolume',voiceVolume)
 def usingEarmuffs_handler(unused_address, args):
     global isUsingEarmuffs
     isUsingEarmuffs = args
     print('isUsingEarmuffs', isUsingEarmuffs)
+    outputLog('isUsingEarmuffs', isUsingEarmuffs)
     
 def vr_handler(unused_address, args):# The game never sends this value from what I've seen
     global isVR
@@ -146,6 +154,31 @@ def vr_handler(unused_address, args):# The game never sends this value from what
     else:
         isVR == False
     print('isVR', isVR)
+    outputLog('isVR', isVR)
+
+"""def thread_exists(name):
+    for thread in threading.enumerate():
+        if thread.name == name:
+            return True
+    return False"""
+    
+message_queue = []
+queue_lock = Lock()
+
+def outputLog(text):
+    def waitThread():
+        timestamp = datetime.now()
+        with queue_lock:
+            message_queue.append((timestamp, text))
+        while windowAccess is None:
+            time.sleep(.01)
+        with queue_lock:
+            message_queue.sort(key=lambda x: x[0])
+            for message in message_queue:
+                windowAccess.write_event_value('outputSend', str(message[0]) + " " + message[1])
+            message_queue.clear()
+    waitThreadHandler = Thread(target=waitThread)
+    waitThreadHandler.start()
 
 def update_checker(a):
   global updatePrompt
@@ -159,6 +192,7 @@ def update_checker(a):
         data = response.json()
         if int(data[0]["tag_name"].replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', '')) != int(version.replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', '')):
           print("A new version is available! "+ data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', '')+" > " + version.replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
+          outputLog("A new version is available! "+ data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', '')+" > " + version.replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
           if updatePrompt:
             def updatePromptWaitThread():
               while windowAccess == None:
@@ -179,9 +213,11 @@ def update_checker(a):
           if a:
             windowAccess.write_event_value('popup', "Program is up to date! Version "+version)
           print("Program is up to date! Version "+version)
+          outputLog("Program is up to date! Version "+version)
         
   else:
-      print('Update Error occurred:', response.status_code)
+      print('Update Checking Error occurred:', response.status_code)
+      outputLog('Update Checking Error occurred:', response.status_code)
       
 
 async def get_media_info():
@@ -224,7 +260,7 @@ def mediaIs(state):
   
 confDataDict = { #this dictionary will always exclude position 0 which is the config version!
   "1.4.1" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt'],
-  "1.4.20" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword']
+  "1.4.20" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput']
 }
 
 if os.path.isfile('please-do-not-delete.txt'):
@@ -238,10 +274,13 @@ if os.path.isfile('please-do-not-delete.txt'):
           globals()[x] = fixed_list[i]
           #print(f"{x} = {fixed_list[i]}")
         print("Successfully Loaded config file version "+fixed_list[0])
+        outputLog("Successfully Loaded config file version "+fixed_list[0])
       else:
         print('Config file is Too Old! Not Updating Values...')
+        outputLog('Config file is Too Old! Not Updating Values...')
     except:
       print('Config File Load Error! Not Updating Values...')
+      outputLog('Config File Load Error! Not Updating Values...')
 def uiThread():
   global version
   global msgOutput
@@ -299,6 +338,7 @@ def uiThread():
   global oscForewordPort
   global oscListen
   global oscForeword
+  global logOutput
   layout_layout = [[sg.Column(
               [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold'))],
               [sg.Column([
@@ -389,7 +429,7 @@ def uiThread():
                   [sg.Text('Toggle Run'), sg.Frame('',[[sg.Text('Unbound', key='keybind_run', background_color='DarkSlateGray4', pad=(10, 0))]],background_color='DarkSlateGray4'), sg.Button('Bind Key', key='run_binding')],
                   [sg.Text('Imagine That there is a checkbox here :)')],
                   [sg.Text('Toggle Afk'), sg.Frame('',[[sg.Text('Unbound', key='keybind_afk', background_color='DarkSlateGray4', pad=(10, 0))]],background_color='DarkSlateGray4'), sg.Button('Bind Key', key='afk_binding')],
-                  [sg.Checkbox('Use keybind (Otherwise, uses osc to check afk status)', default=False, enable_events=True, key='useAfkKeybind')]
+                  [sg.Checkbox('Use keybind (Otherwise, uses OSC to check afk status)', default=False, enable_events=True, key='useAfkKeybind')]
                 ], expand_x=True, size=(379, 130))]
               ]
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='turquoise4')]]
@@ -432,8 +472,13 @@ def uiThread():
                 ], size=(379, 150))]
               ]  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='turquoise4')]]
   
+  output_layout =  [[sg.Column(
+              [[sg.Text('Program Output', background_color='DarkGreen', font=('Arial', 12, 'bold')), sg.Checkbox('Log to file (OCT_debug_log.txt)', default=False, key='logOutput', background_color='DarkGreen')],
+              [sg.Multiline('', disabled=True, key='output', size=(53, 30), background_color='DarkSlateGrey', text_color='white', expand_x=True, expand_y=True)]
+              ] , expand_x=True, expand_y=True, background_color='DarkGreen')]]
+  
   menu_def = [['&File', ['A&pply', '&Reset', '---', 'Open Config File', '---','E&xit' ]],
-          ['&Help', ['&About', '---', 'Submit Feedback', '---', 'Open &Github Page', '&Check For Updates']]]
+          ['&Help', ['&About', '---', 'Submit Feedback', '---', 'Open &Github Page', '&Check For Updates', '&FAQ']]]
   topMenuBar = sg.Menu(menu_def, key="menuBar")
   right_click_menu = ['&Right', ['You thought']]
   layout = [
@@ -445,7 +490,8 @@ def uiThread():
                   sg.Tab('Preview', preview_layout, background_color='DarkGreen'),
                   sg.Tab('Keybindings', keybindings_layout, background_color='turquoise4'),
                   sg.Tab('Options', options_layout, background_color='SteelBlue4'),
-                  sg.Tab('OSC Options', osc_layout, background_color='turquoise4')
+                  sg.Tab('OSC Options', osc_layout, background_color='turquoise4'),
+                  sg.Tab('Output', output_layout, background_color='DarkGreen')
               ]], 
               key='mainTabs', tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True, size=(440, 300)
           )
@@ -501,7 +547,8 @@ def uiThread():
     window['oscForewordPort'].update(value='9002')
     window['oscListen'].update(value=True)
     window['oscForeword'].update(value=False)
-  def pullVars():
+    window['logOutput'].update(value=False)
+  def updateUI():
     global playMsg
     global msgOutput
     if os.path.isfile('please-do-not-delete.txt'):
@@ -547,6 +594,7 @@ def uiThread():
       window['oscForewordPort'].update(value=oscForewordPort)
       window['oscListen'].update(value=oscListen)
       window['oscForeword'].update(value=oscForeword)
+      window['logOutput'].update(value=logOutput)
     while run:
       if run:
         try:
@@ -558,8 +606,8 @@ def uiThread():
         if run:
           window['runThing'].update(value=playMsg)
           window['afk'].update(value=afk)   
-  pullVarsThread = Thread(target=pullVars)
-  pullVarsThread.start()
+  updateUIThread = Thread(target=updateUI)
+  updateUIThread.start()
   if minimizeOnStart:
     window.minimize()  
   windowAccess = window
@@ -681,9 +729,10 @@ def uiThread():
           oscForewordPort = values['oscForewordPort']
           oscListen = values['oscListen']
           oscForeword = values['oscForeword']
+          logOutput = values['logOutput']
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([confVersion, topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, topHRToggle, bottomHRToggle, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword]))
+              f.write(str([confVersion, topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, topHRToggle, bottomHRToggle, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
           """print('Popup Open') #Popup Shit is broken 
@@ -699,7 +748,7 @@ def uiThread():
       if event == 'Open Github Page':
         webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools')
       if event == 'About':
-        about_popop_layout =  [[sg.Text('OSC Chat Tools by', font=('Arial', 11, 'bold'), pad=(0, 20)), sg.Text('Lioncat6', font=('Arial', 12, 'bold'), text_color='lime')],[sg.Text('Modules Used:',font=('Arial', 11, 'bold'))], [sg.Text('- PySimpleGUI\n - argparse\n - datetime\n - pythonosc (udp_client)\n - keyboard\n - asyncio\n - psutil\n - webbrowser\n - winsdk (windows.media.control)\n - websocket-client')], [sg.Text('Python Version: '+str(sys.version))], [sg.Button('Ok')]]
+        about_popop_layout =  [[sg.Text('OSC Chat Tools by', font=('Arial', 11, 'bold'), pad=(0, 20)), sg.Text('Lioncat6', font=('Arial', 12, 'bold'), text_color='lime')],[sg.Text('Modules Used:',font=('Arial', 11, 'bold'))], [sg.Text('- PySimpleGUI\n - argparse\n - datetime\n - pythonosc (udp_client)\n - keyboard\n - asyncio\n - psutil\n - webbrowser\n - winsdk (windows.media.control)\n - websocket-client')], [sg.Button('Ok')]]
         about_window = sg.Window('About', about_popop_layout)
         event, values = about_window.read()
         about_window.close()
@@ -778,6 +827,21 @@ def uiThread():
           window['versionText'].update(value=window['versionText'].get()+" - New Update Available")
       if event == 'popup':
         sg.popup(values['popup'])
+      if event == 'FAQ':
+        webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/wiki/FAQ')
+      if event == 'outputSend':
+        current_text = values['output']
+        if current_text == '':
+          new_text = values[event]
+        else:
+          new_text = current_text + '\n' + values[event]
+        window['output'].update(new_text)
+        if logOutput:
+          with open('OCT_debug_log.txt', 'a+', encoding="utf-8") as f:
+            if f.read() == '':
+              f.write(values[event])
+            else:
+              f.write("\n"+values[event])
   window.close()
   playMsg = False
   run = False
@@ -859,6 +923,7 @@ if __name__ == "__main__":
         global oscForeword
         runForewordServer = True
         print('Starting Forwarding server on '+str(forward_addresses))
+        outputLog('Starting Forwarding server on '+str(forward_addresses))
         oscListenAddressMemory = oscListenAddress
         oscListenPortMemory = oscListenPort
         oscForewordPortMemory = oscForewordPort
@@ -885,6 +950,7 @@ if __name__ == "__main__":
       if oscListenAddressMemory != oscListenAddress or oscListenPortMemory != oscListenPort or oscForewordPortMemory != oscForewordPort or oscForewordAddressMemory != oscForewordAddress or useForewordMemory != oscForeword or useForewordMemory != oscForeword or ((oscForeword or oscListen) and not runForewordServer):
         if oscForeword or oscListen:
           print('Foreword/Listen Server Config Updated, Restarting Forwarding Server...\n')
+          outputLog('Foreword/Listen Server Config Updated, Restarting Forwarding Server...\n')
           runForewordServer = False
           time.sleep(.5)
           if not runForewordServer:
@@ -893,6 +959,7 @@ if __name__ == "__main__":
       if runForewordServer and not(oscForeword or oscListen):
         runForewordServer = False
         print('No OSC Foreword/Listening Options are selected, stopping Forwarding Server...')
+        outputLog('No OSC Foreword/Listening Options are selected, stopping Forwarding Server...')
       time.sleep(.5)
   oscForwardingManagerThread = Thread(target=oscForwardingManager)
   oscForwardingManagerThread.start()
@@ -919,7 +986,7 @@ if __name__ == "__main__":
                       listenServer = osc_server.ThreadingOSCUDPServer(
                           (args.ip, args.port), dispatcher)
                       print("Osc Listen Server Serving on {}".format(listenServer.server_address))
-                      
+                      outputLog("Osc Listen Server Serving on {}".format(listenServer.server_address))
                       sockett = listenServer.socket
                       sockett.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                       
@@ -928,6 +995,7 @@ if __name__ == "__main__":
                       listenServer.serve_forever()           
                   except Exception as e:
                       print('Osc Listen Server Failed to Start, Retying...'+str(e))
+                      outputLog('Osc Listen Server Failed to Start, Retying...'+str(e))
                       pass
 
               if not isListenServerRunning:
@@ -935,6 +1003,7 @@ if __name__ == "__main__":
                   oscServerThread.start()
           if not oscListen and isListenServerRunning:
             print('No OSC Listen Options are Selected, Shutting Down OSC Listen Server...')
+            outputLog('No OSC Listen Options are Selected, Shutting Down OSC Listen Server...')
             isListenServerRunning = False
             listenServer.shutdown()
             listenServer.server_close()
@@ -1154,7 +1223,7 @@ def hrConnectionThread():
       if not hrConnected:
         try:
           ws = create_connection("wss://dev.pulsoid.net/api/v1/data/real_time?access_token="+pulsoidToken+"&response_mode=text_plain_only_heart_rate")
-          ws.settimeout(1) # Set a timeout of 1 second so the thread stops 
+          ws.settimeout(.4) # Set a timeout of 1 second so the thread stops 
           hrConnected = True
           def pulsoidListen():
               global heartRate
@@ -1169,10 +1238,10 @@ def hrConnectionThread():
                     pass
                   if not run or not hrConnected:
                       break
-
           pulsoidListenThread = Thread(target=pulsoidListen)
           pulsoidListenThread.start()
           def blinkHR():
+            global blinkThread
             global heartRate
             global blinkOverride
             global blinkSpeed
@@ -1194,6 +1263,7 @@ def hrConnectionThread():
           blinkHRThread = Thread(target=blinkHR)
           blinkHRThread.start()
           print('Pulsoid Connection Started...')
+          outputLog('Pulsoid Connection Started...')
         except Exception as e:
           if windowAccess != None:
             if playMsg:
@@ -1201,6 +1271,7 @@ def hrConnectionThread():
     if ((not topHRToggle and not bottomHRToggle and not avatarHR) or not (playMsg or avatarHR)) and hrConnected:
       hrConnected = False
       print('Pulsoid Connection Stopped')
+      outputLog('Pulsoid Connection Stopped')
     time.sleep(.3)
 hrConnectionThreadRun = Thread(target=hrConnectionThread)
 hrConnectionThreadRun.start()
