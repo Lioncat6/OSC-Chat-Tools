@@ -350,9 +350,6 @@ def uiThread():
                   [sg.Checkbox('Text file read - defined in the behavior tab\n(This will disable everything else)', default=False, key='scroll', enable_events= True, background_color='dark slate blue')]
               ], key='topConf', background_color='dark slate blue', size=(379, 50))],
               [sg.Column([
-                  [sg.Checkbox('Pass through heartrate avatar parameters\nwithout showing it in the chatbox', default=False, key='avatarHR', enable_events= True, background_color='SteelBlue4')]
-              ], key='topConf', background_color='SteelBlue4', size=(379, 50))],
-              [sg.Column([
                   [sg.Text('Configure top half of chatbox:', font=('Arial', 10, 'bold'))],
                   [sg.Checkbox('Text - Defined in the behavior tab', default=False, key='topText', enable_events= True)],
                   [sg.Checkbox('Time', default=False, key='topTime', enable_events= True)],
@@ -417,13 +414,14 @@ def uiThread():
               ], size=(379, 130))],
               [sg.Column([
                   [sg.Text('Heartrate Settings:')],
+                  [sg.Checkbox('Pass through heartrate avatar parameters\neven when not running', default=False, key='avatarHR', enable_events= True)],
                   [sg.Text('Pulsoid Token:')],
                   [sg.Input(key='pulsoidToken', size=(50, 1))],
                   [sg.Checkbox('Heart Rate Beat', default=True, key='toggleBeat', enable_events=True)],
                   [sg.Checkbox('Override Beat', default=False, key='blinkOverride', enable_events=True)],
                   [sg.Text('Blink Speed (If Overridden)')],
                   [sg.Slider(range=(0, 5), default_value=.5, resolution=.1, orientation='horizontal', size=(40, 15), key="blinkSpeed")]
-              ], size=(379, 210))]
+              ], size=(379, 260))]
               ]
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='DarkSlateGray4')]]
 
