@@ -31,13 +31,13 @@ import winsdk.windows.media.control as wmc
 from websocket import create_connection # websocket-client
 from pythonosc.dispatcher import Dispatcher
 from pythonosc import osc_server
-
+import socket
 
 run = True
 playMsg = True
 cpuInt = int(psutil.cpu_percent())
 textParseIterator = 0
-version = "1.4.1"
+version = "1.4.20"
 message_delay = 1.5
 msgOutput = ''
 topTextToggle = False #in conf
@@ -87,6 +87,25 @@ useAfkKeybind = False #in conf
 toggleBeat = True #in conf
 updatePrompt = True #in conf
 outOfDate = False
+confVersion = '' #in conf
+oscListenAddress = '127.0.0.1' #in conf
+oscListenPort = '9001' #in conf
+oscSendAddress = '127.0.0.1' #in conf
+oscSendPort = '9000' #in conf
+oscForewordAddress = '127.0.0.1' #in conf
+oscForewordPort = '9002' #in conf
+oscListen = True #in conf
+oscForeword = False #in conf
+
+oscForewordPortMemory = ''
+oscForewordAddressMemory = ''
+runForewordServer = False
+oscListenPortMemory = ''
+oscListenAddressMemory = ''
+isListenServerRunning = False
+listenServer = None
+useForewordMemory = False
+
 
 isAfk = False
 isVR = False #Never used as the game never actually updates vrmode 
@@ -94,8 +113,6 @@ isMute = False
 isInSeat = False
 voiceVolume = 0
 isUsingEarmuffs = False
-
-confVersion = '' #in conf
 
 def afk_handler(unused_address, args):
     global isAfk
@@ -206,7 +223,8 @@ def mediaIs(state):
     return int(wmc.GlobalSystemMediaTransportControlsSessionPlaybackStatus[state]) == session.get_playback_info().playback_status
   
 confDataDict = { #this dictionary will always exclude position 0 which is the config version!
-  "1.4.1" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt'] 
+  "1.4.1" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt'],
+  "1.4.20" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword']
 }
 
 if os.path.isfile('please-do-not-delete.txt'):
@@ -273,6 +291,14 @@ def uiThread():
   global updatePrompt
   global outOfDate
   global confVersion
+  global oscListenAddress
+  global oscListenPort
+  global oscSendAddress
+  global oscSendPort
+  global oscForewordAddress
+  global oscForewordPort
+  global oscListen
+  global oscForeword
   layout_layout = [[sg.Column(
               [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold'))],
               [sg.Column([
@@ -386,7 +412,24 @@ def uiThread():
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='DarkGreen')]]
   
   osc_layout = [[sg.Column(
-              [[sg.Text('OSC Options - Coming Soon', background_color='turquoise4', font=('Arial', 12, 'bold'))]
+              [[sg.Text('OSC Options', background_color='turquoise4', font=('Arial', 12, 'bold'))],
+               [sg.Column([
+                  [sg.Text('OSC Listen Options')],
+                  [sg.Checkbox('Use OSC Listen', key='oscListen')],
+                  [sg.Text('Address: '), sg.Input('', size=(30, 1), key='oscListenAddress')],
+                  [sg.Text('Port: '), sg.Input('', size=(30, 1), key='oscListenPort')]
+                ], size=(379, 120))],
+               [sg.Column([
+                  [sg.Text('OSC Send Options')],
+                  [sg.Text('Address: '), sg.Input('', size=(30, 1), key='oscSendAddress')],
+                  [sg.Text('Port: '), sg.Input('', size=(30, 1), key='oscSendPort')]
+                ], size=(379, 90))],
+               [sg.Column([
+                  [sg.Text('OSC Forwarding Options\nRepeats all listened data to another address for other programs')],
+                  [sg.Checkbox('Use OSC Forwarding', key='oscForeword')],
+                  [sg.Text('Address: '), sg.Input('', size=(30, 1), key='oscForewordAddress')],
+                  [sg.Text('Port: '), sg.Input('', size=(30, 1), key='oscForewordPort')]
+                ], size=(379, 150))]
               ]  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='turquoise4')]]
   
   menu_def = [['&File', ['A&pply', '&Reset', '---', 'Open Config File', '---','E&xit' ]],
@@ -450,6 +493,14 @@ def uiThread():
     window['useAfkKeybind'].update(value=False)
     window['toggleBeat'].update(value=True)
     window['updatePrompt'].update(value=True)
+    window['oscListenAddress'].update(value='127.0.0.1')
+    window['oscListenPort'].update(value='9001')
+    window['oscSendAddress'].update(value='127.0.0.1')
+    window['oscSendPort'].update(value='9002')
+    window['oscForewordAddress'].update(value='127.0.0.1')
+    window['oscForewordPort'].update(value='9002')
+    window['oscListen'].update(value=True)
+    window['oscForeword'].update(value=False)
   def pullVars():
     global playMsg
     global msgOutput
@@ -488,6 +539,14 @@ def uiThread():
       window['pulsoidToken'].update(value=pulsoidToken)
       window['avatarHR'].update(value=avatarHR) 
       window['updatePrompt'].update(value=updatePrompt)
+      window['oscListenAddress'].update(value=oscListenAddress)
+      window['oscListenPort'].update(value=oscListenPort)
+      window['oscSendAddress'].update(value=oscSendAddress)
+      window['oscSendPort'].update(value=oscSendPort)
+      window['oscForewordAddress'].update(value=oscForewordAddress)
+      window['oscForewordPort'].update(value=oscForewordPort)
+      window['oscListen'].update(value=oscListen)
+      window['oscForeword'].update(value=oscForeword)
     while run:
       if run:
         try:
@@ -614,9 +673,17 @@ def uiThread():
           useAfkKeybind = values['useAfkKeybind']
           toggleBeat = values['toggleBeat']
           updatePrompt = values['updatePrompt']
+          oscListenAddress = values['oscListenAddress']
+          oscListenPort = values['oscListenPort']
+          oscSendAddress = values['oscSendAddress']
+          oscSendPort = values['oscSendPort']
+          oscForewordAddress = values['oscForewordAddress']
+          oscForewordPort = values['oscForewordPort']
+          oscListen = values['oscListen']
+          oscForeword = values['oscForeword']
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([confVersion, topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, topHRToggle, bottomHRToggle, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt]))
+              f.write(str([confVersion, topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, topHRToggle, bottomHRToggle, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
           """print('Popup Open') #Popup Shit is broken 
@@ -714,6 +781,12 @@ def uiThread():
   window.close()
   playMsg = False
   run = False
+  if listenServer != None:
+    try:
+      listenServer.shutdown()
+      listenServer.server_close()
+    except:
+      pass
 def processMessage(a):
   returnList = []
   if messageString.count('\n')>0:
@@ -727,22 +800,20 @@ def processMessage(a):
   return returnList
 
 if __name__ == "__main__":
+  def oscClientDef():
+    global client
+    while run:
+      parser2 = argparse.ArgumentParser()
+      parser2.add_argument("--ip", default=oscSendAddress,
+          help="The ip of the OSC server")
+      parser2.add_argument("--port", type=int, default=oscSendPort,
+          help="The port the OSC server is listening on")
+      args2 = parser2.parse_args()                                                                                        
 
-  parser2 = argparse.ArgumentParser()
-  parser2.add_argument("--ip", default="127.0.0.1",
-      help="The ip of the OSC server")
-  parser2.add_argument("--port", type=int, default=9000,
-      help="The port the OSC server is listening on")
-  args2 = parser2.parse_args()                                                                                        
-
-  client = udp_client.SimpleUDPClient(args2.ip, args2.port)
- 
-  """parser = argparse.ArgumentParser()
-  parser.add_argument("--ip",
-      default="127.0.0.1", help="The ip to listen on")
-  parser.add_argument("--port",
-      type=int, default=9001, help="The port to listen on")
-  args = parser.parse_args()
+      client = udp_client.SimpleUDPClient(args2.ip, args2.port)
+      time.sleep(.5)
+  oscClientDefThread = Thread(target=oscClientDef)
+  oscClientDefThread.start()
 
   dispatcher = Dispatcher()
   dispatcher.map("/avatar/parameters/AFK", afk_handler)
@@ -751,14 +822,129 @@ if __name__ == "__main__":
   dispatcher.map("/avatar/parameters/InStation", inSeat_handler)
   dispatcher.map("/avatar/parameters/Voice", volume_handler)
   dispatcher.map("/avatar/parameters/Earmuffs", usingEarmuffs_handler)
-  def oscListenServer():
-      server = osc_server.ThreadingOSCUDPServer(
-          (args.ip, args.port), dispatcher)
-      print("Serving on {}".format(server.server_address))
-      server.serve_forever()
-  oscListenServerThread = Thread(target=oscListenServer)
-  oscListenServerThread.start()"""
- 
+  
+  def oscForwardingManager():
+    while run:
+      global runForewordServer
+      global oscListenAddressMemory
+      global oscListenPortMemory
+      global oscForewordAddressMemory
+      global oscForewordPortMemory
+      global oscForeword
+      global oscListen
+      global useForewordMemory
+      # Create a socket to listen for incoming data
+      listen_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+      listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+      listen_socket.bind((oscListenAddress, int(oscListenPort)))
+      listen_socket.settimeout(.5)
+      # Set the IP addresses and port numbers to forward data to
+      if oscForeword:
+        forward_addresses = [
+            ('127.0.0.1', 61394), #for the listen server
+            (oscForewordAddress, int(oscForewordPort)),
+        ]
+      else:
+        forward_addresses = [
+            ('127.0.0.1', 61394) #for the listen server
+        ]
+      
+      def dataSender():
+        global runForewordServer
+        global oscListenAddressMemory
+        global oscListenPortMemory
+        global oscForewordAddressMemory
+        global oscForewordPortMemory
+        global useForewordMemory
+        global oscForeword
+        runForewordServer = True
+        print('Starting Forwarding server on '+str(forward_addresses))
+        oscListenAddressMemory = oscListenAddress
+        oscListenPortMemory = oscListenPort
+        oscForewordPortMemory = oscForewordPort
+        oscForewordAddressMemory = oscForewordAddress
+        useForewordMemory = oscForeword
+        forward_sockets = [
+          socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+          for _ in forward_addresses
+        ]
+        while run and runForewordServer:
+            try:
+              data, addr = listen_socket.recvfrom(1024)
+              
+              # Forward the data to each forward socket
+              for forward_socket, (ip, port) in zip(forward_sockets, forward_addresses):
+                  forward_socket.sendto(data, (ip, port))
+            except:
+              pass
+      if oscForeword or oscListen:
+        if not runForewordServer:
+          dataSenderThread = Thread(target=dataSender)
+          dataSenderThread.start()
+      time.sleep(.1)
+      if oscListenAddressMemory != oscListenAddress or oscListenPortMemory != oscListenPort or oscForewordPortMemory != oscForewordPort or oscForewordAddressMemory != oscForewordAddress or useForewordMemory != oscForeword or useForewordMemory != oscForeword or ((oscForeword or oscListen) and not runForewordServer):
+        if oscForeword or oscListen:
+          print('Foreword/Listen Server Config Updated, Restarting Forwarding Server...\n')
+          runForewordServer = False
+          time.sleep(.5)
+          if not runForewordServer:
+            dataSenderThread = Thread(target=dataSender)
+            dataSenderThread.start()
+      if runForewordServer and not(oscForeword or oscListen):
+        runForewordServer = False
+        print('No OSC Foreword/Listening Options are selected, stopping Forwarding Server...')
+      time.sleep(.5)
+  oscForwardingManagerThread = Thread(target=oscForwardingManager)
+  oscForwardingManagerThread.start()
+
+  def oscListenServerManager():
+      global oscListenAddress
+      global oscListenPort
+      global oscListen
+      global isListenServerRunning
+      while run:
+          if oscListen:
+              parser = argparse.ArgumentParser()
+              parser.add_argument("--ip",
+                  default='127.0.0.1', help="The ip to listen on")
+              parser.add_argument("--port",
+                  type=int, default=61394, help="The port to listen on")
+              args = parser.parse_args()
+              def listenServerThread():
+                  global isListenServerRunning
+                  global oscListenAddress
+                  global oscListenPort
+                  global listenServer
+                  try:
+                      listenServer = osc_server.ThreadingOSCUDPServer(
+                          (args.ip, args.port), dispatcher)
+                      print("Osc Listen Server Serving on {}".format(listenServer.server_address))
+                      
+                      sockett = listenServer.socket
+                      sockett.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                      
+                      isListenServerRunning = True
+                      
+                      listenServer.serve_forever()           
+                  except Exception as e:
+                      print('Osc Listen Server Failed to Start, Retying...'+str(e))
+                      pass
+
+              if not isListenServerRunning:
+                  oscServerThread = Thread(target=listenServerThread)
+                  oscServerThread.start()
+          if not oscListen and isListenServerRunning:
+            print('No OSC Listen Options are Selected, Shutting Down OSC Listen Server...')
+            isListenServerRunning = False
+            listenServer.shutdown()
+            listenServer.server_close()
+          time.sleep(.5)
+
+  oscServerManagerThread = Thread(target=oscListenServerManager)
+  oscServerManagerThread.start()
+
+  
+  
   def sendMsg(a):
     global cpuInt
     global msgOutput
