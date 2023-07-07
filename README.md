@@ -54,8 +54,10 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
  - CPU Info
  - RAM Info
  - Heart rate info using Pulsoid (Get a token from the 'Tokens' section of the dashboard)
- - AFK message activated with a keyboard shortcut
+ - AFK message activated with a keyboard shortcut or using the OSC to watch for when the player activates AFK mode in game
  - Customizable keyboard shortcuts
+ - OSC Port forwarding (So multiple programs can listen to the OSC!)
+ - Customizable OSC Listen port/address
  - TONS of customizability
 
 # Coming soon:
