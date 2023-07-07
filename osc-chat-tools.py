@@ -1,6 +1,6 @@
 import os
 import time
-#import threading
+import threading
 from threading import Thread, Lock
 import ast
 import sys
@@ -121,19 +121,19 @@ isUsingEarmuffs = False
 def afk_handler(unused_address, args):
     global isAfk
     isAfk = args
-    print('isAfk', isAfk)
+    #print('isAfk', isAfk)
     outputLog('isAfk', isAfk)
     
 def mute_handler(unused_address, args):
     global isMute
     isMute = args
-    print('isMute',isMute)
+    #print('isMute',isMute)
     outputLog('isMute',isMute)
     
 def inSeat_handler(unused_address, args):
     global isInSeat
     isInSeat = args
-    print('isInSeat',isInSeat)
+    #print('isInSeat',isInSeat)
     outputLog('isInSeat',isInSeat)
     
 def volume_handler(unused_address, args):
@@ -144,7 +144,7 @@ def volume_handler(unused_address, args):
 def usingEarmuffs_handler(unused_address, args):
     global isUsingEarmuffs
     isUsingEarmuffs = args
-    print('isUsingEarmuffs', isUsingEarmuffs)
+    #print('isUsingEarmuffs', isUsingEarmuffs)
     outputLog('isUsingEarmuffs', isUsingEarmuffs)
     
 def vr_handler(unused_address, args):# The game never sends this value from what I've seen
@@ -153,7 +153,7 @@ def vr_handler(unused_address, args):# The game never sends this value from what
         isVR == True
     else:
         isVR == False
-    print('isVR', isVR)
+    #print('isVR', isVR)
     outputLog('isVR', isVR)
 
 """def thread_exists(name):
@@ -164,12 +164,15 @@ def vr_handler(unused_address, args):# The game never sends this value from what
     
 message_queue = []
 queue_lock = Lock()
-
 def outputLog(text):
+    print(text)
+    global threadName
+    threadName = threading.current_thread().name
     def waitThread():
+        global threadName
         timestamp = datetime.now()
         with queue_lock:
-            message_queue.append((timestamp, text))
+            message_queue.append((timestamp, "["+threadName+"] "+text))
         while windowAccess is None:
             time.sleep(.01)
         with queue_lock:
@@ -179,6 +182,8 @@ def outputLog(text):
             message_queue.clear()
     waitThreadHandler = Thread(target=waitThread)
     waitThreadHandler.start()
+    
+outputLog("OCT Starting...")
 
 def update_checker(a):
   global updatePrompt
@@ -191,7 +196,7 @@ def update_checker(a):
   if response.ok:
         data = response.json()
         if int(data[0]["tag_name"].replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', '')) != int(version.replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', '')):
-          print("A new version is available! "+ data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', '')+" > " + version.replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
+          #print("A new version is available! "+ data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', '')+" > " + version.replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
           outputLog("A new version is available! "+ data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', '')+" > " + version.replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
           if updatePrompt:
             def updatePromptWaitThread():
@@ -212,11 +217,11 @@ def update_checker(a):
         else:
           if a:
             windowAccess.write_event_value('popup', "Program is up to date! Version "+version)
-          print("Program is up to date! Version "+version)
+          #print("Program is up to date! Version "+version)
           outputLog("Program is up to date! Version "+version)
         
   else:
-      print('Update Checking Error occurred:', response.status_code)
+      #print('Update Checking Error occurred:', response.status_code)
       outputLog('Update Checking Error occurred:', response.status_code)
       
 
@@ -273,13 +278,13 @@ if os.path.isfile('please-do-not-delete.txt'):
         for i, x in enumerate(confDataDict[fixed_list[0]]):
           globals()[x] = fixed_list[i]
           #print(f"{x} = {fixed_list[i]}")
-        print("Successfully Loaded config file version "+fixed_list[0])
+        #print("Successfully Loaded config file version "+fixed_list[0])
         outputLog("Successfully Loaded config file version "+fixed_list[0])
       else:
-        print('Config file is Too Old! Not Updating Values...')
+        #print('Config file is Too Old! Not Updating Values...')
         outputLog('Config file is Too Old! Not Updating Values...')
     except:
-      print('Config File Load Error! Not Updating Values...')
+      #print('Config File Load Error! Not Updating Values...')
       outputLog('Config File Load Error! Not Updating Values...')
 def uiThread():
   global version
@@ -614,7 +619,7 @@ def uiThread():
   while True:
       event, values = window.read()
       #print(event, values)
-      if event == sg.WIN_CLOSED or event == "Exit" or event == "You thought":
+      if event == sg.WIN_CLOSED or event == "Exit":
           break
       if values['topNone']:
           window['topText'].update(value=False)
@@ -838,19 +843,13 @@ def uiThread():
         window['output'].update(new_text)
         if logOutput:
           with open('OCT_debug_log.txt', 'a+', encoding="utf-8") as f:
-            if f.read() == '':
-              f.write(values[event])
-            else:
-              f.write("\n"+values[event])
+            f.write("\n"+values[event])
   window.close()
   playMsg = False
   run = False
-  if listenServer != None:
-    try:
-      listenServer.shutdown()
-      listenServer.server_close()
-    except:
-      pass
+  if logOutput:
+    with open('OCT_debug_log.txt', 'a+', encoding="utf-8") as f:
+        f.write("\n"+str(datetime.now())+" OCT Shutting down...")
 def processMessage(a):
   returnList = []
   if messageString.count('\n')>0:
@@ -922,7 +921,7 @@ if __name__ == "__main__":
         global useForewordMemory
         global oscForeword
         runForewordServer = True
-        print('Starting Forwarding server on '+str(forward_addresses))
+        #print('Starting Forwarding server on '+str(forward_addresses))
         outputLog('Starting Forwarding server on '+str(forward_addresses))
         oscListenAddressMemory = oscListenAddress
         oscListenPortMemory = oscListenPort
@@ -949,7 +948,7 @@ if __name__ == "__main__":
       time.sleep(.1)
       if oscListenAddressMemory != oscListenAddress or oscListenPortMemory != oscListenPort or oscForewordPortMemory != oscForewordPort or oscForewordAddressMemory != oscForewordAddress or useForewordMemory != oscForeword or useForewordMemory != oscForeword or ((oscForeword or oscListen) and not runForewordServer):
         if oscForeword or oscListen:
-          print('Foreword/Listen Server Config Updated, Restarting Forwarding Server...\n')
+          #print('Foreword/Listen Server Config Updated, Restarting Forwarding Server...\n')
           outputLog('Foreword/Listen Server Config Updated, Restarting Forwarding Server...\n')
           runForewordServer = False
           time.sleep(.5)
@@ -958,7 +957,7 @@ if __name__ == "__main__":
             dataSenderThread.start()
       if runForewordServer and not(oscForeword or oscListen):
         runForewordServer = False
-        print('No OSC Foreword/Listening Options are selected, stopping Forwarding Server...')
+        #print('No OSC Foreword/Listening Options are selected, stopping Forwarding Server...')
         outputLog('No OSC Foreword/Listening Options are selected, stopping Forwarding Server...')
       time.sleep(.5)
   oscForwardingManagerThread = Thread(target=oscForwardingManager)
@@ -985,7 +984,7 @@ if __name__ == "__main__":
                   try:
                       listenServer = osc_server.ThreadingOSCUDPServer(
                           (args.ip, args.port), dispatcher)
-                      print("Osc Listen Server Serving on {}".format(listenServer.server_address))
+                      #print("Osc Listen Server Serving on {}".format(listenServer.server_address))
                       outputLog("Osc Listen Server Serving on {}".format(listenServer.server_address))
                       sockett = listenServer.socket
                       sockett.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -994,7 +993,7 @@ if __name__ == "__main__":
                       
                       listenServer.serve_forever()           
                   except Exception as e:
-                      print('Osc Listen Server Failed to Start, Retying...'+str(e))
+                      #print('Osc Listen Server Failed to Start, Retying...'+str(e))
                       outputLog('Osc Listen Server Failed to Start, Retying...'+str(e))
                       pass
 
@@ -1002,7 +1001,7 @@ if __name__ == "__main__":
                   oscServerThread = Thread(target=listenServerThread)
                   oscServerThread.start()
           if not oscListen and isListenServerRunning:
-            print('No OSC Listen Options are Selected, Shutting Down OSC Listen Server...')
+            #print('No OSC Listen Options are Selected, Shutting Down OSC Listen Server...')
             outputLog('No OSC Listen Options are Selected, Shutting Down OSC Listen Server...')
             isListenServerRunning = False
             listenServer.shutdown()
@@ -1077,6 +1076,7 @@ if __name__ == "__main__":
         else:
           if windowAccess != None:
             try:
+                logOutput('mediaManagerError! '+str(e))
                 windowAccess.write_event_value('mediaManagerError', e)
             except:
               pass
@@ -1262,7 +1262,7 @@ def hrConnectionThread():
                     time.sleep(60/int(heartRate))
           blinkHRThread = Thread(target=blinkHR)
           blinkHRThread.start()
-          print('Pulsoid Connection Started...')
+          #print('Pulsoid Connection Started...')
           outputLog('Pulsoid Connection Started...')
         except Exception as e:
           if windowAccess != None:
@@ -1270,7 +1270,7 @@ def hrConnectionThread():
               windowAccess.write_event_value('pulsoidError', e)
     if ((not topHRToggle and not bottomHRToggle and not avatarHR) or not (playMsg or avatarHR)) and hrConnected:
       hrConnected = False
-      print('Pulsoid Connection Stopped')
+      #print('Pulsoid Connection Stopped')
       outputLog('Pulsoid Connection Stopped')
     time.sleep(.3)
 hrConnectionThreadRun = Thread(target=hrConnectionThread)
