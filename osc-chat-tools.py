@@ -95,7 +95,7 @@ oscSendAddress = '127.0.0.1' #in conf
 oscSendPort = '9000' #in conf
 oscForewordAddress = '127.0.0.1' #in conf
 oscForewordPort = '9002' #in conf
-oscListen = True #in conf
+oscListen = False #in conf
 oscForeword = False #in conf
 
 output = ''
@@ -457,7 +457,7 @@ def uiThread():
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='DarkGreen')]]
   
   osc_layout = [[sg.Column(
-              [[sg.Text('OSC Options', background_color='turquoise4', font=('Arial', 12, 'bold'))],
+              [[sg.Text('OSC Options - Experimental\n(Turning on debug logging is recommended)', background_color='turquoise4', font=('Arial', 12, 'bold'))],
                [sg.Column([
                   [sg.Text('OSC Listen Options')],
                   [sg.Checkbox('Use OSC Listen', key='oscListen')],
@@ -550,7 +550,7 @@ def uiThread():
     window['oscSendPort'].update(value='9002')
     window['oscForewordAddress'].update(value='127.0.0.1')
     window['oscForewordPort'].update(value='9002')
-    window['oscListen'].update(value=True)
+    window['oscListen'].update(value=False)
     window['oscForeword'].update(value=False)
     window['logOutput'].update(value=False)
   def updateUI():
