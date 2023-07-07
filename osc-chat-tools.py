@@ -122,30 +122,30 @@ def afk_handler(unused_address, args):
     global isAfk
     isAfk = args
     #print('isAfk', isAfk)
-    outputLog('isAfk', isAfk)
+    outputLog(f'isAfk {isAfk}')
     
 def mute_handler(unused_address, args):
     global isMute
     isMute = args
     #print('isMute',isMute)
-    outputLog('isMute',isMute)
+    outputLog(f'isMute {isMute}')
     
 def inSeat_handler(unused_address, args):
     global isInSeat
     isInSeat = args
     #print('isInSeat',isInSeat)
-    outputLog('isInSeat',isInSeat)
+    outputLog(f'isInSeat {isInSeat}')
     
 def volume_handler(unused_address, args):
     global voiceVolume
     voiceVolume = args
     #print('voiceVolume',voiceVolume)
-    #outputLog('voiceVolume',voiceVolume)
+    #outputLog(f'voiceVolume {voiceVolume}')
 def usingEarmuffs_handler(unused_address, args):
     global isUsingEarmuffs
     isUsingEarmuffs = args
     #print('isUsingEarmuffs', isUsingEarmuffs)
-    outputLog('isUsingEarmuffs', isUsingEarmuffs)
+    outputLog(f'isUsingEarmuffs {isUsingEarmuffs}')
     
 def vr_handler(unused_address, args):# The game never sends this value from what I've seen
     global isVR
@@ -154,7 +154,7 @@ def vr_handler(unused_address, args):# The game never sends this value from what
     else:
         isVR == False
     #print('isVR', isVR)
-    outputLog('isVR', isVR)
+    outputLog(f'isVR {isVR}')
 
 """def thread_exists(name):
     for thread in threading.enumerate():
@@ -740,13 +740,6 @@ def uiThread():
               f.write(str([confVersion, topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, topHRToggle, bottomHRToggle, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
-          """print('Popup Open') #Popup Shit is broken 
-          apply_popup_layout = [[sg.Text('Applied!')]]
-          apply_popup_window = sg.Window('Applied!', apply_popup_layout, size=(300, 90), element_justification='center', no_titlebar=True, modal=False, finalize=True)
-          apply_popup_window.bring_to_front()
-          time.sleep(1)
-          apply_popup_window.close()
-          print('Popup Close')"""
           
       if event == 'Check For Updates':
         update_checker(True)
@@ -844,9 +837,19 @@ def uiThread():
         if logOutput:
           with open('OCT_debug_log.txt', 'a+', encoding="utf-8") as f:
             f.write("\n"+values[event])
+      if event == 'listenError':
+        outputLog(f'listenError {str(values[event])}')
+        oscListen = False
+        oscForeword = False
+        window['oscListen'].update(value=False)
+        window['oscForeword'].update(value=False)
+        sg.popup('Please make sure no other program is listening to the osc and try re-enabling osc Listen/Foreword options.\n\nOSC Listen and Foreword have been disabled to this won\'t happen on startup')
+        window.write_event_value('Apply', '')
   window.close()
   playMsg = False
   run = False
+  listenServer.shutdown()
+  listenServer.server_close()
   if logOutput:
     with open('OCT_debug_log.txt', 'a+', encoding="utf-8") as f:
         f.write("\n"+str(datetime.now())+" OCT Shutting down...")
@@ -887,82 +890,126 @@ if __name__ == "__main__":
   dispatcher.map("/avatar/parameters/Earmuffs", usingEarmuffs_handler)
   
   def oscForwardingManager():
+    global runForewordServer
+    global oscListenAddressMemory
+    global oscListenPortMemory
+    global oscForewordAddressMemory
+    global oscForewordPortMemory
+    global oscForeword
+    global oscListen
+    global useForewordMemory
+    global windowAccess
+    time.sleep(.1)
+    listen_socket = None
+    forward_sockets = []
     while run:
-      global runForewordServer
-      global oscListenAddressMemory
-      global oscListenPortMemory
-      global oscForewordAddressMemory
-      global oscForewordPortMemory
-      global oscForeword
-      global oscListen
-      global useForewordMemory
-      # Create a socket to listen for incoming data
-      listen_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-      listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-      listen_socket.bind((oscListenAddress, int(oscListenPort)))
-      listen_socket.settimeout(.5)
-      # Set the IP addresses and port numbers to forward data to
-      if oscForeword:
-        forward_addresses = [
-            ('127.0.0.1', 61394), #for the listen server
-            (oscForewordAddress, int(oscForewordPort)),
-        ]
-      else:
-        forward_addresses = [
-            ('127.0.0.1', 61394) #for the listen server
-        ]
-      
-      def dataSender():
         global runForewordServer
         global oscListenAddressMemory
         global oscListenPortMemory
         global oscForewordAddressMemory
         global oscForewordPortMemory
-        global useForewordMemory
         global oscForeword
-        runForewordServer = True
-        #print('Starting Forwarding server on '+str(forward_addresses))
-        outputLog('Starting Forwarding server on '+str(forward_addresses))
-        oscListenAddressMemory = oscListenAddress
-        oscListenPortMemory = oscListenPort
-        oscForewordPortMemory = oscForewordPort
-        oscForewordAddressMemory = oscForewordAddress
-        useForewordMemory = oscForeword
-        forward_sockets = [
-          socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-          for _ in forward_addresses
-        ]
-        while run and runForewordServer:
+        global oscListen
+        global useForewordMemory
+        global windowAccess
+        # Create a socket to listen for incoming data
+        def create_sockets():
+            nonlocal listen_socket
+            global runForewordServer
+            global oscListenAddressMemory
+            global oscListenPortMemory
+            global oscForewordAddressMemory
+            global oscForewordPortMemory
+            global oscForeword
+            global oscListen
+            global useForewordMemory
+            global windowAccess
             try:
-              data, addr = listen_socket.recvfrom(1024)
-              
-              # Forward the data to each forward socket
-              for forward_socket, (ip, port) in zip(forward_sockets, forward_addresses):
-                  forward_socket.sendto(data, (ip, port))
-            except:
-              pass
-      if oscForeword or oscListen:
-        if not runForewordServer:
-          dataSenderThread = Thread(target=dataSender)
-          dataSenderThread.start()
-      time.sleep(.1)
-      if oscListenAddressMemory != oscListenAddress or oscListenPortMemory != oscListenPort or oscForewordPortMemory != oscForewordPort or oscForewordAddressMemory != oscForewordAddress or useForewordMemory != oscForeword or useForewordMemory != oscForeword or ((oscForeword or oscListen) and not runForewordServer):
+                listen_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                listen_socket.bind((oscListenAddress, int(oscListenPort)))
+                listen_socket.settimeout(.5)
+            except Exception as err:
+                def WaitThread(err):
+                    while windowAccess == None:
+                        time.sleep(.1)
+                        pass
+                    windowAccess.write_event_value('listenError', str(err))
+                updatePromptWaitThreadHandler = Thread(target=WaitThread, args=(err,))
+                updatePromptWaitThreadHandler.start()
+
+        # Set the IP addresses and port numbers to forward data to
+        if oscForeword:
+            forward_addresses = [
+                ('127.0.0.1', 61394), #for the listen server
+                (oscForewordAddress, int(oscForewordPort)),
+            ]
+        else:
+            forward_addresses = [
+                ('127.0.0.1', 61394) #for the listen server
+            ]
+
+        def dataSender():
+            global runForewordServer
+            global oscListenAddressMemory
+            global oscListenPortMemory
+            global oscForewordAddressMemory
+            global oscForewordPortMemory
+            global oscForeword
+            global oscListen
+            global useForewordMemory
+            global windowAccess
+            nonlocal forward_sockets
+            runForewordServer = True
+            #print('Starting Forwarding server on '+str(forward_addresses))
+            create_sockets()
+            outputLog('Starting Forwarding server on '+str(forward_addresses))
+            oscListenAddressMemory = oscListenAddress
+            oscListenPortMemory = oscListenPort
+            oscForewordPortMemory = oscForewordPort
+            oscForewordAddressMemory = oscForewordAddress
+            useForewordMemory = oscForeword
+            forward_sockets = [
+              socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+              for _ in forward_addresses
+            ]
+            while run and runForewordServer:
+                try:
+                    data, addr = listen_socket.recvfrom(1024)
+
+                    # Forward the data to each forward socket
+                    for forward_socket, (ip, port) in zip(forward_sockets, forward_addresses):
+                        forward_socket.sendto(data, (ip, port))
+                except:
+                  pass
+
         if oscForeword or oscListen:
-          #print('Foreword/Listen Server Config Updated, Restarting Forwarding Server...\n')
-          outputLog('Foreword/Listen Server Config Updated, Restarting Forwarding Server...\n')
-          runForewordServer = False
-          time.sleep(.5)
-          if not runForewordServer:
-            dataSenderThread = Thread(target=dataSender)
-            dataSenderThread.start()
-      if runForewordServer and not(oscForeword or oscListen):
-        runForewordServer = False
-        #print('No OSC Foreword/Listening Options are selected, stopping Forwarding Server...')
-        outputLog('No OSC Foreword/Listening Options are selected, stopping Forwarding Server...')
-      time.sleep(.5)
+            if not runForewordServer:
+                dataSenderThread = Thread(target=dataSender)
+                dataSenderThread.start()
+        time.sleep(.1)
+        if oscListenAddressMemory != oscListenAddress or oscListenPortMemory != oscListenPort or oscForewordPortMemory != oscForewordPort or oscForewordAddressMemory != oscForewordAddress or useForewordMemory != oscForeword or useForewordMemory != oscForeword:
+            if oscForeword or oscListen:
+                #print('Foreword/Listen Server Config Updated, Restarting Forwarding Server...\n')
+                outputLog('Foreword/Listen Server Config Updated, Restarting Forwarding Server...\n')
+                runForewordServer = False
+                time.sleep(.5)
+                if not runForewordServer:
+                    dataSenderThread = Thread(target=dataSender)
+                    dataSenderThread.start()
+        if runForewordServer and not(oscForeword or oscListen):
+            runForewordServer = False
+            #print('No OSC Foreword/Listening Options are selected, stopping Forwarding Server...')
+            outputLog('No OSC Foreword/Listening Options are selected, stopping Forwarding Server...')
+        time.sleep(.5)
+
+    # Close all sockets on shutdown
+    if listen_socket is not None:
+        listen_socket.close()
+    for forward_socket in forward_sockets:
+        forward_socket.close()
   oscForwardingManagerThread = Thread(target=oscForwardingManager)
   oscForwardingManagerThread.start()
-
   def oscListenServerManager():
       global oscListenAddress
       global oscListenPort
@@ -1076,7 +1123,7 @@ if __name__ == "__main__":
         else:
           if windowAccess != None:
             try:
-                logOutput('mediaManagerError! '+str(e))
+                logOutput('mediaManagerError '+str(e))
                 windowAccess.write_event_value('mediaManagerError', e)
             except:
               pass
