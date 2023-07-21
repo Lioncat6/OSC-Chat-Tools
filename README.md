@@ -9,7 +9,8 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 
 # Having Issues? 
  - Read the [FAQ](https://github.com/Lioncat6/OSC-Chat-Tools/wiki/FAQ)
-
+ - Find me on discord @lioncat6
+ - Create an issue https://github.com/Lioncat6/OSC-Chat-Tools/issues
 # Installation:
 ## Exe file
  - https://github.com/Lioncat6/OSC-Chat-Tools/releases/latest
