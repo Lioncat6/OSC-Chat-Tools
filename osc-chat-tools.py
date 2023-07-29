@@ -3,18 +3,12 @@ import time
 import threading
 from threading import Thread, Lock
 import ast
-import sys
 import requests
+import gc
 
+from collections import defaultdict
 
 if not os.path.isfile('please-do-not-delete.txt'):
-  """os.system("pip install python-osc")
-  os.system("pip install argparse")
-  os.system("pip install datetime")
-  os.system("pip install keyboard")
-  os.system("pip install asyncio")
-  os.system("pip install psutil")
-  os.system("pip install PySimpleGUI")"""
   with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
       f.write('[]')
 
@@ -33,35 +27,34 @@ from websocket import create_connection # websocket-client
 from pythonosc.dispatcher import Dispatcher
 from pythonosc import osc_server
 import socket
-
+import GPUtil
 run = True
 playMsg = True
-cpuInt = int(psutil.cpu_percent())
 textParseIterator = 0
-version = "1.4.20"
+version = "1.5.0"
 message_delay = 1.5
 msgOutput = ''
-topTextToggle = False #in conf
-topTimeToggle = False #in conf
-topSongToggle = False #in conf
-topCPUToggle = False #in conf
-topRAMToggle = False #in conf
-topNoneToggle = True #in conf
+topTextToggle = False #Deprecated, only in use for converting old save files
+topTimeToggle = False #Deprecated, only in use for converting old save files
+topSongToggle = False #Deprecated, only in use for converting old save files
+topCPUToggle = False #Deprecated, only in use for converting old save files
+topRAMToggle = False #Deprecated, only in use for converting old save files
+topNoneToggle = True #Deprecated, only in use for converting old save files
 
-bottomTextToggle = False #in conf
-bottomTimeToggle = False #in conf
-bottomSongToggle = False #in conf
-bottomCPUToggle = False #in conf
-bottomRAMToggle = False #in conf
-bottomNoneToggle = True #in conf
+bottomTextToggle = False #Deprecated, only in use for converting old save files
+bottomTimeToggle = False #Deprecated, only in use for converting old save files
+bottomSongToggle = False #Deprecated, only in use for converting old save files
+bottomCPUToggle = False #Deprecated, only in use for converting old save files
+bottomRAMToggle = False #Deprecated, only in use for converting old save files
+bottomNoneToggle = True #Deprecated, only in use for converting old save files
 messageString = '' #in conf
 afk = False
 FileToRead = '' #in conf
 scrollText = False #in conf
 scrollTexTSpeed = 6
 hideSong = False #in conf
-hideMiddle = False #in conf
-hideOutside = False #in conf
+hideMiddle = False #Deprecated, only in use for converting old save files
+hideOutside = True #in conf
 showPaused = True #in conf
 songDisplay = ' 🎵{title} ᵇʸ {artist}🎵' #in conf
 songName = ''
@@ -74,8 +67,8 @@ keybind_afk = 'end' #in conf
 topBar = '╔═════════════╗' #in conf
 middleBar = '╠═════════════╣' #in conf
 bottomBar = '╚═════════════╝' #in conf
-topHRToggle = False #in conf
-bottomHRToggle = False #in conf
+topHRToggle = False #Deprecated, only in use for converting old save files
+bottomHRToggle = False #Deprecated, only in use for converting old save files
 pulsoidToken = '' #in conf
 hrConnected = False
 heartRate = 0
@@ -98,8 +91,17 @@ oscForewordPort = '9002' #in conf
 oscListen = False #in conf
 oscForeword = False #in conf
 
+layoutStorage = ''
+
 output = ''
 logOutput = False  #in conf
+
+layoutString = '' #in conf
+verticalDivider = "┊" #in conf
+
+useHR = False
+
+playTime = 0
 
 oscForewordPortMemory = ''
 oscForewordAddressMemory = ''
@@ -110,6 +112,13 @@ isListenServerRunning = False
 listenServer = None
 useForewordMemory = False
 
+cpuDisplay = 'ᴄᴘᴜ: {cpu_percent}%'
+ramDisplay = 'ʀᴀᴍ: {ram_percent}%  ({ram_used}/{ram_total})'
+gpuDisplay = 'ɢᴘᴜ: {gpu_percent}%'
+hrDisplay = '💓 {hr}'
+playTimeDisplay = 'Play Time: {play_time}'
+mutedDisplay = 'Muted 🔇'
+unmutedDisplay = '🎙️'
 
 isAfk = False
 isVR = False #Never used as the game never actually updates vrmode 
@@ -117,6 +126,17 @@ isMute = False
 isInSeat = False
 voiceVolume = 0
 isUsingEarmuffs = False
+
+
+
+"""def is_exe_running(exe_name):
+    for process in psutil.process_iter():
+        try:
+            if process.name() == exe_name:
+                return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    return False"""
 
 def afk_handler(unused_address, args):
     global isAfk
@@ -191,39 +211,40 @@ def update_checker(a):
   global windowAccess
   global version
   url = 'https://api.github.com/repos/Lioncat6/OSC-Chat-Tools/releases'
-  response = requests.get(url)
-
-  if response.ok:
-        data = response.json()
-        if int(data[0]["tag_name"].replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', '')) != int(version.replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', '')):
-          #print("A new version is available! "+ data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', '')+" > " + version.replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
-          outputLog("A new version is available! "+ data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', '')+" > " + version.replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
-          if updatePrompt:
-            def updatePromptWaitThread():
+  try:
+    response = requests.get(url)
+    if response.ok:
+          data = response.json()
+          if int(data[0]["tag_name"].replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', '')) != int(version.replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', '')):
+            #print("A new version is available! "+ data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', '')+" > " + version.replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
+            outputLog("A new version is available! "+ data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', '')+" > " + version.replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
+            if updatePrompt:
+              def updatePromptWaitThread():
+                while windowAccess == None:
+                  time.sleep(.1)
+                  pass
+                windowAccess.write_event_value('updateAvailable', data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
+              updatePromptWaitThreadHandler = Thread(target=updatePromptWaitThread)
+              updatePromptWaitThreadHandler.start()
+            outOfDate = True
+            def waitThread():
               while windowAccess == None:
-                time.sleep(.1)
-                pass
-              windowAccess.write_event_value('updateAvailable', data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
-            updatePromptWaitThreadHandler = Thread(target=updatePromptWaitThread)
-            updatePromptWaitThreadHandler.start()
-          outOfDate = True
-          def waitThread():
-            while windowAccess == None:
-                time.sleep(.1)
-                pass
-            windowAccess.write_event_value('markOutOfDate', '')
-          waitThreadHandler = Thread(target=waitThread)
-          waitThreadHandler.start()
-        else:
-          if a:
-            windowAccess.write_event_value('popup', "Program is up to date! Version "+version)
-          #print("Program is up to date! Version "+version)
-          outputLog("Program is up to date! Version "+version)
-        
-  else:
-      #print('Update Checking Error occurred:', response.status_code)
-      outputLog('Update Checking Error occurred:', response.status_code)
-      
+                  time.sleep(.1)
+                  pass
+              windowAccess.write_event_value('markOutOfDate', '')
+            waitThreadHandler = Thread(target=waitThread)
+            waitThreadHandler.start()
+          else:
+            if a:
+              windowAccess.write_event_value('popup', "Program is up to date! Version "+version)
+            #print("Program is up to date! Version "+version)
+            outputLog("Program is up to date! Version "+version)
+          
+    else:
+        #print('Update Checking Error occurred:', response.status_code)
+        outputLog('Update Checking Error occurred:', response.status_code)
+  except Exception as e:
+    outputLog('Update Checking Error occurred:', str(e))
 
 async def get_media_info():
     sessions = await MediaManager.request_async()
@@ -265,7 +286,8 @@ def mediaIs(state):
   
 confDataDict = { #this dictionary will always exclude position 0 which is the config version!
   "1.4.1" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt'],
-  "1.4.20" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput']
+  "1.4.20" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput'],
+  "1.5.0" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay']
 }
 
 if os.path.isfile('please-do-not-delete.txt'):
@@ -283,14 +305,101 @@ if os.path.isfile('please-do-not-delete.txt'):
       else:
         #print('Config file is Too Old! Not Updating Values...')
         outputLog('Config file is Too Old! Not Updating Values...')
-    except:
+    except Exception as e:
       #print('Config File Load Error! Not Updating Values...')
       outputLog('Config File Load Error! Not Updating Values...')
+  if confVersion == "1.4.1" or confVersion ==  "1.4.20":
+    outputLog("Converting old layout system, please update your config by pressing apply!")
+    if topTextToggle:
+      layoutString = layoutString + '{text(0)}'
+    if topTimeToggle:
+      layoutString = layoutString + '{time(0)}'
+    if topSongToggle:
+      layoutString = layoutString + '{song(0)}'
+    if topCPUToggle:
+      layoutString = layoutString + '{cpu(0)}'
+    if topRAMToggle:
+      layoutString = layoutString + '{ram(0)}'
+    if not hideMiddle and (topTextToggle or topTimeToggle or topSongToggle or topCPUToggle or topRAMToggle) and (bottomTextToggle or bottomTimeToggle or bottomSongToggle or bottomCPUToggle or bottomRAMToggle):
+      layoutString = layoutString + '{div(0)}'
+    if bottomTextToggle:
+      layoutString = layoutString + '{text(0)}'
+    if bottomTimeToggle:
+      layoutString = layoutString + '{time(0)}'
+    if bottomSongToggle:
+      layoutString = layoutString + '{song(0)}'
+    if bottomCPUToggle:
+      layoutString = layoutString + '{cpu(0)}'
+    if bottomRAMToggle:
+      layoutString = layoutString + '{ram(0)}'
+      
+forewordServerLastUsed = oscForeword
+
+
+layoutDisplayDict = {
+    "playtime(" : "⌚Play Time",
+    "text(" : "💬Text",
+    "time(" : "🕒Time",
+    "song(" : "🎵Song",
+    "cpu(" : "⏱️CPU Usage",
+    "ram(" : "🚦RAM Usage",
+    "gpu(" : "⏳GPU Usage",
+    "hr(" : "💓Heart Rate",
+    "mute(" : "🔇Mute Status",
+    "stt(" : "⌨Speech To Text",
+    "div(" : "☵Divider"
+                      }
+def layoutPreviewBuilder(layout, window):
+  def returnDisp(a):
+    global layoutDisplayDict
+    for x in layoutDisplayDict:
+      if x in a:
+        return layoutDisplayDict[x]
+
+  try:
+    layoutList = ast.literal_eval("["+layout.replace("{", "\"").replace("}", "\",")[:-1]+"]")
+    layoutLen = len(layoutList)
+    if layoutLen <=15:
+      for x in range(layoutLen+1, 16):
+        window['layout'+str(x)].update(visible=False)
+      
+      if layoutLen > 0:
+        for x in range(1, layoutLen+1):
+          window['layout'+str(x)].update(visible=True)
+          window['text'+str(x)].update(value=returnDisp(layoutList[x-1]))
+          if "3" in layoutList[x-1]:
+            window['divider'+str(x)].update(value=True)
+            window['newLine'+str(x)].update(value=True)
+          elif "2" in layoutList[x-1]:
+            window['newLine'+str(x)].update(value=True)
+            window['divider'+str(x)].update(value=False)
+          elif "1" in layoutList[x-1]: 
+            window['divider'+str(x)].update(value=True)
+            window['newLine'+str(x)].update(value=False)
+          else:
+            window['divider'+str(x)].update(value=False)
+            window['newLine'+str(x)].update(value=False)
+            
+          
+          
+
+    else:
+      for x in range(1, 16):
+        window['layout'+str(x)].update(visible=False)
+  except:
+    for x in range(1, 16):
+      window['layout'+str(x)].update(visible=False)
+    
+      
 def uiThread():
+  sg.set_options(use_ttk_buttons=True)
+  """sg.set_options(ttk_theme='default')
+  color ="#001f4d"
+  sg.set_options(background_color=color, element_background_color=color, text_element_background_color=color)"""
   global version
   global msgOutput
   global message_delay
-  global topTextToggle
+  """global topTextToggle
   global topTimeToggle
   global topSongToggle
   global topCPUToggle
@@ -301,7 +410,7 @@ def uiThread():
   global bottomSongToggle
   global bottomCPUToggle
   global bottomRAMToggle
-  global bottomNoneToggle
+  global bottomNoneToggle"""
   global messageString
   global playMsg
   global run
@@ -322,8 +431,8 @@ def uiThread():
   global topBar
   global middleBar
   global bottomBar
-  global topHRToggle
-  global bottomHRToggle
+  """global topHRToggle
+  global bottomHRToggle"""
   global pulsoidToken
   global errorExit
   global windowAccess
@@ -344,6 +453,16 @@ def uiThread():
   global oscListen
   global oscForeword
   global logOutput
+  global layoutString
+  global verticalDivider
+  global layoutDisplayDict
+  global cpuDisplay
+  global ramDisplay
+  global gpuDisplay
+  global hrDisplay
+  global playTimeDisplay
+  global mutedDisplay
+  global unmutedDisplay
   layout_layout = [[sg.Column(
               [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold'))],
               [sg.Column([
@@ -371,14 +490,60 @@ def uiThread():
               ], key='bottomConf', background_color='peru')]
               ]
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='darkseagreen')]]
+  
+  
+  new_layout_layout =  [[sg.Column(
+              [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold')), sg.Checkbox('Text file read - defined in the behavior tab\n(This will disable everything else)', default=False, key='scroll', enable_events= True, background_color='dark slate blue')],
+              [sg.Column([
+                [sg.Text('Add Elements', font=('Arial', 12, 'bold'))],
+                [sg.Text('Every Element is customizable from the Behavior Tab', font=('Arial', 10, 'bold'))],
+                [sg.Text('*', text_color='cyan', font=('Arial', 12, 'bold'), pad=(0, 0)), sg.Text('= Requires OSC Listening To Function')],
+                [sg.Text('💬Text', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('A configurable text object', ), sg.Push(), sg.Button('Add to Layout', key='addText')],
+                [sg.Text('🕒Time', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display your current time', ), sg.Push(), sg.Button('Add to Layout', key='addTime')],
+                [sg.Text('🎵Song', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Customizable song display', ), sg.Push(), sg.Button('Add to Layout', key='addSong')],
+                [sg.Text('⏱️CPU', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display CPU Utilization %', ), sg.Push(), sg.Button('Add to Layout', key='addCPU')],
+                [sg.Text('🚦RAM', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display RAM Usage %', ), sg.Push(), sg.Button('Add to Layout', key='addRAM')],
+                [sg.Text('⏳GPU', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display GPU Utilization %', ), sg.Push(), sg.Button('Add to Layout', key='addGPU')],
+                [sg.Text('💓HR', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display Heart Rate', ), sg.Push(), sg.Button('Add to Layout', key='addHR')],
+                [sg.Text('🔇Mute', font=('Arial', 12, 'bold')), sg.Text('*', text_color='cyan', pad=(0, 0), font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display Mic Mute Status', ), sg.Push(), sg.Button('Add to Layout', key='addMute')],
+                [sg.Text('⌚Play Time', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Show Play Time', ), sg.Push(), sg.Button('Add to Layout',  key='addPlaytime')],
+                [sg.Text('⌨️STT', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Speech recognition object', ), sg.Push(), sg.Button('Coming  Soon', disabled=True, key='addSTT')],
+                [sg.Text('☵Divider', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Horizontal Divider', ), sg.Push(), sg.Button('Add to Layout',  key='addDiv')],
+                
+                ],size=(350, 520), scrollable=True, vertical_scroll_only=True, element_justification='center'), sg.Column([
+                  [sg.Text('Arrange Elements', font=('Arial', 12, 'bold'))],
+                  [sg.Text('↩ = New Line  ┋ = Vertical Divider')],
+                  [sg.Column([
+                    [sg.Column([[sg.Button('❌', key='delete1'), sg.Button('⬆️', disabled=True, key='up1'), sg.Button('⬇️', key='down1'), sg.Text('---', key='text1',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', key="divider1", enable_events=True, font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine1")]], key='layout1', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete2'), sg.Button('⬆️', key='up2'), sg.Button('⬇️', key='down2'), sg.Text('---', key='text2',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider2",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine2")]], key='layout2', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete3'), sg.Button('⬆️', key='up3'), sg.Button('⬇️', key='down3'), sg.Text('---', key='text3',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider3",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine3")]], key='layout3', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete4'), sg.Button('⬆️', key='up4'), sg.Button('⬇️', key='down4'), sg.Text('---', key='text4',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider4",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine4")]], key='layout4', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete5'), sg.Button('⬆️', key='up5'), sg.Button('⬇️', key='down5'), sg.Text('---', key='text5',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider5",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine5")]], key='layout5', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete6'), sg.Button('⬆️', key='up6'), sg.Button('⬇️', key='down6'), sg.Text('---', key='text6',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider6",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine6")]], key='layout6', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete7'), sg.Button('⬆️', key='up7'), sg.Button('⬇️', key='down7'), sg.Text('---', key='text7',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider7",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine7")]], key='layout7', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete8'), sg.Button('⬆️', key='up8'), sg.Button('⬇️', key='down8'), sg.Text('---', key='text8',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider8",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine8")]], key='layout8', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete9'), sg.Button('⬆️', key='up9'), sg.Button('⬇️', key='down9'), sg.Text('---', key='text9',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider9",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine9")]], key='layout9', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete10'), sg.Button('⬆️', key='up10'), sg.Button('⬇️', key='down10'), sg.Text('---', key='text10',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider10",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine10")]], key='layout10', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete11'), sg.Button('⬆️', key='up11'), sg.Button('⬇️', key='down11'), sg.Text('---', key='text11',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider11",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine11")]], key='layout11', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete12'), sg.Button('⬆️', key='up12'), sg.Button('⬇️', key='down12'), sg.Text('---', key='text12',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider12",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine12")]], key='layout12', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete13'), sg.Button('⬆️', key='up13'), sg.Button('⬇️', key='down13'), sg.Text('---', key='text13',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider13",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine13")]], key='layout13', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete14'), sg.Button('⬆️', key='up14'), sg.Button('⬇️', key='down14'), sg.Text('---', key='text14',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider14",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine14")]], key='layout14', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete15'), sg.Button('⬆️', key='up15'), sg.Button('⬇️', key='down15'), sg.Text('---', key='text15',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider15",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine15")]], key='layout15', element_justification='left')],
+                    ], key="layout_editor", scrollable=True, vertical_scroll_only=True, element_justification='left', size=(335, 300))],
+                  [sg.Text('Manual Edit', font=('Arial', 12, 'bold')), sg.Button('?', font=('Arial', 12, 'bold'), key="manualHelp")],
+                  [sg.Text('Wrap object in { }. Spaces are respected.')],
+                  [sg.Multiline('', key='layoutStorage', size=(45, 5), font=('Arial', 10, 'bold'))]
+                  ], size=(360, 520), element_justification='center')]
+              ]
+  ,  expand_x=True, expand_y=True, background_color='darkseagreen', element_justification='left')]]
 
   behavior_layout =  [[sg.Column(
               [[sg.Text('Configure chatbox behavior', background_color='DarkSlateGray4', font=('Arial', 12, 'bold'))],
               [sg.Column([
-                  [sg.Text('Text to display for the message. One frame per line\nTo send a blank frame, use an asterisk(*) by itself on a line.')],
+                  [sg.Text('Text to display for the message. One frame per line\nTo send a blank frame, use an asterisk(*) by itself on a line.\n\\n and \\v are respected.', justification='center')],
                   [sg.Multiline(default_text='OSC Chat Tools\nBy Lioncat6',
                       size=(50, 10), key='messageInput')]
-              ], size=(379, 220))],
+              ], size=(379, 240))],
               [sg.Column([
                   [sg.Text('File to use for the text file read functionality')],
                   [sg.Button('Open File'), sg.Text('', key='message_file_path_display')]
@@ -388,30 +553,55 @@ def uiThread():
                   [sg.Slider(range=(1.5, 10), default_value=1.5, resolution=0.1, orientation='horizontal', size=(40, 15), key="msgDelay")]
               ], size=(379, 70))],
               [sg.Column([
-                  [sg.Text('Template to use for song display.\nVariables = {artist}, {title}, {album_title}')],
+                  [sg.Text('Template to use for song display.\nVariables: {artist}, {title}, {album_title}, {album_artist}')],
                   [sg.Input(key='songDisplay', size=(50, 1))]
               ], size=(379, 80))],
               [sg.Column([
+                  [sg.Text('Template to use for CPU display.\nVariables: {cpu_percent}')],
+                  [sg.Input(key='cpuDisplay', size=(50, 1))]
+              ], size=(379, 80))],
+              [sg.Column([
+                  [sg.Text('Template to use for RAM display. Variables:\n{ram_percent}, {ram_available}, {ram_total}, {ram_used}')],
+                  [sg.Input(key='ramDisplay', size=(50, 1))]
+              ], size=(379, 80))],
+              [sg.Column([
+                  [sg.Text('Template to use for GPU display.\nVariables: {gpu_percent}')],
+                  [sg.Input(key='gpuDisplay', size=(50, 1))]
+              ], size=(379, 80))],
+              [sg.Column([
+                  [sg.Text('Template to use for Heart Rate display.\nVariables: {hr}')],
+                  [sg.Input(key='hrDisplay', size=(50, 1))]
+              ], size=(379, 80))],
+              [sg.Column([
+                  [sg.Text('Template to use for Play Time display.\nVariables: {play_time}')],
+                  [sg.Input(key='playTimeDisplay', size=(50, 1))]
+              ], size=(379, 80))],
+              [sg.Column([
+                  [sg.Text('Template to use for Mute Toggle display')],
+                  [sg.Text('Muted:'), sg.Push(),  sg.Input(key='mutedDisplay', size=(30, 1))],
+                  [sg.Text('Unmuted:'), sg.Push(), sg.Input(key='unmutedDisplay', size=(30, 1))]
+              ], size=(379, 80))],
+              [sg.Column([
+                  [sg.Text('Divider Settings:')],
                   [sg.Text('Top Divider:')],
                   [sg.Input(key='topBar', size=(50, 1))],
                   [sg.Text('Middle Divider:')],
                   [sg.Input(key='middleBar', size=(50, 1))],
                   [sg.Text('Bottom Divider:')],
                   [sg.Input(key='bottomBar', size=(50, 1))],
-                ], size=(379, 160))],
+                  [sg.Text('Vertical Divider:')],
+                  [sg.Input(key='verticalDivider', size=(50, 1))],
+                  [sg.Checkbox('Remove outside dividers', default=True, key='hideOutside', enable_events= True)],
+                ], size=(379, 270))],
               [sg.Column([
-                  [sg.Text('Misc. Settings:')],
+                  [sg.Text('Music Settings:')],
                   [sg.Checkbox('Show \"(paused)\" after song when song is paused', default=True, key='showPaused', enable_events= True)],
                   [sg.Checkbox('Hide song when music is paused', default=False, key='hideSong', enable_events= True)],
-                  [sg.Checkbox('Remove middle divider (when applicable)', default=False, key='hideMiddle', enable_events= True)],
-                  [sg.Checkbox('Remove outside dividers (when applicable)', default=False, key='hideOutside', enable_events= True)],
-              ], size=(379, 150))],
-              [sg.Column([
-                  [sg.Text('Only Show on song change settings:')],
+                  [sg.HorizontalSeparator()],
                   [sg.Checkbox('Only show music on song change', default=False, key='showOnChange', enable_events=True)],
                   [sg.Text('Amount of frames to wait before the song name disappears')],
                   [sg.Slider(range=(1, 5), default_value=2, resolution=1, orientation='horizontal', size=(40, 15), key="songChangeTicks")]
-              ], size=(379, 130))],
+              ], size=(379, 220))],
               [sg.Column([
                   [sg.Text('Heartrate Settings:')],
                   [sg.Checkbox('Pass through heartrate avatar parameters\neven when not running', default=False, key='avatarHR', enable_events= True)],
@@ -427,10 +617,10 @@ def uiThread():
 
   keybindings_layout = [[sg.Column(
               [[sg.Text('Keybindings Configuration', background_color='turquoise4', font=('Arial', 12, 'bold'))],
-               [sg.Text('You must press Apply for new keybinds to take affect!', background_color='turquoise4')],
+              [sg.Text('You must press Apply for new keybinds to take affect!', background_color='turquoise4')],
                 [sg.Column([
                   [sg.Text('Toggle Run'), sg.Frame('',[[sg.Text('Unbound', key='keybind_run', background_color='DarkSlateGray4', pad=(10, 0))]],background_color='DarkSlateGray4'), sg.Button('Bind Key', key='run_binding')],
-                  [sg.Text('Imagine That there is a checkbox here :)')],
+                  [sg.Checkbox('Use keybind', default=True, enable_events=True, key='useRunKeybind', disabled=True)],
                   [sg.Text('Toggle Afk'), sg.Frame('',[[sg.Text('Unbound', key='keybind_afk', background_color='DarkSlateGray4', pad=(10, 0))]],background_color='DarkSlateGray4'), sg.Button('Bind Key', key='afk_binding')],
                   [sg.Checkbox('Use keybind (Otherwise, uses OSC to check afk status)', default=False, enable_events=True, key='useAfkKeybind')]
                 ], expand_x=True, size=(379, 130))]
@@ -456,23 +646,24 @@ def uiThread():
   
   osc_layout = [[sg.Column(
               [[sg.Text('OSC Options - Experimental\n(Turning on debug logging is recommended)', background_color='turquoise4', font=('Arial', 12, 'bold'))],
-               [sg.Column([
+              [sg.Column([
                   [sg.Text('OSC Listen Options')],
                   [sg.Checkbox('Use OSC Listen', key='oscListen')],
                   [sg.Text('Address: '), sg.Input('', size=(30, 1), key='oscListenAddress')],
                   [sg.Text('Port: '), sg.Input('', size=(30, 1), key='oscListenPort')]
                 ], size=(379, 120))],
-               [sg.Column([
+              [sg.Column([
                   [sg.Text('OSC Send Options')],
                   [sg.Text('Address: '), sg.Input('', size=(30, 1), key='oscSendAddress')],
                   [sg.Text('Port: '), sg.Input('', size=(30, 1), key='oscSendPort')]
                 ], size=(379, 90))],
-               [sg.Column([
+              [sg.Column([
                   [sg.Text('OSC Forwarding Options\nRepeats all listened data to another address for other programs')],
+                  [sg.Text('Warning: Do Not Use with High Traffic OSC Programs\nlike VRCFT!', justification='center')],
                   [sg.Checkbox('Use OSC Forwarding', key='oscForeword')],
                   [sg.Text('Address: '), sg.Input('', size=(30, 1), key='oscForewordAddress')],
                   [sg.Text('Port: '), sg.Input('', size=(30, 1), key='oscForewordPort')]
-                ], size=(379, 150))]
+                ], size=(379, 170))]
               ]  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='turquoise4')]]
   
   output_layout =  [[sg.Column(
@@ -488,7 +679,7 @@ def uiThread():
       [[topMenuBar]],
       [   
           sg.TabGroup([[
-                  sg.Tab('Layout', layout_layout, background_color='darkseagreen'),
+                  sg.Tab('Layout', new_layout_layout, background_color='darkseagreen'),
                   sg.Tab('Behavior', behavior_layout, background_color='DarkSlateGray4'),
                   sg.Tab('Preview', preview_layout, background_color='DarkGreen'),
                   sg.Tab('Keybindings', keybindings_layout, background_color='turquoise4'),
@@ -502,29 +693,16 @@ def uiThread():
       [sg.Button('Apply'), sg.Button('Reset'), sg.Text(" Version "+str(version), key='versionText'), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru'), sg.Checkbox('AFK', default=False, key='afk', enable_events= True, background_color='#cb7cef')]]
 
   window = sg.Window('OSC Chat Tools', layout,
-                  default_element_size=(12, 1), resizable=True, finalize= True, size=(540, 600), right_click_menu=right_click_menu)
+                  default_element_size=(12, 1), resizable=True, finalize= True, size=(880, 620), right_click_menu=right_click_menu)
   window.set_min_size((500, 350))
   
   def resetVars():
-    window['bottomText'].update(value=False)
-    window['bottomTime'].update(value=False)
-    window['bottomSong'].update(value=False)
-    window['bottomCPU'].update(value=False)
-    window['bottomRAM'].update(value=False)
-    window['topText'].update(value=False)
-    window['topTime'].update(value=False)
-    window['topSong'].update(value=False)
-    window['topCPU'].update(value=False)
-    window['topRAM'].update(value=False)
-    window['topNone'].update(value=True)
-    window['bottomNone'].update(value=True)
     window['messageInput'].update(value='OSC Chat Tools\nBy Lioncat6')
     window['msgDelay'].update(value=1.5)
     window['songDisplay'].update(value=' 🎵{title} ᵇʸ {artist}🎵')
     window['showOnChange'].update(value=False)
     window['songChangeTicks'].update(value=2)
-    window['hideOutside'].update(value=False)
-    window['hideMiddle'].update(value=False)
+    window['hideOutside'].update(value=True)
     window['showPaused'].update(value=True)
     window['hideSong'].update(value=False)
     window['minimizeOnStart'].update(value=False)
@@ -533,8 +711,6 @@ def uiThread():
     window['topBar'].update(value='╔═════════════╗')
     window['middleBar'].update(value='╠═════════════╣')
     window['bottomBar'].update(value='╚═════════════╝')
-    window['topHRToggle'].update(value='False')
-    window['bottomHRToggle'].update(value='False')
     window['pulsoidToken'].update(value='')
     window['avatarHR'].update(value=False)
     window['blinkOverride'].update(value=False)
@@ -551,28 +727,24 @@ def uiThread():
     window['oscListen'].update(value=False)
     window['oscForeword'].update(value=False)
     window['logOutput'].update(value=False)
+    window['layoutStorage'].update(value=False)
+    window['verticalDivider'].update(value='┊')
+    window['cpuDisplay'].update(value='ᴄᴘᴜ: {cpu_percent}%')
+    window['ramDisplay'].update(value='ʀᴀᴍ: {ram_percent}%  ({ram_used}/{ram_total})')
+    window['gpuDisplay'].update(value='ɢᴘᴜ: {gpu_percent}%')
+    window['hrDisplay'].update(value='💓 {hr}')
+    window['playTimeDisplay'].update(value='Play Time: {play_time}')
+    window['mutedDisplay'].update(value='Muted 🔇')
+    window['unmutedDisplay'].update(value='🎙️')
   def updateUI():
     global playMsg
     global msgOutput
     if os.path.isfile('please-do-not-delete.txt'):
-      window['topText'].update(value=topTextToggle)
-      window['topTime'].update(value=topTimeToggle)
-      window['topSong'].update(value=topSongToggle)
-      window['topCPU'].update(value=topCPUToggle)
-      window['topRAM'].update(value=topRAMToggle)
-      window['topNone'].update(value=topNoneToggle)
-      window['bottomText'].update(value=bottomTextToggle)
-      window['bottomTime'].update(value=bottomTimeToggle)
-      window['bottomSong'].update(value=bottomSongToggle)
-      window['bottomCPU'].update(value=bottomCPUToggle)
-      window['bottomRAM'].update(value=bottomRAMToggle)
-      window['bottomNone'].update(value=bottomNoneToggle )
       window['msgDelay'].update(value=message_delay)
       window['messageInput'].update(value=messageString)
       window['message_file_path_display'].update(value=FileToRead)
       window['scroll'].update(value=scrollText)
       window['hideSong'].update(value=hideSong)
-      window['hideMiddle'].update(value=hideMiddle)
       window['hideOutside'].update(value=hideOutside)
       window['showPaused'].update(value=showPaused)
       window['songDisplay'].update(value=songDisplay)
@@ -584,8 +756,6 @@ def uiThread():
       window['topBar'].update(value=topBar)
       window['middleBar'].update(value=middleBar)
       window['bottomBar'].update(value=bottomBar)
-      window['topHRToggle'].update(value=topHRToggle)
-      window['bottomHRToggle'].update(value=bottomHRToggle)
       window['pulsoidToken'].update(value=pulsoidToken)
       window['avatarHR'].update(value=avatarHR) 
       window['updatePrompt'].update(value=updatePrompt)
@@ -598,17 +768,26 @@ def uiThread():
       window['oscListen'].update(value=oscListen)
       window['oscForeword'].update(value=oscForeword)
       window['logOutput'].update(value=logOutput)
+      window['layoutStorage'].update(value=layoutString)
+      window['verticalDivider'].update(value=verticalDivider)
+      window['cpuDisplay'].update(value=cpuDisplay)
+      window['ramDisplay'].update(value=ramDisplay)
+      window['gpuDisplay'].update(value=gpuDisplay)
+      window['hrDisplay'].update(value=hrDisplay)
+      window['playTimeDisplay'].update(value=playTimeDisplay)
+      window['mutedDisplay'].update(value=mutedDisplay)
+      window['unmutedDisplay'].update(value=unmutedDisplay)
     while run:
       if run:
         try:
-          window['messagePreviewFill'].update(value=msgOutput)
+          window['messagePreviewFill'].update(value=msgOutput.replace("\v", "\n"))
+          window['runThing'].update(value=playMsg)
+          window['afk'].update(value=afk)   
+          layoutPreviewBuilder(window['layoutStorage'].get(), window)
         except Exception as e:
           print(e)
         if run:
           time.sleep(.1)
-        if run:
-          window['runThing'].update(value=playMsg)
-          window['afk'].update(value=afk)   
   updateUIThread = Thread(target=updateUI)
   updateUIThread.start()
   if minimizeOnStart:
@@ -619,64 +798,7 @@ def uiThread():
       #print(event, values)
       if event == sg.WIN_CLOSED or event == "Exit":
           break
-      if values['topNone']:
-          window['topText'].update(value=False)
-          window['topTime'].update(value=False)
-          window['topSong'].update(value=False)
-          window['topCPU'].update(value=False)
-          window['topRAM'].update(value=False)
-          window['topHRToggle'].update(value=False)
-      if values['bottomNone']:
-          window['bottomText'].update(value=False)
-          window['bottomTime'].update(value=False)
-          window['bottomSong'].update(value=False)
-          window['bottomCPU'].update(value=False)
-          window['bottomRAM'].update(value=False)
-          window['bottomHRToggle'].update(value=False)
-      if (not event == "topNone") and (not values['topText'] and not values['topTime'] and not values['topSong'] and not values['topCPU'] and not values['topRAM'] and not values['topHRToggle']):
-          window['topNone'].update(value=True)
-      if (not event == "bottomNone") and (not values['bottomText'] and not values['bottomTime'] and not values['bottomSong'] and not values['bottomCPU'] and not values['bottomRAM'] and not values['bottomHRToggle']):
-          window['bottomNone'].update(value=True)
-      if (event == "topText" or event == "topTime" or event == "topSong" or  event == "topCPU" or event == "topRAM" or event == 'topHRToggle'):
-          window['topNone'].update(value=False)
-          if not values[event]:
-              window[event].update(value=False)
-              if (not values['topText'] and not values['topTime'] and not values['topSong'] and not values['topCPU'] and not values['topRAM'] and not values['topHRToggle']):
-                  window["topNone"].update(value=True)
-          else:
-              window[event].update(value=True)
-      if (event == "bottomText" or event == "bottomTime" or event == "bottomSong" or  event == "bottomCPU" or event == "bottomRAM" or event == 'bottomHRToggle'):
-          window['bottomNone'].update(value=False)
-          if not values[event]:
-              window[event].update(value=False)
-              if (not values['bottomText'] and not values['bottomTime'] and not values['bottomSong'] and not values['bottomCPU'] and not values['bottomRAM'] and not values['bottomHRToggle']):
-                  window["bottomNone"].update(value=True)
-          else:
-              window[event].update(value=True)
-      if event == 'topHRToggle' or event == 'bottomHRToggle':
-        if window['pulsoidToken'].get() == '':
-          window['bottomHRToggle'].update(value=False)
-          window['topHRToggle'].update(value=False)
-          sg.popup('Please enter a pulsoid token in the behavior tab!')
-      if values['scroll']:
-          if window['message_file_path_display'].get() == '':
-            window['scroll'].update(value=False)
-            sg.popup('Please select a file in the behavior tab before enabling this option!')
-          else:
-            window['bottomText'].update(value=False)
-            window['bottomTime'].update(value=False)
-            window['bottomSong'].update(value=False)
-            window['bottomCPU'].update(value=False)
-            window['bottomRAM'].update(value=False)
-            window['topText'].update(value=False)
-            window['topTime'].update(value=False)
-            window['topSong'].update(value=False)
-            window['topCPU'].update(value=False)
-            window['topRAM'].update(value=False)
-            window['topHRToggle'].update(value=False)
-            window['bottomHRToggle'].update(value=False)
-            window['topNone'].update(value=True)
-            window['bottomNone'].update(value=True)
+      
       if event == 'Reset':
           answer = sg.popup_yes_no("Are you sure?\nThis will erase all of your entered text and reset the configuration file!")
           if answer == "Yes":
@@ -686,24 +808,11 @@ def uiThread():
           window['message_file_path_display'].update(value=message_file_path)
       if event == 'Apply':
           confVersion = version
-          topTextToggle = values['topText']
-          topTimeToggle = values['topTime']
-          topSongToggle = values['topSong']
-          topCPUToggle = values['topCPU']
-          topRAMToggle = values['topRAM']
-          topNoneToggle = values['topNone']
-          bottomTextToggle = values['bottomText']
-          bottomTimeToggle = values['bottomTime']
-          bottomSongToggle = values['bottomSong']
-          bottomCPUToggle = values['bottomCPU']
-          bottomRAMToggle = values['bottomRAM']
-          bottomNoneToggle = values['bottomNone']
           message_delay = values['msgDelay']
           messageString = values['messageInput']
           FileToRead = window['message_file_path_display'].get()
           scrollText = values['scroll']
           hideSong = values['hideSong']
-          hideMiddle = values['hideMiddle']
           hideOutside = values['hideOutside']
           showPaused = values['showPaused']
           songDisplay = values['songDisplay']
@@ -715,8 +824,6 @@ def uiThread():
           topBar = values['topBar']
           middleBar = values['middleBar']
           bottomBar = values['bottomBar']
-          topHRToggle = values['topHRToggle']
-          bottomHRToggle = values['bottomHRToggle']
           pulsoidToken = values['pulsoidToken']
           avatarHR = values['avatarHR']
           blinkOverride = values['blinkOverride']
@@ -733,9 +840,18 @@ def uiThread():
           oscListen = values['oscListen']
           oscForeword = values['oscForeword']
           logOutput = values['logOutput']
+          layoutString = values['layoutStorage']
+          verticalDivider = values['verticalDivider']
+          cpuDisplay = values['cpuDisplay']
+          ramDisplay = values['ramDisplay']
+          gpuDisplay = values['gpuDisplay']
+          hrDisplay = values['hrDisplay']
+          playTimeDisplay = values['playTimeDisplay']
+          mutedDisplay = values['mutedDisplay']
+          unmutedDisplay = values['unmutedDisplay']
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([confVersion, topTextToggle, topTimeToggle, topSongToggle, topCPUToggle, topRAMToggle, topNoneToggle, bottomTextToggle, bottomTimeToggle, bottomSongToggle, bottomCPUToggle, bottomRAMToggle, bottomNoneToggle, message_delay, messageString, FileToRead, scrollText, hideSong, hideMiddle, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, topHRToggle, bottomHRToggle, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput]))
+              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
           
@@ -744,10 +860,25 @@ def uiThread():
       if event == 'Open Github Page':
         webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools')
       if event == 'About':
-        about_popop_layout =  [[sg.Text('OSC Chat Tools by', font=('Arial', 11, 'bold'), pad=(0, 20)), sg.Text('Lioncat6', font=('Arial', 12, 'bold'), text_color='lime')],[sg.Text('Modules Used:',font=('Arial', 11, 'bold'))], [sg.Text('- PySimpleGUI\n - argparse\n - datetime\n - pythonosc (udp_client)\n - keyboard\n - asyncio\n - psutil\n - webbrowser\n - winsdk (windows.media.control)\n - websocket-client')], [sg.Button('Ok')]]
-        about_window = sg.Window('About', about_popop_layout)
+        about_popop_layout =  [[sg.Text('OSC Chat Tools by', font=('Arial', 11, 'bold'), pad=(0, 20)), sg.Text('Lioncat6', font=('Arial', 12, 'bold'))],[sg.Text('Modules Used:',font=('Arial', 11, 'bold'))], [sg.Text('- PySimpleGUI\n - argparse\n - datetime\n - pythonosc (udp_client)\n - keyboard\n - asyncio\n - psutil\n - webbrowser\n - winsdk (windows.media.control)\n - websocket-client')], [sg.Button('Ok')]]
+        about_window = sg.Window('About', about_popop_layout, keep_on_top=True)
         event, values = about_window.read()
         about_window.close()
+      if event =='manualHelp':
+        manual_help_layout =  [[sg.Column([
+          [sg.Text('Manual Editing Guide', font=('Arial', 11, 'bold'))],
+          [sg.Text('Warning: Manually editing the layout can cause errors if done incorrectly!', text_color='#e60000')],
+          [sg.Text('Note: While putting plain text in the layout editor is supported,\nit will break the visual editor!', text_color="#6699ff", justification='center')],
+          [sg.Text('Objects:', font=('Arial', 10, 'bold'))],
+          [sg.Text(str(layoutDisplayDict).replace("\"", "").replace("(", "(data)").replace("\'", "").replace(",", "\n").replace("{", "").replace("}", "").replace(": ", " : "), font=('Arial', 11, 'bold'), justification='center')],
+          [sg.Text('Data Guide (A data value is REQUIRED!):', font=('Arial', 10, 'bold'))],
+          [sg.Text("0 : No Data\n1 : Vertical Line\n2 : New Line\n3 : Both Vertical Line and New Line", font=('Arial', 11, 'bold'), justification='center')],
+        ],element_justification='center')]                      
+        ,[sg.Text()], 
+        [sg.Button('Ok')]]
+        manual_help_window = sg.Window('About', manual_help_layout, keep_on_top=True)
+        event, values = manual_help_window.read()
+        manual_help_window.close()
       if event == 'runThing':
         msgPlayToggle()
       if event == 'Open Config File':
@@ -802,6 +933,9 @@ def uiThread():
       if event == 'pulsoidError':
         playMsg = False
         sg.popup('Pulsoid Error: Please double check your token in the behavior tab and then toggle run to try again.\n\nIf this problem persists, please report an issue on github: https://github.com/Lioncat6/OSC-Chat-Tools/issues')
+      if event == 'scrollError':
+        playMsg = False
+        sg.popup('File Read Error: Please make sure you have a file selected to scroll though in the behavior tab, then toggle Run to try again!\nFull Error:\n' + str(values[event]), keep_on_top="True")
       if event == 'updateAvailable':
         update_available_layout = [
               [sg.Column([
@@ -843,6 +977,74 @@ def uiThread():
         window['oscForeword'].update(value=False)
         sg.popup('Please make sure no other program is listening to the osc and try re-enabling osc Listen/Foreword options.\n\nOSC Listen and Foreword have been disabled to this won\'t happen on startup')
         window.write_event_value('Apply', '')
+      def layoutStorageAdd(a):
+        if len(ast.literal_eval("["+window['layoutStorage'].get().replace("{", "\"").replace("}", "\",")[:-1]+"]")) < 15:
+          window['layoutStorage'].update(value=values['layoutStorage']+" {"+a+"}")
+        else:
+          sg.popup("You have reached the limit of objects in the layout.\nYou can still add more in the manual edit section,\nhowever the UI will not reflect it")
+      if event == 'addText':
+        layoutStorageAdd("text(0)")
+      if event == 'addTime':
+        layoutStorageAdd("time(0)")
+      if event == 'addSong':
+        layoutStorageAdd("song(0)")
+      if event == 'addCPU':
+        layoutStorageAdd("cpu(0)")
+      if event == 'addRAM':
+        layoutStorageAdd("ram(0)")
+      if event == 'addGPU':
+        layoutStorageAdd("gpu(0)")
+      if event == 'addHR':
+        layoutStorageAdd("hr(0)")
+      if event == 'addMute':
+        layoutStorageAdd("mute(0)")
+      if event == 'addSTT':
+        layoutStorageAdd("stt(0)")
+      if event == 'addDiv':
+        layoutStorageAdd("div(0)")
+      if event == 'addPlaytime':
+        layoutStorageAdd("playtime(0)")
+      def layoutMove(pos, up):
+        layList = ast.literal_eval("["+window['layoutStorage'].get().replace("{", "\"").replace("}", "\",")[:-1]+"]")
+        pos = pos-1
+        if up:
+          layList.insert(pos-1, layList.pop(pos))
+        else:
+          layList.insert(pos+1, layList.pop(pos))
+        window['layoutStorage'].update(value=str(layList).replace("[", "").replace("\']", "}").replace("\"]", "}").replace("\",", "}").replace("\',", "}").replace("\"", "{").replace("\'", "{").replace("]", ""))
+      def toggleValues(pos, data):
+        layList = ast.literal_eval("["+window['layoutStorage'].get().replace("{", "\"").replace("}", "\",")[:-1]+"]")
+        pos = pos-1
+        editpos = layList[pos].find("(")+1
+        if data == 1:
+          layList[pos] = layList[pos][:editpos] + '1' + layList[pos][editpos+1:]
+        elif data == 2:
+          layList[pos] = layList[pos][:editpos] + '2' + layList[pos][editpos+1:]
+        elif data == 3:
+          layList[pos] = layList[pos][:editpos] + '3' + layList[pos][editpos+1:]
+        else:
+          layList[pos] = layList[pos][:editpos] + '0' + layList[pos][editpos+1:]
+        if layList[pos][editpos+1:editpos+2] != ")":
+          layList[pos] = layList[pos][:editpos+1] + ')' + layList[pos][editpos+1:]
+        window['layoutStorage'].update(value=str(layList).replace("[", "").replace("\']", "}").replace("\"]", "}").replace("\",", "}").replace("\',", "}").replace("\"", "{").replace("\'", "{").replace("]", ""))
+      for x in range(1, 16):
+        if event == "delete"+str(x):
+          listMod = ast.literal_eval("["+window['layoutStorage'].get().replace("{", "\"").replace("}", "\",")[:-1]+"]")
+          del listMod[x-1]
+          window['layoutStorage'].update(value=str(listMod).replace("[", "").replace("\']", "}").replace("\"]", "}").replace("\",", "}").replace("\',", "}").replace("\"", "{").replace("\'", "{").replace("]", ""))
+        if event == "up"+str(x):
+          layoutMove(x, True)
+        if event == "down"+str(x):
+          layoutMove(x, False)
+        if event == "divider"+str(x) or event == "newLine"+str(x):
+          if values['divider'+str(x)] and values['newLine'+str(x)]:
+            toggleValues(x, 3)
+          elif values['divider'+str(x)] and (not values['newLine'+str(x)]):
+            toggleValues(x, 1)
+          elif (not values['divider'+str(x)]) and values['newLine'+str(x)]:
+            toggleValues(x, 2)
+          else:
+            toggleValues(x, 0)
   window.close()
   playMsg = False
   run = False
@@ -981,16 +1183,22 @@ if __name__ == "__main__":
                     # Forward the data to each forward socket
                     for forward_socket, (ip, port) in zip(forward_sockets, forward_addresses):
                         forward_socket.sendto(data, (ip, port))
-                except:
+                except Exception as e:
+                  time.sleep(.01)
                   pass
+                
 
-        if oscForeword or oscListen:
+        if oscForeword:
             if not runForewordServer:
+              if forewordServerLastUsed != oscForeword:
+                outputLog("Foreword Server Toggled On... Waiting For Listen Server To Change Ports...")
+                time.sleep(3)
+              else:
                 dataSenderThread = Thread(target=dataSender)
                 dataSenderThread.start()
         time.sleep(.1)
         if oscListenAddressMemory != oscListenAddress or oscListenPortMemory != oscListenPort or oscForewordPortMemory != oscForewordPort or oscForewordAddressMemory != oscForewordAddress or useForewordMemory != oscForeword or useForewordMemory != oscForeword:
-            if oscForeword or oscListen:
+            if oscForeword:
                 #print('Foreword/Listen Server Config Updated, Restarting Forwarding Server...\n')
                 outputLog('Foreword/Listen Server Config Updated, Restarting Forwarding Server...\n')
                 runForewordServer = False
@@ -998,7 +1206,11 @@ if __name__ == "__main__":
                 if not runForewordServer:
                     dataSenderThread = Thread(target=dataSender)
                     dataSenderThread.start()
-        if runForewordServer and not(oscForeword or oscListen):
+        if runForewordServer and not(oscForeword):
+            if listen_socket is not None:
+                listen_socket.close()
+            for forward_socket in forward_sockets:
+                forward_socket.close()
             runForewordServer = False
             #print('No OSC Foreword/Listening Options are selected, stopping Forwarding Server...')
             outputLog('No OSC Foreword/Listening Options are selected, stopping Forwarding Server...')
@@ -1016,13 +1228,20 @@ if __name__ == "__main__":
       global oscListenPort
       global oscListen
       global isListenServerRunning
+      global forewordServerLastUsed
       while run:
           if oscListen:
               parser = argparse.ArgumentParser()
-              parser.add_argument("--ip",
+              if oscForeword:
+                parser.add_argument("--ip",
                   default='127.0.0.1', help="The ip to listen on")
-              parser.add_argument("--port",
-                  type=int, default=61394, help="The port to listen on")
+                parser.add_argument("--port",
+                    type=int, default=61394, help="The port to listen on")
+              else:
+                parser.add_argument("--ip",
+                  default=oscListenAddress, help="The ip to listen on")
+                parser.add_argument("--port",
+                    type=int, default=oscListenPort, help="The port to listen on")
               args = parser.parse_args()
               def listenServerThread():
                   global isListenServerRunning
@@ -1030,6 +1249,11 @@ if __name__ == "__main__":
                   global oscListenPort
                   global listenServer
                   try:
+                      if oscForeword:
+                        location = "127.0.0.1:61394"
+                      else:
+                        location = f"{str(oscListenAddress)}:{str(oscListenPort)}"
+                      outputLog('Attempting To Start Listen Server on '+location)
                       listenServer = osc_server.ThreadingOSCUDPServer(
                           (args.ip, args.port), dispatcher)
                       #print("Osc Listen Server Serving on {}".format(listenServer.server_address))
@@ -1042,7 +1266,7 @@ if __name__ == "__main__":
                       listenServer.serve_forever()           
                   except Exception as e:
                       #print('Osc Listen Server Failed to Start, Retying...'+str(e))
-                      outputLog('Osc Listen Server Failed to Start, Retying...'+str(e))
+                      outputLog('Osc Listen Server Failed to Start, Retying...\n'+str(e))
                       pass
 
               if not isListenServerRunning:
@@ -1054,6 +1278,15 @@ if __name__ == "__main__":
             isListenServerRunning = False
             listenServer.shutdown()
             listenServer.server_close()
+          if oscForeword != forewordServerLastUsed  and isListenServerRunning:
+            outputLog('Foreword Server Toggled, Restarting Listen Server...')
+            isListenServerRunning = False
+            try:
+              listenServer.shutdown()
+              listenServer.server_close()
+            except:
+              pass
+            forewordServerLastUsed = oscForeword
           time.sleep(.5)
 
   oscServerManagerThread = Thread(target=oscListenServerManager)
@@ -1062,21 +1295,8 @@ if __name__ == "__main__":
   
   
   def sendMsg(a):
-    global cpuInt
     global msgOutput
     global message_delay
-    global topTextToggle
-    global topTimeToggle
-    global topSongToggle
-    global topCPUToggle
-    global topRAMToggle
-    global topNoneToggle
-    global bottomTextToggle
-    global bottomTimeToggle
-    global bottomSongToggle
-    global bottomCPUToggle
-    global bottomRAMToggle
-    global bottomNoneToggle
     global messageString
     global playMsg
     global run
@@ -1087,8 +1307,6 @@ if __name__ == "__main__":
     global topBar
     global middleBar
     global bottomBar
-    global topHRToggle
-    global bottomHRToggle
     global pulsoidToken
     global errorExit
     global avatarHR
@@ -1096,6 +1314,24 @@ if __name__ == "__main__":
     global blinkSpeed
     global useAfkKeybind
     global toggleBeat
+    global layoutString
+    global verticalDivider
+    global cpuDisplay
+    global ramDisplay
+    global gpuDisplay
+    global hrDisplay
+    global playTimeDisplay
+    global mutedDisplay
+    global unmutedDisplay
+
+    #stupid crap
+    global letsGetThatTime
+    global songInfo
+    global cpuDat
+    global ramDat
+    global hrInfo
+    global gpuDat
+    #end of stupid crap
     if playMsg:
       #preassembles
       now = datetime.now()
@@ -1113,11 +1349,13 @@ if __name__ == "__main__":
         artist = current_media_info['artist']
         title = current_media_info['title']
         album_title = current_media_info['album_title'] 
+        album_artist = current_media_info['album_artist'] 
         mediaPlaying = mediaIs('PLAYING')
       except Exception as e:
         artist = 'Can\'t get artist'
         title = 'Can\'t get title'
         album_title = 'Can\'t get album title'
+        album_artist = 'Can\'t get album artist'
         mediaPlaying = False
         if 'TARGET_PROGRAM' in str(e):
           pass
@@ -1129,122 +1367,101 @@ if __name__ == "__main__":
             except:
               pass
       if mediaPlaying or (not showPaused):
-        songInfo= songDisplay.format(artist=artist,title=title,album_title=album_title)
+        songInfo = songDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist))
+        
       else:
-        songInfo=songDisplay.format(artist=artist,title=title,album_title=album_title)+" (paused)"
+        songInfo=songDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist))+" (paused)"
       letsGetThatTime =" "+str(current_hour)+":"+current_minute+dayThing
-      cpu = " Cpu: "+ str(psutil.cpu_percent())+"%"
-      ram = " Ram: "+str(int(psutil.virtual_memory()[2]))+"%"
-      hrInfo = " 💓"+str(heartRate)
+      cpu_percent = str(psutil.cpu_percent())
+      ram_percent = str(int(psutil.virtual_memory()[2]))
+      ram_used = str(round(int(psutil.virtual_memory()[0])/1073741824-int(psutil.virtual_memory()[1])/1073741824, 1))
+      ram_available = str(round(int(psutil.virtual_memory()[1])/1073741824, 1))
+      ram_total = str(round(int(psutil.virtual_memory()[0])/1073741824, 1))
+      gpu_percent = str(round((GPUtil.getGPUs()[0].load*100), 1))
+      hr = str(heartRate)
+      cpuDat = cpuDisplay.format_map(defaultdict(str, cpu_percent=cpu_percent))
+      ramDat = ramDisplay.format_map(defaultdict(str, ram_percent=ram_percent, ram_available=ram_available, ram_total=ram_total, ram_used=ram_used))
+      gpuDat = gpuDisplay.format_map(defaultdict(str, gpu_percent=gpu_percent))
+      hrInfo = hrDisplay.format_map(defaultdict(str, hr=hr))
       #message Assembler:
       if not scrollText and not afk:
-        if topNoneToggle or bottomNoneToggle:
-          toSend = ''
-          if topSongToggle or bottomSongToggle:
-            if showOnChange:
-              if tickCount != 0:
-                toSend = toSend+songInfo
-                songName = current_media_info['title']
-                tickCount = tickCount -1
-              if current_media_info['title'] != songName:
-                toSend = toSend+songInfo
-                songName = current_media_info['title']
-                tickCount = songChangeTicks -1
+        
+        def msgGen(a):
+          global verticalDivider
+          global letsGetThatTime
+          global songInfo
+          global cpuDat
+          global ramDat
+          global hrInfo
+          global msgOutput
+          global hideSong
+          global showPaused
+          global useHR
+          global gpuDat
+          useHR = False
+          def checkData(msg, data):
+            lf = "\v"
+            if data == 1 or data == 3:
+              msg = msg + " " + verticalDivider
+            if data == 2 or data == 3:
+              msg =  msg + lf
+            return msg
+          def time(data):
+            global letsGetThatTime
+            return(checkData(letsGetThatTime, data))
+          def text(data):
+            return(checkData(a.replace("\\n", "\v").replace("\\v", "\v"), data))
+          def song(data):
+            global songInfo
+            if hideSong and not mediaPlaying:
+              return ''
             else:
-              if not (hideSong and not mediaPlaying):
-                toSend = toSend+songInfo
-              else: 
-                toSend = ''
-          if topCPUToggle or bottomCPUToggle:
-            toSend = toSend+cpu
-          if topRAMToggle or bottomRAMToggle:
-            toSend = toSend+ram
-          if topTimeToggle or bottomTimeToggle:
-            toSend = toSend+letsGetThatTime
-          if topTextToggle or bottomTextToggle:
-            toSend = toSend + a
-          if topHRToggle or bottomHRToggle:
-            toSend = toSend + hrInfo
-          if toSend != '':
-            if not hideOutside:
-              msgOutput = topBar+toSend+" "+bottomBar
+              return(checkData(songInfo, data))
+          def cpu(data):
+            global cpuDat
+            return (checkData(cpuDat, data))
+          def ram(data):
+            return (checkData(ramDat, data))
+          def gpu(data):
+            return (checkData(gpuDat, data))
+          def hr(data):
+            global hrInfo
+            global useHR
+            useHR = True
+            return (checkData(hrInfo, data))
+          def mute(data):
+            return (checkData("Coming Soon", data))
+          def stt(data):
+            return (checkData("Coming Soon", data))
+          def div(data):
+            return (checkData(middleBar, data))
+          def mute(data):
+            if isMute: 
+              return (checkData(mutedDisplay, data))
             else:
-              msgOutput = toSend
-          else:
-            msgOutput = ''
-        else:
-          toSendTop = ''
-          toSendBottom = ''
-          if topSongToggle:
-            if showOnChange:
-              if tickCount != 0:
-                toSendTop = toSendTop+songInfo
-                songName = current_media_info['title']
-                tickCount = tickCount -1
-              if current_media_info['title'] != songName:
-                toSendTop = toSendTop+songInfo
-                songName = current_media_info['title']
-                tickCount = songChangeTicks -1
+              return (checkData(unmutedDisplay, data))
+          def playtime(data):
+            minutes, sec = divmod(playTime, 60)
+            hours, remainder = divmod(playTime, 3600)
+            if playTime < 3600:
+              return(checkData(f'{minutes:02d}:{sec:02d}', data))
             else:
-              if not (hideSong and not mediaPlaying):
-                toSendTop = toSendTop+songInfo
-              else: 
-                toSendTop = ''
-          if topCPUToggle:
-            toSendTop = toSendTop+cpu
-          if topRAMToggle:
-            toSendTop = toSendTop+ram
-          if topTimeToggle:
-            toSendTop = toSendTop+letsGetThatTime
-          if topTextToggle:
-            toSendTop = toSendTop + a
-          if topHRToggle:
-            toSendTop = toSendTop + hrInfo
-          if bottomSongToggle:
-            if showOnChange:
-              if tickCount != 0:
-                toSendBottom = toSendBottom+songInfo
-                songName = current_media_info['title']
-                tickCount = tickCount -1
-              if current_media_info['title'] != songName:
-                toSendBottom = toSendBottom+songInfo
-                songName = current_media_info['title']
-                tickCount = songChangeTicks -1
-            else:
-              if not (hideSong and not mediaPlaying):
-                toSendBottom = toSendBottom+songInfo
-              else: 
-                toSendBottom = ''
-          if bottomCPUToggle:
-            toSendBottom = toSendBottom+cpu
-          if bottomRAMToggle:
-            toSendBottom = toSendBottom+ram
-          if bottomTimeToggle:
-            toSendBottom = toSendBottom+letsGetThatTime
-          if bottomTextToggle :
-            toSendBottom = toSendBottom + a
-          if bottomHRToggle:
-            toSendBottom = toSendBottom + hrInfo
-          if not(toSendBottom == '' or toSendTop == ''):
-            if not hideOutside and not hideMiddle:
-              msgOutput = topBar+toSendTop+" "+middleBar+toSendBottom+" "+bottomBar
-            elif hideOutside and not hideMiddle:
-              msgOutput = toSendTop+" "+middleBar+toSendBottom+' '
-            elif not hideOutside and hideMiddle:
-              msgOutput = topBar+toSendTop+" "+toSendBottom+" "+bottomBar
-            elif hideOutside and hideMiddle:
-              msgOutput = toSendTop+" "+toSendBottom+' '
-          elif toSendBottom == '' and toSendTop == '':
-            msgOutput = ''
-          elif toSendBottom == '' or toSendTop == '':
-            if not hideOutside and not hideMiddle:
-              msgOutput = topBar+toSendTop+toSendBottom+" "+bottomBar
-            elif hideOutside and not hideMiddle:
-              msgOutput = toSendTop+toSendBottom+' '
-            elif not hideOutside and hideMiddle:
-              msgOutput = topBar+toSendTop+toSendBottom+" "+bottomBar
-            elif hideOutside and hideMiddle:
-              msgOutput = toSendTop+toSendBottom+' '
+              return(checkData(f'{hours:02d}:{minutes:02d}', data))
+          try:
+            msgOutput = eval("f'"f'{layoutString}'"'")
+          except Exception as e:
+            msgOutput = "Layout Error!\v"+str(e)
+          if msgOutput[-len(verticalDivider+" "):] == verticalDivider+" ":
+            msgOutput = msgOutput[:-len(verticalDivider+" ")-1]
+          if msgOutput[-len(middleBar+" "):] == middleBar+" ":
+            msgOutput = msgOutput[:-len(middleBar+" ")]
+          if "\v " in msgOutput[-2:]:
+            msgOutput = msgOutput[:-2]
+          if "\v" in msgOutput[-2:]:
+            msgOutput = msgOutput[:-1]
+          if not hideOutside:
+            msgOutput = topBar + " "+ msgOutput + " " +bottomBar 
+        msgGen(a)
       elif afk:
         msgOutput = topBar+a+" "+bottomBar
       else:
@@ -1267,7 +1484,8 @@ def hrConnectionThread():
     global blinkSpeed
     global useAfkKeybind
     global toggleBeat
-    if (topHRToggle or bottomHRToggle or avatarHR) and (playMsg or avatarHR):
+    global useHR
+    if (useHR or avatarHR) and (playMsg or avatarHR):
       if not hrConnected:
         try:
           ws = create_connection("wss://dev.pulsoid.net/api/v1/data/real_time?access_token="+pulsoidToken+"&response_mode=text_plain_only_heart_rate")
@@ -1284,6 +1502,7 @@ def hrConnectionThread():
                     client.send_message("/avatar/parameters/HR", int(event))
                   except:
                     pass
+                    time.sleep(.01)
                   if not run or not hrConnected:
                       break
           pulsoidListenThread = Thread(target=pulsoidListen)
@@ -1316,7 +1535,7 @@ def hrConnectionThread():
           if windowAccess != None:
             if playMsg:
               windowAccess.write_event_value('pulsoidError', e)
-    if ((not topHRToggle and not bottomHRToggle and not avatarHR) or not (playMsg or avatarHR)) and hrConnected:
+    if ((not useHR and not avatarHR) or not (playMsg or avatarHR)) and hrConnected:
       hrConnected = False
       #print('Pulsoid Connection Stopped')
       outputLog('Pulsoid Connection Stopped')
@@ -1341,14 +1560,18 @@ def runmsg():
       sendMsg('AFK')
       sendMsg('ㅤ')
     elif scrollText:
-      fileToOpen = open(FileToRead, "r")
-      fileText = fileToOpen.read()
-      if textParseIterator + 144 < len(fileText):
-        sendMsg(fileText[textParseIterator:textParseIterator+144])
-        textParseIterator = textParseIterator +144
-      else: 
-        sendMsg(fileText[textParseIterator:textParseIterator+len(fileText)-textParseIterator])
-        textParseIterator = 0
+      try:
+        fileToOpen = open(FileToRead, "r", encoding="utf-8")
+        fileText = fileToOpen.read()
+        if textParseIterator + 144 < len(fileText):
+          sendMsg(fileText[textParseIterator:textParseIterator+144])
+          textParseIterator = textParseIterator +144
+        else: 
+          sendMsg(fileText[textParseIterator:textParseIterator+len(fileText)-textParseIterator])
+          textParseIterator = 0
+      except Exception as e:
+        windowAccess.write_event_value('scrollError', e)
+        sendMsg('')
     else:
       sendMsg('')
     
@@ -1367,13 +1590,7 @@ def msgPlayToggle():
     playMsg = True  
     msgThread = Thread(target=runmsg)
     msgThread.start()
-    """cpuThread = Thread(target=cpuCheck)
-    cpuThread.start()"""
     time.sleep(.5) 
-"""def cpuCheck():
-  while playMsg:
-    global cpuInt
-    cpuInt = int(psutil.cpu_percent(2)*10)"""
     
 def afkCheck():
   global isAfk
@@ -1400,8 +1617,15 @@ def restartMsg():
   msgThread.start()
 
 
-"""cpuThread = Thread(target=cpuCheck)
-cpuThread.start()"""
+def playTimeCheck():
+  global playTime
+  while run:
+    gc.collect() # Garbage Collector
+    playTime = playTime +1
+    time.sleep(1)
+
+playTimeCheckThread = Thread(target=playTimeCheck)
+playTimeCheckThread.start()
 msgThread = Thread(target=runmsg)
 msgThread.start()
 mainUI = Thread(target=uiThread)
