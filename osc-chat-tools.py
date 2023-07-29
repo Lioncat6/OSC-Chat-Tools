@@ -128,16 +128,6 @@ voiceVolume = 0
 isUsingEarmuffs = False
 
 
-
-"""def is_exe_running(exe_name):
-    for process in psutil.process_iter():
-        try:
-            if process.name() == exe_name:
-                return True
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            pass
-    return False"""
-
 def afk_handler(unused_address, args):
     global isAfk
     isAfk = args
@@ -503,7 +493,7 @@ def uiThread():
                 [sg.Text('🎵Song', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Customizable song display', ), sg.Push(), sg.Button('Add to Layout', key='addSong')],
                 [sg.Text('⏱️CPU', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display CPU Utilization %', ), sg.Push(), sg.Button('Add to Layout', key='addCPU')],
                 [sg.Text('🚦RAM', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display RAM Usage %', ), sg.Push(), sg.Button('Add to Layout', key='addRAM')],
-                [sg.Text('⏳GPU', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display GPU Utilization %', ), sg.Push(), sg.Button('Add to Layout', key='addGPU')],
+                [sg.Text('⏳GPU', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display GPU Utilization %', ), sg.Push(), sg.Button('Coming Soon', disabled=True, key='addGPU')],
                 [sg.Text('💓HR', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display Heart Rate', ), sg.Push(), sg.Button('Add to Layout', key='addHR')],
                 [sg.Text('🔇Mute', font=('Arial', 12, 'bold')), sg.Text('*', text_color='cyan', pad=(0, 0), font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display Mic Mute Status', ), sg.Push(), sg.Button('Add to Layout', key='addMute')],
                 [sg.Text('⌚Play Time', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Show Play Time', ), sg.Push(), sg.Button('Add to Layout',  key='addPlaytime')],
@@ -1377,7 +1367,8 @@ if __name__ == "__main__":
       ram_used = str(round(int(psutil.virtual_memory()[0])/1073741824-int(psutil.virtual_memory()[1])/1073741824, 1))
       ram_available = str(round(int(psutil.virtual_memory()[1])/1073741824, 1))
       ram_total = str(round(int(psutil.virtual_memory()[0])/1073741824, 1))
-      gpu_percent = str(round((GPUtil.getGPUs()[0].load*100), 1))
+      #gpu_percent = str(round((GPUtil.getGPUs()[0].load*100), 1))
+      gpu_percent = "0"
       hr = str(heartRate)
       cpuDat = cpuDisplay.format_map(defaultdict(str, cpu_percent=cpu_percent))
       ramDat = ramDisplay.format_map(defaultdict(str, ram_percent=ram_percent, ram_available=ram_available, ram_total=ram_total, ram_used=ram_used))
@@ -1620,7 +1611,6 @@ def restartMsg():
 def playTimeCheck():
   global playTime
   while run:
-    gc.collect() # Garbage Collector
     playTime = playTime +1
     time.sleep(1)
 
