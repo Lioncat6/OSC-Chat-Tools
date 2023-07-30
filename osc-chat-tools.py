@@ -118,7 +118,7 @@ gpuDisplay = 'ɢᴘᴜ: {gpu_percent}%'
 hrDisplay = '💓 {hr}'
 playTimeDisplay = 'Play Time: {play_time}'
 mutedDisplay = 'Muted 🔇'
-unmutedDisplay = '🎙️'
+unmutedDisplay = '🔊'
 
 isAfk = False
 isVR = False #Never used as the game never actually updates vrmode 
@@ -649,11 +649,10 @@ def uiThread():
                 ], size=(379, 90))],
               [sg.Column([
                   [sg.Text('OSC Forwarding Options\nRepeats all listened data to another address for other programs')],
-                  [sg.Text('Warning: Do Not Use with High Traffic OSC Programs\nlike VRCFT!', justification='center')],
                   [sg.Checkbox('Use OSC Forwarding', key='oscForeword')],
                   [sg.Text('Address: '), sg.Input('', size=(30, 1), key='oscForewordAddress')],
                   [sg.Text('Port: '), sg.Input('', size=(30, 1), key='oscForewordPort')]
-                ], size=(379, 170))]
+                ], size=(379, 150))]
               ]  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='turquoise4')]]
   
   output_layout =  [[sg.Column(
@@ -725,7 +724,7 @@ def uiThread():
     window['hrDisplay'].update(value='💓 {hr}')
     window['playTimeDisplay'].update(value='Play Time: {play_time}')
     window['mutedDisplay'].update(value='Muted 🔇')
-    window['unmutedDisplay'].update(value='🎙️')
+    window['unmutedDisplay'].update(value='🔊')
   def updateUI():
     global playMsg
     global msgOutput
@@ -1374,6 +1373,13 @@ if __name__ == "__main__":
       ramDat = ramDisplay.format_map(defaultdict(str, ram_percent=ram_percent, ram_available=ram_available, ram_total=ram_total, ram_used=ram_used))
       gpuDat = gpuDisplay.format_map(defaultdict(str, gpu_percent=gpu_percent))
       hrInfo = hrDisplay.format_map(defaultdict(str, hr=hr))
+      minutes, sec = divmod(playTime, 60)
+      hours, remainder = divmod(playTime, 3600)
+      if playTime < 3600:
+        play_time =  f'{minutes:02d}:{sec:02d}'
+      else:
+        play_time =  f'{hours:02d}:{minutes:02d}'
+      playDat = playTimeDisplay.format_map(defaultdict(str, play_time=play_time))
       #message Assembler:
       if not scrollText and not afk:
         
@@ -1432,12 +1438,7 @@ if __name__ == "__main__":
             else:
               return (checkData(unmutedDisplay, data))
           def playtime(data):
-            minutes, sec = divmod(playTime, 60)
-            hours, remainder = divmod(playTime, 3600)
-            if playTime < 3600:
-              return(checkData(f'{minutes:02d}:{sec:02d}', data))
-            else:
-              return(checkData(f'{hours:02d}:{minutes:02d}', data))
+            return(checkData(playDat, data))
           try:
             msgOutput = eval("f'"f'{layoutString}'"'")
           except Exception as e:
