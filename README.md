@@ -20,16 +20,16 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
    - PySimpleGUI
    - argparse
    - datetime
-   - pythonosc
+   - python-osc
    - keyboard
    - asyncio
    - psutil
-   - webbrowser
    - winsdk
    - websocket-client
  - In a command prompt window in the folder the `osc-chat-tools.py` is located in:
  - `pip install PyInstaller`
- - `python -m PyInstaller -wF osc-chat-tools.py`
+ - `python -m PyInstaller -wF --icon=oscicon.ico --clean osc-chat-tools.py`
+ - Or run the included `build.bat` file
  - The resulting exe will be located in the `dist` folder
 
 ## Open up `osc-chat-tools.exe` and the code will do the rest!
