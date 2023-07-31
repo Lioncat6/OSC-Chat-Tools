@@ -1,7 +1,8 @@
+echo 
 pip install PySimpleGUI
 pip install argparse
 pip install datetime
-pip install pythonosc
+pip install python-osc
 pip install keyboard
 pip install asyncio
 pip install psutil
