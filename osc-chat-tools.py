@@ -4,7 +4,6 @@ import threading
 from threading import Thread, Lock
 import ast
 import requests
-import gc
 
 from collections import defaultdict
 
@@ -27,7 +26,7 @@ from websocket import create_connection # websocket-client
 from pythonosc.dispatcher import Dispatcher
 from pythonosc import osc_server
 import socket
-import GPUtil
+#import GPUtil
 run = True
 playMsg = True
 textParseIterator = 0
@@ -60,7 +59,7 @@ songDisplay = ' 🎵{title} ᵇʸ {artist}🎵' #in conf
 songName = ''
 showOnChange = False #in conf
 songChangeTicks = 1 #in conf
-tickCount = 2 #in conf
+tickCount = 2
 minimizeOnStart = False #in conf
 keybind_run = 'p' #in conf
 keybind_afk = 'end' #in conf
@@ -502,23 +501,23 @@ def uiThread():
                 
                 ],size=(350, 520), scrollable=True, vertical_scroll_only=True, element_justification='center'), sg.Column([
                   [sg.Text('Arrange Elements', font=('Arial', 12, 'bold'))],
-                  [sg.Text('↩ = New Line  ┋ = Vertical Divider')],
+                  [sg.Text('➥ = New Line  ┋ = Vertical Divider')],
                   [sg.Column([
-                    [sg.Column([[sg.Button('❌', key='delete1'), sg.Button('⬆️', disabled=True, key='up1'), sg.Button('⬇️', key='down1'), sg.Text('---', key='text1',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', key="divider1", enable_events=True, font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine1")]], key='layout1', element_justification='left')],
-                    [sg.Column([[sg.Button('❌', key='delete2'), sg.Button('⬆️', key='up2'), sg.Button('⬇️', key='down2'), sg.Text('---', key='text2',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider2",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine2")]], key='layout2', element_justification='left')],
-                    [sg.Column([[sg.Button('❌', key='delete3'), sg.Button('⬆️', key='up3'), sg.Button('⬇️', key='down3'), sg.Text('---', key='text3',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider3",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine3")]], key='layout3', element_justification='left')],
-                    [sg.Column([[sg.Button('❌', key='delete4'), sg.Button('⬆️', key='up4'), sg.Button('⬇️', key='down4'), sg.Text('---', key='text4',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider4",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine4")]], key='layout4', element_justification='left')],
-                    [sg.Column([[sg.Button('❌', key='delete5'), sg.Button('⬆️', key='up5'), sg.Button('⬇️', key='down5'), sg.Text('---', key='text5',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider5",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine5")]], key='layout5', element_justification='left')],
-                    [sg.Column([[sg.Button('❌', key='delete6'), sg.Button('⬆️', key='up6'), sg.Button('⬇️', key='down6'), sg.Text('---', key='text6',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider6",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine6")]], key='layout6', element_justification='left')],
-                    [sg.Column([[sg.Button('❌', key='delete7'), sg.Button('⬆️', key='up7'), sg.Button('⬇️', key='down7'), sg.Text('---', key='text7',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider7",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine7")]], key='layout7', element_justification='left')],
-                    [sg.Column([[sg.Button('❌', key='delete8'), sg.Button('⬆️', key='up8'), sg.Button('⬇️', key='down8'), sg.Text('---', key='text8',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider8",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine8")]], key='layout8', element_justification='left')],
-                    [sg.Column([[sg.Button('❌', key='delete9'), sg.Button('⬆️', key='up9'), sg.Button('⬇️', key='down9'), sg.Text('---', key='text9',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider9",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine9")]], key='layout9', element_justification='left')],
-                    [sg.Column([[sg.Button('❌', key='delete10'), sg.Button('⬆️', key='up10'), sg.Button('⬇️', key='down10'), sg.Text('---', key='text10',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider10",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine10")]], key='layout10', element_justification='left')],
-                    [sg.Column([[sg.Button('❌', key='delete11'), sg.Button('⬆️', key='up11'), sg.Button('⬇️', key='down11'), sg.Text('---', key='text11',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider11",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine11")]], key='layout11', element_justification='left')],
-                    [sg.Column([[sg.Button('❌', key='delete12'), sg.Button('⬆️', key='up12'), sg.Button('⬇️', key='down12'), sg.Text('---', key='text12',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider12",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine12")]], key='layout12', element_justification='left')],
-                    [sg.Column([[sg.Button('❌', key='delete13'), sg.Button('⬆️', key='up13'), sg.Button('⬇️', key='down13'), sg.Text('---', key='text13',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider13",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine13")]], key='layout13', element_justification='left')],
-                    [sg.Column([[sg.Button('❌', key='delete14'), sg.Button('⬆️', key='up14'), sg.Button('⬇️', key='down14'), sg.Text('---', key='text14',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider14",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine14")]], key='layout14', element_justification='left')],
-                    [sg.Column([[sg.Button('❌', key='delete15'), sg.Button('⬆️', key='up15'), sg.Button('⬇️', key='down15'), sg.Text('---', key='text15',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider15",  font=('Arial', 10, 'bold')), sg.Checkbox('↩️', enable_events=True, key="newLine15")]], key='layout15', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete1'), sg.Button('⬆️', disabled=True, key='up1'), sg.Button('⬇️', key='down1'), sg.Text('---', key='text1',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', key="divider1", enable_events=True, font=('Arial', 10, 'bold')), sg.Checkbox('➥', enable_events=True, key="newLine1")]], key='layout1', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete2'), sg.Button('⬆️', key='up2'), sg.Button('⬇️', key='down2'), sg.Text('---', key='text2',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider2",  font=('Arial', 10, 'bold')), sg.Checkbox('➥', enable_events=True, key="newLine2")]], key='layout2', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete3'), sg.Button('⬆️', key='up3'), sg.Button('⬇️', key='down3'), sg.Text('---', key='text3',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider3",  font=('Arial', 10, 'bold')), sg.Checkbox('➥', enable_events=True, key="newLine3")]], key='layout3', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete4'), sg.Button('⬆️', key='up4'), sg.Button('⬇️', key='down4'), sg.Text('---', key='text4',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider4",  font=('Arial', 10, 'bold')), sg.Checkbox('➥', enable_events=True, key="newLine4")]], key='layout4', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete5'), sg.Button('⬆️', key='up5'), sg.Button('⬇️', key='down5'), sg.Text('---', key='text5',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider5",  font=('Arial', 10, 'bold')), sg.Checkbox('➥', enable_events=True, key="newLine5")]], key='layout5', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete6'), sg.Button('⬆️', key='up6'), sg.Button('⬇️', key='down6'), sg.Text('---', key='text6',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider6",  font=('Arial', 10, 'bold')), sg.Checkbox('➥', enable_events=True, key="newLine6")]], key='layout6', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete7'), sg.Button('⬆️', key='up7'), sg.Button('⬇️', key='down7'), sg.Text('---', key='text7',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider7",  font=('Arial', 10, 'bold')), sg.Checkbox('➥', enable_events=True, key="newLine7")]], key='layout7', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete8'), sg.Button('⬆️', key='up8'), sg.Button('⬇️', key='down8'), sg.Text('---', key='text8',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider8",  font=('Arial', 10, 'bold')), sg.Checkbox('➥', enable_events=True, key="newLine8")]], key='layout8', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete9'), sg.Button('⬆️', key='up9'), sg.Button('⬇️', key='down9'), sg.Text('---', key='text9',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider9",  font=('Arial', 10, 'bold')), sg.Checkbox('➥', enable_events=True, key="newLine9")]], key='layout9', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete10'), sg.Button('⬆️', key='up10'), sg.Button('⬇️', key='down10'), sg.Text('---', key='text10',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider10",  font=('Arial', 10, 'bold')), sg.Checkbox('➥', enable_events=True, key="newLine10")]], key='layout10', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete11'), sg.Button('⬆️', key='up11'), sg.Button('⬇️', key='down11'), sg.Text('---', key='text11',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider11",  font=('Arial', 10, 'bold')), sg.Checkbox('➥', enable_events=True, key="newLine11")]], key='layout11', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete12'), sg.Button('⬆️', key='up12'), sg.Button('⬇️', key='down12'), sg.Text('---', key='text12',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider12",  font=('Arial', 10, 'bold')), sg.Checkbox('➥', enable_events=True, key="newLine12")]], key='layout12', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete13'), sg.Button('⬆️', key='up13'), sg.Button('⬇️', key='down13'), sg.Text('---', key='text13',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider13",  font=('Arial', 10, 'bold')), sg.Checkbox('➥', enable_events=True, key="newLine13")]], key='layout13', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete14'), sg.Button('⬆️', key='up14'), sg.Button('⬇️', key='down14'), sg.Text('---', key='text14',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider14",  font=('Arial', 10, 'bold')), sg.Checkbox('➥', enable_events=True, key="newLine14")]], key='layout14', element_justification='left')],
+                    [sg.Column([[sg.Button('❌', key='delete15'), sg.Button('⬆️', key='up15'), sg.Button('⬇️', key='down15'), sg.Text('---', key='text15',  font=('Arial', 10, 'bold')), sg.Checkbox('┋', enable_events=True, key="divider15",  font=('Arial', 10, 'bold')), sg.Checkbox('➥', enable_events=True, key="newLine15")]], key='layout15', element_justification='left')],
                     ], key="layout_editor", scrollable=True, vertical_scroll_only=True, element_justification='left', size=(335, 300))],
                   [sg.Text('Manual Edit', font=('Arial', 12, 'bold')), sg.Button('?', font=('Arial', 12, 'bold'), key="manualHelp")],
                   [sg.Text('Wrap object in { }. Spaces are respected.')],
@@ -682,7 +681,7 @@ def uiThread():
       [sg.Button('Apply'), sg.Button('Reset'), sg.Text(" Version "+str(version), key='versionText'), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru'), sg.Checkbox('AFK', default=False, key='afk', enable_events= True, background_color='#cb7cef')]]
 
   window = sg.Window('OSC Chat Tools', layout,
-                  default_element_size=(12, 1), resizable=True, finalize= True, size=(880, 620), right_click_menu=right_click_menu)
+                  default_element_size=(12, 1), resizable=True, finalize= True, size=(880, 620), right_click_menu=right_click_menu, icon="oscicon.ico")
   window.set_min_size((500, 350))
   
   def resetVars():
@@ -1409,11 +1408,25 @@ if __name__ == "__main__":
           def text(data):
             return(checkData(a.replace("\\n", "\v").replace("\\v", "\v"), data))
           def song(data):
+            global showOnChange
+            global songChangeTicks
+            global tickCount
             global songInfo
+            global songName
             if hideSong and not mediaPlaying:
               return ''
             else:
-              return(checkData(songInfo, data))
+              if showOnChange:
+                if songInfo != songName:
+                  tickCount = songChangeTicks
+                  songName = songInfo
+                if tickCount != 0:
+                  tickCount = tickCount-1
+                  return(checkData(songInfo, data))
+                else:
+                  return ''
+              else:
+                return(checkData(songInfo, data))
           def cpu(data):
             global cpuDat
             return (checkData(cpuDat, data))
@@ -1453,6 +1466,7 @@ if __name__ == "__main__":
             msgOutput = msgOutput[:-1]
           if not hideOutside:
             msgOutput = topBar + " "+ msgOutput + " " +bottomBar 
+          msgOutput = msgOutput.replace("\\n", "\v").replace("\\v", "\v")
         msgGen(a)
       elif afk:
         msgOutput = topBar+a+" "+bottomBar
