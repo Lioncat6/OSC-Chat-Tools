@@ -20,11 +20,10 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
    - PySimpleGUI
    - argparse
    - datetime
-   - pythonosc
+   - python-osc
    - keyboard
    - asyncio
    - psutil
-   - webbrowser
    - winsdk
    - websocket-client
  - In a command prompt window in the folder the `osc-chat-tools.py` is located in:
