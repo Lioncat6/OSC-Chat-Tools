@@ -681,7 +681,7 @@ def uiThread():
       [sg.Button('Apply'), sg.Button('Reset'), sg.Text(" Version "+str(version), key='versionText'), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru'), sg.Checkbox('AFK', default=False, key='afk', enable_events= True, background_color='#cb7cef')]]
 
   window = sg.Window('OSC Chat Tools', layout,
-                  default_element_size=(12, 1), resizable=True, finalize= True, size=(880, 620), right_click_menu=right_click_menu, icon="oscicon.ico")
+                  default_element_size=(12, 1), resizable=True, finalize= True, size=(880, 620), right_click_menu=right_click_menu)
   window.set_min_size((500, 350))
   
   def resetVars():
