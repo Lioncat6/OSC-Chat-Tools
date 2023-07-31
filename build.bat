@@ -1,4 +1,3 @@
-echo 
 pip install PySimpleGUI
 pip install argparse
 pip install datetime
