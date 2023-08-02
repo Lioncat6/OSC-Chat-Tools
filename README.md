@@ -36,8 +36,10 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 
 ### Side note... the song functionality will show whatever the last thing you were listening to was... including a website or video you were watching. So be careful.
 
-# Keyboard Shortcuts (PC ONLY)
+# Keyboard Shortcuts 
+All keyboard shortcuts can be rebound
 - **`P`** Toggle Chatbox
+- **`end`** Toggle AFK
 
 # TO GET A PULSOID TOKEN
  - First set up a pulsoid account and link a device: https://pulsoid.net/registration
