@@ -34,7 +34,7 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 
 ## Open up `osc-chat-tools.exe` and the code will do the rest!
 
-### Side note... the song functionality will show whatever the last thing you were listening to was... including a website or video you were watching. So be careful.
+### Side note... the song functionality will show whatever the last thing you were listening to was... including any website or video you were watching... So be careful.
 
 # Keyboard Shortcuts 
 All keyboard shortcuts can be rebound
