@@ -4,8 +4,8 @@ import threading
 from threading import Thread, Lock
 import ast
 import requests
-
 from collections import defaultdict
+import subprocess
 
 if not os.path.isfile('please-do-not-delete.txt'):
   with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
@@ -30,7 +30,7 @@ import socket
 run = True
 playMsg = True
 textParseIterator = 0
-version = "1.5.0"
+version = "1.5.1"
 message_delay = 1.5
 msgOutput = ''
 topTextToggle = False #Deprecated, only in use for converting old save files
@@ -55,7 +55,7 @@ hideSong = False #in conf
 hideMiddle = False #Deprecated, only in use for converting old save files
 hideOutside = True #in conf
 showPaused = True #in conf
-songDisplay = ' 🎵{title} ᵇʸ {artist}🎵' #in conf
+songDisplay = ' 🎵\'{title}\' ᵇʸ {artist}🎶' #in conf
 songName = ''
 showOnChange = False #in conf
 songChangeTicks = 1 #in conf
@@ -98,6 +98,18 @@ logOutput = False  #in conf
 layoutString = '' #in conf
 verticalDivider = "┊" #in conf
 
+cpuDisplay = 'ᴄᴘᴜ: {cpu_percent}%'#in conf
+ramDisplay = 'ʀᴀᴍ: {ram_percent}%  ({ram_used}/{ram_total})'#in conf
+gpuDisplay = 'ɢᴘᴜ: {gpu_percent}%'#in conf
+hrDisplay = '💓 {hr}'#in conf
+playTimeDisplay = '⏳{hours}:{remainder_minutes}'#in conf
+mutedDisplay = 'Muted 🔇'#in conf
+unmutedDisplay = '🔊'#in conf
+
+darkMode = 'False' #in conf
+
+###########Program Variables (not in conf)#########
+
 useHR = False
 
 playTime = 0
@@ -111,13 +123,6 @@ isListenServerRunning = False
 listenServer = None
 useForewordMemory = False
 
-cpuDisplay = 'ᴄᴘᴜ: {cpu_percent}%'
-ramDisplay = 'ʀᴀᴍ: {ram_percent}%  ({ram_used}/{ram_total})'
-gpuDisplay = 'ɢᴘᴜ: {gpu_percent}%'
-hrDisplay = '💓 {hr}'
-playTimeDisplay = 'Play Time: {play_time}'
-mutedDisplay = 'Muted 🔇'
-unmutedDisplay = '🔊'
 
 isAfk = False
 isVR = False #Never used as the game never actually updates vrmode 
@@ -125,6 +130,12 @@ isMute = False
 isInSeat = False
 voiceVolume = 0
 isUsingEarmuffs = False
+
+
+vrcPID = None
+
+playTimeDat = time.mktime(time.localtime(psutil.Process(vrcPID).create_time()))
+
 
 
 def afk_handler(unused_address, args):
@@ -174,6 +185,7 @@ def vr_handler(unused_address, args):# The game never sends this value from what
 message_queue = []
 queue_lock = Lock()
 def outputLog(text):
+    text = text.replace("\n", "\n    ")
     print(text)
     global threadName
     threadName = threading.current_thread().name
@@ -188,6 +200,7 @@ def outputLog(text):
             message_queue.sort(key=lambda x: x[0])
             for message in message_queue:
                 windowAccess.write_event_value('outputSend', str(message[0]) + " " + message[1])
+                windowAccess['output'].Widget.see('end')
             message_queue.clear()
     waitThreadHandler = Thread(target=waitThread)
     waitThreadHandler.start()
@@ -276,7 +289,8 @@ def mediaIs(state):
 confDataDict = { #this dictionary will always exclude position 0 which is the config version!
   "1.4.1" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt'],
   "1.4.20" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput'],
-  "1.5.0" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay']
+  "1.5.0" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay'],
+  "1.5.1" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode']
 }
 
 if os.path.isfile('please-do-not-delete.txt'):
@@ -381,25 +395,18 @@ def layoutPreviewBuilder(layout, window):
     
       
 def uiThread():
-  sg.set_options(use_ttk_buttons=True)
-  """sg.set_options(ttk_theme='default')
-  color ="#001f4d"
-  sg.set_options(background_color=color, element_background_color=color, text_element_background_color=color)"""
+  global fontColor
+  global bgColor
+  global accentColor
+  global scrollbarColor
+  global buttonColor
+  global scrollbarBackgroundColor
+  global tabBackgroundColor
+  global tabTextColor
+
   global version
   global msgOutput
   global message_delay
-  """global topTextToggle
-  global topTimeToggle
-  global topSongToggle
-  global topCPUToggle
-  global topRAMToggle
-  global topNoneToggle
-  global bottomTextToggle
-  global bottomTimeToggle
-  global bottomSongToggle
-  global bottomCPUToggle
-  global bottomRAMToggle
-  global bottomNoneToggle"""
   global messageString
   global playMsg
   global run
@@ -420,8 +427,6 @@ def uiThread():
   global topBar
   global middleBar
   global bottomBar
-  """global topHRToggle
-  global bottomHRToggle"""
   global pulsoidToken
   global errorExit
   global windowAccess
@@ -452,37 +457,40 @@ def uiThread():
   global playTimeDisplay
   global mutedDisplay
   global unmutedDisplay
-  layout_layout = [[sg.Column(
-              [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold'))],
-              [sg.Column([
-                  [sg.Checkbox('Text file read - defined in the behavior tab\n(This will disable everything else)', default=False, key='scroll', enable_events= True, background_color='dark slate blue')]
-              ], key='topConf', background_color='dark slate blue', size=(379, 50))],
-              [sg.Column([
-                  [sg.Text('Configure top half of chatbox:', font=('Arial', 10, 'bold'))],
-                  [sg.Checkbox('Text - Defined in the behavior tab', default=False, key='topText', enable_events= True)],
-                  [sg.Checkbox('Time', default=False, key='topTime', enable_events= True)],
-                  [sg.Checkbox('Song - Uses Windows\' MediaManager to request song info \n Does NOT pull directly from spotify', default=False, key='topSong', enable_events= True)],
-                  [sg.Checkbox('CPU', default=False, key='topCPU', enable_events= True)],
-                  [sg.Checkbox('RAM', default=False, key='topRAM', enable_events= True)],
-                  [sg.Checkbox('Heart Rate (Configure in Behavior)', default=False, key='topHRToggle', enable_events= True)],
-                  [sg.Checkbox('None (Uncheck to select others)', default=True, key='topNone', enable_events= True)]
-              ], key='topConf')],
-              [sg.Column([
-                  [sg.Text('Configure bottom half of chatbox:', font=('Arial', 10, 'bold'), background_color='peru')],
-                  [sg.Checkbox('Text - Defined in the behavior tab', default=False, key='bottomText', enable_events= True, background_color='peru')],
-                  [sg.Checkbox('Time', default=False, key='bottomTime', enable_events= True, background_color='peru')],
-                  [sg.Checkbox('Song - Uses Windows\' MediaManager to request song info \n Does NOT pull directly from spotify', default=False, key='bottomSong', enable_events= True, background_color='peru')],
-                  [sg.Checkbox('CPU', default=False, key='bottomCPU', enable_events= True, background_color='peru')],
-                  [sg.Checkbox('RAM', default=False, key='bottomRAM', enable_events= True, background_color='peru')],
-                  [sg.Checkbox('Heart Rate (Configure in Behavior)', default=False, key='bottomHRToggle', enable_events= True, background_color='peru')],
-                  [sg.Checkbox('None (Uncheck to select others)', default=True, key='bottomNone', enable_events= True, background_color='peru')]
-              ], key='bottomConf', background_color='peru')]
-              ]
-  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='darkseagreen')]]
+  global darkMode
+  
+  if darkMode:
+    bgColor = '#333333'
+    accentColor = '#4d4d4d'
+    fontColor = 'grey90'
+    buttonColor = accentColor
+    scrollbarColor = accentColor
+    scrollbarBackgroundColor = accentColor
+    tabBackgroundColor = accentColor
+    tabTextColor = fontColor
+  else: 
+    bgColor = '#64778d'
+    accentColor = '#528b8b'
+    fontColor = 'white'
+    buttonColor = '#283b5b'
+    scrollbarColor = '#283b5b'
+    scrollbarBackgroundColor = '#a6b2be'
+    tabBackgroundColor = 'white'
+    tabTextColor = 'black'
+  sg.set_options(sbar_frame_color=fontColor)
+  sg.set_options(scrollbar_color=scrollbarColor)
+  sg.set_options(button_color=(fontColor, buttonColor))
+  sg.set_options(text_color=fontColor)
+  sg.set_options(background_color=bgColor)
+  sg.set_options(element_background_color=bgColor)
+  sg.set_options(text_element_background_color=bgColor)
+  sg.set_options(sbar_trough_color=scrollbarBackgroundColor)
+  sg.set_options(border_width=0)
+  sg.set_options(use_ttk_buttons=True)
   
   
   new_layout_layout =  [[sg.Column(
-              [[sg.Text('Configure chatbox layout', background_color='darkseagreen', font=('Arial', 12, 'bold')), sg.Checkbox('Text file read - defined in the behavior tab\n(This will disable everything else)', default=False, key='scroll', enable_events= True, background_color='dark slate blue')],
+              [[sg.Text('Configure chatbox layout', background_color=accentColor, font=('Arial', 12, 'bold')), sg.Checkbox('Text file read - defined in the behavior tab\n(This will disable everything else)', default=False, key='scroll', enable_events= True, background_color='dark slate blue')],
               [sg.Column([
                 [sg.Text('Add Elements', font=('Arial', 12, 'bold'))],
                 [sg.Text('Every Element is customizable from the Behavior Tab', font=('Arial', 10, 'bold'))],
@@ -524,53 +532,95 @@ def uiThread():
                   [sg.Multiline('', key='layoutStorage', size=(45, 5), font=('Arial', 10, 'bold'))]
                   ], size=(360, 520), element_justification='center')]
               ]
-  ,  expand_x=True, expand_y=True, background_color='darkseagreen', element_justification='left')]]
+  ,  expand_x=True, expand_y=True, background_color=accentColor, element_justification='left')]]
 
-  behavior_layout =  [[sg.Column(
-              [[sg.Text('Configure chatbox behavior', background_color='DarkSlateGray4', font=('Arial', 12, 'bold'))],
-              [sg.Column([
-                  [sg.Text('Text to display for the message. One frame per line\nTo send a blank frame, use an asterisk(*) by itself on a line.\n\\n and \\v are respected.', justification='center')],
-                  [sg.Multiline(default_text='OSC Chat Tools\nBy Lioncat6',
-                      size=(50, 10), key='messageInput')]
-              ], size=(379, 240))],
-              [sg.Column([
+
+  
+  misc_conf_layout = [
+    [sg.Column([
                   [sg.Text('File to use for the text file read functionality')],
                   [sg.Button('Open File'), sg.Text('', key='message_file_path_display')]
               ], size=(379, 70))],
               [sg.Column([
                   [sg.Text('Delay between frame updates, in seconds')],
-                  [sg.Slider(range=(1.5, 10), default_value=1.5, resolution=0.1, orientation='horizontal', size=(40, 15), key="msgDelay")]
-              ], size=(379, 70))],
-              [sg.Column([
+                  [sg.Slider(range=(1.5, 10), default_value=1.5, resolution=0.1, orientation='horizontal', size=(40, 15), key="msgDelay", trough_color=scrollbarBackgroundColor)]
+      ], size=(379, 70))],
+  ]
+  
+  text_conf_layout = [
+    [sg.Column([
+                  [sg.Text('Text to display for the message. One frame per line\nTo send a blank frame, use an asterisk(*) by itself on a line.\n\\n and \\v are respected.', justification='center')],
+                  [sg.Multiline(default_text='OSC Chat Tools\nBy Lioncat6',
+                      size=(50, 10), key='messageInput')]
+    ], size=(379, 240))],
+  ]
+  time_conf_layout = [
+  ]
+  song_conf_layout = [
+    [sg.Column([
                   [sg.Text('Template to use for song display.\nVariables: {artist}, {title}, {album_title}, {album_artist}')],
                   [sg.Input(key='songDisplay', size=(50, 1))]
-              ], size=(379, 80))],
-              [sg.Column([
+    ], size=(379, 80))],
+    [sg.Column([
+                  [sg.Text('Music Settings:')],
+                  [sg.Checkbox('Show \"(paused)\" after song when song is paused', default=True, key='showPaused', enable_events= True)],
+                  [sg.Checkbox('Hide song when music is paused', default=False, key='hideSong', enable_events= True)],
+                  [sg.HorizontalSeparator()],
+                  [sg.Checkbox('Only show music on song change', default=False, key='showOnChange', enable_events=True)],
+                  [sg.Text('Amount of frames to wait before the song name disappears')],
+                  [sg.Slider(range=(1, 5), default_value=2, resolution=1, orientation='horizontal', size=(40, 15), key="songChangeTicks", trough_color=scrollbarBackgroundColor)]
+              ], size=(379, 220))],
+  ]
+  cpu_conf_layout = [
+    [sg.Column([
                   [sg.Text('Template to use for CPU display.\nVariables: {cpu_percent}')],
                   [sg.Input(key='cpuDisplay', size=(50, 1))]
               ], size=(379, 80))],
-              [sg.Column([
+  ] 
+  ram_conf_layout = [
+    [sg.Column([
                   [sg.Text('Template to use for RAM display. Variables:\n{ram_percent}, {ram_available}, {ram_total}, {ram_used}')],
                   [sg.Input(key='ramDisplay', size=(50, 1))]
               ], size=(379, 80))],
-              [sg.Column([
+  ]
+  
+  gpu_conf_layout = [
+    [sg.Column([
                   [sg.Text('Template to use for GPU display.\nVariables: {gpu_percent}')],
                   [sg.Input(key='gpuDisplay', size=(50, 1))]
               ], size=(379, 80))],
-              [sg.Column([
+  ]
+  hr_conf_layout = [
+    [sg.Column([
                   [sg.Text('Template to use for Heart Rate display.\nVariables: {hr}')],
                   [sg.Input(key='hrDisplay', size=(50, 1))]
               ], size=(379, 80))],
-              [sg.Column([
-                  [sg.Text('Template to use for Play Time display.\nVariables: {play_time}')],
+    [sg.Column([
+                  [sg.Text('Heartrate Settings:')],
+                  [sg.Checkbox('Pass through heartrate avatar parameters\neven when not running', default=False, key='avatarHR', enable_events= True)],
+                  [sg.Text('Pulsoid Token:')],
+                  [sg.Input(key='pulsoidToken', size=(50, 1))],
+                  [sg.Checkbox('Heart Rate Beat', default=True, key='toggleBeat', enable_events=True)],
+                  [sg.Checkbox('Override Beat', default=False, key='blinkOverride', enable_events=True)],
+                  [sg.Text('Blink Speed (If Overridden)')],
+                  [sg.Slider(range=(0, 5), default_value=.5, resolution=.1, orientation='horizontal', size=(40, 15), key="blinkSpeed", trough_color=scrollbarBackgroundColor)]
+              ], size=(379, 260))]
+  ]
+  playTime_conf_layout = [
+    [sg.Column([
+                  [sg.Text('Template to use for Play Time display.\nVariables: {hours}, {remainder_minutes}, {minutes}')],
                   [sg.Input(key='playTimeDisplay', size=(50, 1))]
               ], size=(379, 80))],
-              [sg.Column([
+  ]
+  mute_conf_layout = [
+    [sg.Column([
                   [sg.Text('Template to use for Mute Toggle display')],
                   [sg.Text('Muted:'), sg.Push(),  sg.Input(key='mutedDisplay', size=(30, 1))],
                   [sg.Text('Unmuted:'), sg.Push(), sg.Input(key='unmutedDisplay', size=(30, 1))]
               ], size=(379, 80))],
-              [sg.Column([
+  ]
+  divider_conf_layout = [
+    [sg.Column([
                   [sg.Text('Divider Settings:')],
                   [sg.Text('Top Divider:')],
                   [sg.Input(key='topBar', size=(50, 1))],
@@ -582,59 +632,77 @@ def uiThread():
                   [sg.Input(key='verticalDivider', size=(50, 1))],
                   [sg.Checkbox('Remove outside dividers', default=True, key='hideOutside', enable_events= True)],
                 ], size=(379, 270))],
-              [sg.Column([
-                  [sg.Text('Music Settings:')],
-                  [sg.Checkbox('Show \"(paused)\" after song when song is paused', default=True, key='showPaused', enable_events= True)],
-                  [sg.Checkbox('Hide song when music is paused', default=False, key='hideSong', enable_events= True)],
-                  [sg.HorizontalSeparator()],
-                  [sg.Checkbox('Only show music on song change', default=False, key='showOnChange', enable_events=True)],
-                  [sg.Text('Amount of frames to wait before the song name disappears')],
-                  [sg.Slider(range=(1, 5), default_value=2, resolution=1, orientation='horizontal', size=(40, 15), key="songChangeTicks")]
-              ], size=(379, 220))],
-              [sg.Column([
-                  [sg.Text('Heartrate Settings:')],
-                  [sg.Checkbox('Pass through heartrate avatar parameters\neven when not running', default=False, key='avatarHR', enable_events= True)],
-                  [sg.Text('Pulsoid Token:')],
-                  [sg.Input(key='pulsoidToken', size=(50, 1))],
-                  [sg.Checkbox('Heart Rate Beat', default=True, key='toggleBeat', enable_events=True)],
-                  [sg.Checkbox('Override Beat', default=False, key='blinkOverride', enable_events=True)],
-                  [sg.Text('Blink Speed (If Overridden)')],
-                  [sg.Slider(range=(0, 5), default_value=.5, resolution=.1, orientation='horizontal', size=(40, 15), key="blinkSpeed")]
-              ], size=(379, 260))]
+  ]
+  new_behavior_layout = [
+    [   
+          sg.TabGroup([[
+                  sg.Tab('❔Misc.', [[sg.Column(misc_conf_layout, background_color=accentColor)]], background_color=accentColor),
+                  sg.Tab('💬Text', [[sg.Column(text_conf_layout, background_color=accentColor)]], background_color=accentColor),
+                  sg.Tab('🕒Time', [[sg.Column(time_conf_layout, background_color=accentColor)]], background_color=accentColor),
+                  sg.Tab('🎵Song', [[sg.Column(song_conf_layout, background_color=accentColor)]], background_color=accentColor),
+                  sg.Tab('⏱️CPU', [[sg.Column(cpu_conf_layout, background_color=accentColor)]], background_color=accentColor),
+                  sg.Tab('🚦RAM', [[sg.Column(ram_conf_layout, background_color=accentColor)]], background_color=accentColor),
+                  sg.Tab('⏳GPU', [[sg.Column(gpu_conf_layout, background_color=accentColor)]], background_color=accentColor),
+                  sg.Tab('💓HR', [[sg.Column(hr_conf_layout, background_color=accentColor)]], background_color=accentColor),
+                  sg.Tab('🔇Mute', [[sg.Column(mute_conf_layout, background_color=accentColor)]], background_color=accentColor),
+                  sg.Tab('⌚Play Time', [[sg.Column(playTime_conf_layout, background_color=accentColor)]], background_color=accentColor),
+                  sg.Tab('⌨STT', [[sg.Text('Coming Soon')]], background_color=accentColor),
+                  sg.Tab('☵Divider', [[sg.Column(divider_conf_layout, background_color=accentColor)]], background_color=accentColor),
+              ]], 
+              key='behaviorTabs', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True, size=(440, 300), font=('Arial', 11, 'normal'), tab_background_color=tabBackgroundColor, tab_border_width=0, title_color=tabTextColor, 
+          )
+      ],
+  ]
+  """behavior_layout =  [[sg.Column([
+              [sg.Text('Configure chatbox behavior', background_color=accentColor, font=('Arial', 12, 'bold'))],
+              [sg.Column(text_conf_layout, background_color=accentColor)],
+              [sg.Column(time_conf_layout, background_color=accentColor)],
+              [sg.Column(misc_conf_layout, background_color=accentColor)],
+              [sg.Column(song_conf_layout, background_color=accentColor)],
+              [sg.Column(cpu_conf_layout, background_color=accentColor)],
+              [sg.Column(ram_conf_layout, background_color=accentColor)],
+              [sg.Column(gpu_conf_layout, background_color=accentColor)],
+              [sg.Column(hr_conf_layout, background_color=accentColor)],
+              [sg.Column(playTime_conf_layout, background_color=accentColor)],
+              [sg.Column(mute_conf_layout, background_color=accentColor)],
+              [sg.Column(divider_conf_layout, background_color=accentColor)],             
+              
+              
               ]
-  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='DarkSlateGray4')]]
+  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=accentColor)]]"""
 
   keybindings_layout = [[sg.Column(
-              [[sg.Text('Keybindings Configuration', background_color='turquoise4', font=('Arial', 12, 'bold'))],
-              [sg.Text('You must press Apply for new keybinds to take affect!', background_color='turquoise4')],
+              [[sg.Text('Keybindings Configuration', background_color=accentColor, font=('Arial', 12, 'bold'))],
+              [sg.Text('You must press Apply for new keybinds to take affect!', background_color=accentColor)],
                 [sg.Column([
-                  [sg.Text('Toggle Run'), sg.Frame('',[[sg.Text('Unbound', key='keybind_run', background_color='DarkSlateGray4', pad=(10, 0))]],background_color='DarkSlateGray4'), sg.Button('Bind Key', key='run_binding')],
+                  [sg.Text('Toggle Run'), sg.Frame('',[[sg.Text('Unbound', key='keybind_run', background_color=accentColor, pad=(10, 0))]],background_color=accentColor), sg.Button('Bind Key', key='run_binding')],
                   [sg.Checkbox('Use keybind', default=True, enable_events=True, key='useRunKeybind', disabled=True)],
-                  [sg.Text('Toggle Afk'), sg.Frame('',[[sg.Text('Unbound', key='keybind_afk', background_color='DarkSlateGray4', pad=(10, 0))]],background_color='DarkSlateGray4'), sg.Button('Bind Key', key='afk_binding')],
+                  [sg.Text('Toggle Afk'), sg.Frame('',[[sg.Text('Unbound', key='keybind_afk', background_color=accentColor, pad=(10, 0))]],background_color=accentColor), sg.Button('Bind Key', key='afk_binding')],
                   [sg.Checkbox('Use keybind (Otherwise, uses OSC to check afk status)', default=False, enable_events=True, key='useAfkKeybind')]
                 ], expand_x=True, size=(379, 130))]
               ]
-  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='turquoise4')]]
+  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=accentColor)]]
   
   options_layout = [[sg.Column(
-              [[sg.Text('Configure Program', background_color='SteelBlue4', font=('Arial', 12, 'bold'))],
+              [[sg.Text('Configure Program', background_color=accentColor, font=('Arial', 12, 'bold'))],
                 [sg.Column([
                   [sg.Checkbox('Minimize on startup', default=False, key='minimizeOnStart', enable_events= True)],
-                  [sg.Checkbox('Show update prompt', default=True, key='updatePrompt', enable_events= True)]
-                ], size=(379, 60))]
+                  [sg.Checkbox('Show update prompt', default=True, key='updatePrompt', enable_events= True)],
+                  [sg.Checkbox('Dark Mode (applies on restart)', default=False, key='darkMode', enable_events=True)]
+                ], size=(379, 90))]
               ]
-  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='SteelBlue4')]]
+  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=accentColor)]]
   preview_layout = [[sg.Column(
-              [[sg.Text('Preview (Not Perfect)', background_color='DarkGreen', font=('Arial', 12, 'bold'))],
+              [[sg.Text('Preview (Not Perfect)', background_color=accentColor, font=('Arial', 12, 'bold'))],
               [sg.Column([
                 [sg.Text('', key = 'messagePreviewFill', font=('Arial', 12 ), auto_size_text=True, size=(21, 100), justification='center')]
               ], size=(379, 150))]
               ]
   
-  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='DarkGreen')]]
+  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=accentColor)]]
   
   osc_layout = [[sg.Column(
-              [[sg.Text('OSC Options - Experimental\n(Turning on debug logging is recommended)', background_color='turquoise4', font=('Arial', 12, 'bold'))],
+              [[sg.Text('OSC Options - Experimental\n(Turning on debug logging is recommended)', background_color=accentColor, font=('Arial', 12, 'bold'))],
               [sg.Column([
                   [sg.Text('OSC Listen Options')],
                   [sg.Checkbox('Use OSC Listen', key='oscListen')],
@@ -652,14 +720,14 @@ def uiThread():
                   [sg.Text('Address: '), sg.Input('', size=(30, 1), key='oscForewordAddress')],
                   [sg.Text('Port: '), sg.Input('', size=(30, 1), key='oscForewordPort')]
                 ], size=(379, 150))]
-              ]  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color='turquoise4')]]
+              ]  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=accentColor)]]
   
   output_layout =  [[sg.Column(
-              [[sg.Text('Program Output', background_color='DarkGreen', font=('Arial', 12, 'bold')), sg.Checkbox('Log to file (OCT_debug_log.txt)', default=False, key='logOutput', background_color='DarkGreen')],
+              [[sg.Text('Program Output', background_color=accentColor, font=('Arial', 12, 'bold')), sg.Checkbox('Log to file (OCT_debug_log.txt)', default=False, key='logOutput', background_color=accentColor)],
               [sg.Multiline('', disabled=True, key='output', size=(53, 30), background_color='DarkSlateGrey', text_color='white', expand_x=True, expand_y=True)]
-              ] , expand_x=True, expand_y=True, background_color='DarkGreen')]]
+              ] , expand_x=True, expand_y=True, background_color=accentColor)]]
   
-  menu_def = [['&File', ['A&pply', '&Reset', '---', 'Open Config File', '---','E&xit' ]],
+  menu_def = [['&File', ['A&pply', '&Reset', '---', 'Open Config File', '---','E&xit', 'Re&start' ]],
           ['&Help', ['&About', '---', 'Submit Feedback', '---', 'Open &Github Page', '&Check For Updates', '&FAQ']]]
   topMenuBar = sg.Menu(menu_def, key="menuBar")
   right_click_menu = ['&Right', ['You thought']]
@@ -667,27 +735,27 @@ def uiThread():
       [[topMenuBar]],
       [   
           sg.TabGroup([[
-                  sg.Tab('Layout', new_layout_layout, background_color='darkseagreen'),
-                  sg.Tab('Behavior', behavior_layout, background_color='DarkSlateGray4'),
-                  sg.Tab('Preview', preview_layout, background_color='DarkGreen'),
-                  sg.Tab('Keybindings', keybindings_layout, background_color='turquoise4'),
-                  sg.Tab('Options', options_layout, background_color='SteelBlue4'),
-                  sg.Tab('OSC Options', osc_layout, background_color='turquoise4'),
-                  sg.Tab('Output', output_layout, background_color='DarkGreen')
+                  sg.Tab('🧩Layout', new_layout_layout, background_color=accentColor),
+                  sg.Tab('🤖Behavior', new_behavior_layout, background_color=accentColor),
+                  sg.Tab('📺Preview', preview_layout, background_color=accentColor),
+                  sg.Tab('⌨Keybindings', keybindings_layout, background_color=accentColor),
+                  sg.Tab('💻Options', options_layout, background_color=accentColor),
+                  sg.Tab('📲OSC Options', osc_layout, background_color=accentColor),
+                  sg.Tab('💾Output', output_layout, background_color=accentColor)
               ]], 
-              key='mainTabs', tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True, size=(440, 300)
+              key='mainTabs', tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True, size=(440, 300), font=('Arial', 11, 'normal'), tab_background_color=tabBackgroundColor, tab_border_width=0, title_color=tabTextColor
           )
       ],
-      [sg.Button('Apply'), sg.Button('Reset'), sg.Text(" Version "+str(version), key='versionText'), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru'), sg.Checkbox('AFK', default=False, key='afk', enable_events= True, background_color='#cb7cef')]]
+      [sg.Button('Apply', tooltip='Apply all changes to options'), sg.Button('Reset'), sg.Text(" Version "+str(version), key='versionText'), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru'), sg.Checkbox('AFK', default=False, key='afk', enable_events= True, background_color='#cb7cef')]]
 
   window = sg.Window('OSC Chat Tools', layout,
-                  default_element_size=(12, 1), resizable=True, finalize= True, size=(880, 620), right_click_menu=right_click_menu)
+                  default_element_size=(12, 1), resizable=True, finalize= True, size=(900, 620), right_click_menu=right_click_menu)
   window.set_min_size((500, 350))
-  
+
   def resetVars():
     window['messageInput'].update(value='OSC Chat Tools\nBy Lioncat6')
     window['msgDelay'].update(value=1.5)
-    window['songDisplay'].update(value=' 🎵{title} ᵇʸ {artist}🎵')
+    window['songDisplay'].update(value=' 🎵\'{title}\' ᵇʸ {artist}🎶')
     window['showOnChange'].update(value=False)
     window['songChangeTicks'].update(value=2)
     window['hideOutside'].update(value=True)
@@ -721,10 +789,19 @@ def uiThread():
     window['ramDisplay'].update(value='ʀᴀᴍ: {ram_percent}%  ({ram_used}/{ram_total})')
     window['gpuDisplay'].update(value='ɢᴘᴜ: {gpu_percent}%')
     window['hrDisplay'].update(value='💓 {hr}')
-    window['playTimeDisplay'].update(value='Play Time: {play_time}')
+    window['playTimeDisplay'].update(value='⏳{hours}:{remainder_minutes}')
     window['mutedDisplay'].update(value='Muted 🔇')
     window['unmutedDisplay'].update(value='🔊')
+    window['darkMode'].update(value=False)
   def updateUI():
+    global bgColor
+    global accentColor
+    global fontColor
+    global buttonColor
+    global scrollbarColor 
+    global scrollbarBackgroundColor
+    global tabBackgroundColor
+    global tabTextColor
     global playMsg
     global msgOutput
     if os.path.isfile('please-do-not-delete.txt'):
@@ -765,6 +842,7 @@ def uiThread():
       window['playTimeDisplay'].update(value=playTimeDisplay)
       window['mutedDisplay'].update(value=mutedDisplay)
       window['unmutedDisplay'].update(value=unmutedDisplay)
+      window['darkMode'].update(value=darkMode)
     while run:
       if run:
         try:
@@ -837,9 +915,10 @@ def uiThread():
           playTimeDisplay = values['playTimeDisplay']
           mutedDisplay = values['mutedDisplay']
           unmutedDisplay = values['unmutedDisplay']
+          darkMode = values['darkMode']
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay]))
+              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
           
@@ -1254,7 +1333,7 @@ if __name__ == "__main__":
                       listenServer.serve_forever()           
                   except Exception as e:
                       #print('Osc Listen Server Failed to Start, Retying...'+str(e))
-                      outputLog('Osc Listen Server Failed to Start, Retying...\n'+str(e))
+                      outputLog(f'Osc Listen Server Failed to Start, Retying...\nPlease make sure another program isn\'t using {location}\n'+str(e))
                       pass
 
               if not isListenServerRunning:
@@ -1311,7 +1390,7 @@ if __name__ == "__main__":
     global playTimeDisplay
     global mutedDisplay
     global unmutedDisplay
-
+    global playTimeDat
     #stupid crap
     global letsGetThatTime
     global songInfo
@@ -1340,12 +1419,13 @@ if __name__ == "__main__":
         album_artist = current_media_info['album_artist'] 
         mediaPlaying = mediaIs('PLAYING')
       except Exception as e:
-        artist = 'Can\'t get artist'
-        title = 'Can\'t get title'
-        album_title = 'Can\'t get album title'
-        album_artist = 'Can\'t get album artist'
+        artist = ''
+        title = ''
+        album_title = ''
+        album_artist = ''
         mediaPlaying = False
         if 'TARGET_PROGRAM' in str(e):
+          logOutput('Can\'t get media info, please make sure an application is playing audio')
           pass
         else:
           if windowAccess != None:
@@ -1372,13 +1452,21 @@ if __name__ == "__main__":
       ramDat = ramDisplay.format_map(defaultdict(str, ram_percent=ram_percent, ram_available=ram_available, ram_total=ram_total, ram_used=ram_used))
       gpuDat = gpuDisplay.format_map(defaultdict(str, gpu_percent=gpu_percent))
       hrInfo = hrDisplay.format_map(defaultdict(str, hr=hr))
-      minutes, sec = divmod(playTime, 60)
-      hours, remainder = divmod(playTime, 3600)
-      if playTime < 3600:
-        play_time =  f'{minutes:02d}:{sec:02d}'
-      else:
-        play_time =  f'{hours:02d}:{minutes:02d}'
-      playDat = playTimeDisplay.format_map(defaultdict(str, play_time=play_time))
+      """hours, remainder = divmod(playTime, 3600)
+      minutes, seconds = divmod(remainder, 60)
+      play_time =  f'{hours:02d}:{minutes:02d}:{seconds:02d}'"""
+      try:
+        minutes = int((time.time()-playTimeDat)/60)
+        hours, remainder_minutes = divmod(minutes, 60)
+        if vrcPID == None:
+          minutes = 0
+          hours = 0
+          remainder_minutes = 0
+      except:
+        minutes = 0
+        hours = 0
+        remainder_minutes = 0
+      playDat = playTimeDisplay.format_map(defaultdict(str, hours="{:02d}".format(hours), remainder_minutes="{:02d}".format(remainder_minutes), minutes="{:02d}".format(minutes)))
       #message Assembler:
       if not scrollText and not afk:
         
@@ -1623,14 +1711,30 @@ def restartMsg():
   msgThread.start()
 
 
-def playTimeCheck():
-  global playTime
+def vrcRunningCheck():
+  global vrcPID
+  global playTimeDat
+  def pid_check(pid):
+    try:
+      if psutil.pid_exists(vrcPID):
+        return True
+      else:
+        return False
+    except:
+      return False
   while run:
-    playTime = playTime +1
+    if not pid_check(vrcPID): 
+      vrcPID = None
+      for proc in psutil.process_iter():
+          if "VRChat.exe" in proc.name():
+              vrcPID = proc.pid
+              break
+          time.sleep(.001)
+      playTimeDat = time.mktime(time.localtime(psutil.Process(vrcPID).create_time()))
     time.sleep(1)
 
-playTimeCheckThread = Thread(target=playTimeCheck)
-playTimeCheckThread.start()
+vrcRunningCheckThread = Thread(target=vrcRunningCheck)
+vrcRunningCheckThread.start()
 msgThread = Thread(target=runmsg)
 msgThread.start()
 mainUI = Thread(target=uiThread)
