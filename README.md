@@ -14,6 +14,8 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 # Installation:
 ## Exe file
  - https://github.com/Lioncat6/OSC-Chat-Tools/releases/latest
+ - Windows SmartScreen will complain due to it not being signed
+ - Run it through https://www.virustotal.com/ if you would like: Gets detected as `Trojan:Win32/Wacatac.B!ml` by the Microsoft one
 ## Build it yourself
 (Not recommended cause things might be broken before release)
  - Install python [https://www.python.org/downloads/](https://www.python.org/downloads/)
