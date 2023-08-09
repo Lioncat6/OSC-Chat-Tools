@@ -2,7 +2,7 @@
 An osc script I made for Vrchat. Now with UI!
 - Feature Requests are encouraged. You need something added? Let me know
 
-![Preview](https://github.com/Lioncat6/OSC-Chat-Tools/blob/27ad5f1e7960cc6454ade1e00cf0006b6d6f53f9/preview.png)
+![Preview](https://github.com/Lioncat6/OSC-Chat-Tools/blob/95ec4d2c6f4209dbabfc389255943e86bb336deb/preview.png)
 
 OCT Is a standalone Python script used for interacting with Vrchat's OSC
 ### Python is not required to be installed on your system
@@ -14,7 +14,8 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 # Installation:
 ## Exe file
  - https://github.com/Lioncat6/OSC-Chat-Tools/releases/latest
-## Build it yourself (Not recommended cause things might be broken before release)
+## Build it yourself
+(Not recommended cause things might be broken before release)
  - Install python [https://www.python.org/downloads/](https://www.python.org/downloads/)
  - Install all of the required Python modules (`pip install {module name}`):
    - PySimpleGUI
@@ -34,14 +35,17 @@ OCT Is a standalone Python script used for interacting with Vrchat's OSC
 
 ## Open up `osc-chat-tools.exe` and the code will do the rest!
 
-### Side note... the song functionality will show whatever the last thing you were listening to was... including a website or video you were watching. So be careful.
+### Side note... the song functionality will show whatever the last thing you were listening to was... including any website or video you were watching... So be careful.
 
-# Keyboard Shortcuts (PC ONLY)
+# Keyboard Shortcuts 
+All keyboard shortcuts can be rebound
 - **`P`** Toggle Chatbox
+- **`end`** Toggle AFK
 
 # TO GET A PULSOID TOKEN
  - First set up a pulsoid account and link a device: https://pulsoid.net/registration
-    - Coming soon (whenever Pusloid looks at my request to create a third-party app): Pulsoid App link. 
+    - Coming soon (whenever Pusloid looks at my request to create a third-party app): Pulsoid App link.
+    - [HRtoVRChat_OSC pulsoid link](https://pulsoid.net/oauth2/authorize?response_type=token&client_id=8c48435f-a0c6-4512-9bf7-6768678b625c&redirect_uri=&scope=data:heart_rate:read&state=&response_mode=web_page)
     - https://pulsoid.net/ui/keys - If you have a BRO Subscription
 
 # Guide- last updated for 1.1.0
