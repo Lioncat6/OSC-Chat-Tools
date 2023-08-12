@@ -136,7 +136,7 @@ vrcPID = None
 
 playTimeDat = time.mktime(time.localtime(psutil.Process(vrcPID).create_time()))
 
-
+lastSent = ''
 
 def afk_handler(unused_address, args):
     global isAfk
@@ -290,7 +290,8 @@ confDataDict = { #this dictionary will always exclude position 0 which is the co
   "1.4.1" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt'],
   "1.4.20" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput'],
   "1.5.0" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay'],
-  "1.5.1" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode']
+  "1.5.1" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode'],
+  "1.5.2" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode']
 }
 
 if os.path.isfile('please-do-not-delete.txt'):
@@ -543,8 +544,9 @@ def uiThread():
               ], size=(379, 70))],
               [sg.Column([
                   [sg.Text('Delay between frame updates, in seconds')],
-                  [sg.Slider(range=(1.5, 10), default_value=1.5, resolution=0.1, orientation='horizontal', size=(40, 15), key="msgDelay", trough_color=scrollbarBackgroundColor)]
-      ], size=(379, 70))],
+                  [sg.Text('If you are getting a \'Timed out for x seconds\'message,\ntry adjusting this')],
+                  [sg.Slider(range=(1.5, 10), default_value=5, resolution=0.1, orientation='horizontal', size=(40, 15), key="msgDelay", trough_color=scrollbarBackgroundColor)]
+      ], size=(379, 110))],
   ]
   
   text_conf_layout = [
@@ -754,7 +756,7 @@ def uiThread():
 
   def resetVars():
     window['messageInput'].update(value='OSC Chat Tools\nBy Lioncat6')
-    window['msgDelay'].update(value=1.5)
+    window['msgDelay'].update(value=5)
     window['songDisplay'].update(value=' 🎵\'{title}\' ᵇʸ {artist}🎶')
     window['showOnChange'].update(value=False)
     window['songChangeTicks'].update(value=2)
@@ -1398,6 +1400,7 @@ if __name__ == "__main__":
     global ramDat
     global hrInfo
     global gpuDat
+    global lastSent
     #end of stupid crap
     if playMsg:
       #preassembles
@@ -1561,12 +1564,14 @@ if __name__ == "__main__":
       else:
         msgOutput = a
       if playMsg:
-        client.send_message("/chatbox/input", [ str(msgOutput), True, False])
-        #print(str(msgOutput))
+        if str(msgOutput) != lastSent:
+          client.send_message("/chatbox/input", [ str(msgOutput), True, False])
+          lastSent = str(msgOutput)
+      msgDelayMemory = message_delay
       for x in range(int(message_delay*10)):
-        time.sleep(.1)
-        if not playMsg or not run:
+        if not playMsg or not run or msgDelayMemory != message_delay:
           break
+        time.sleep(.1)
 
 def hrConnectionThread():
   while run:
@@ -1646,6 +1651,8 @@ def runmsg():
   while playMsg:
     if not afk and not scrollText:
       for x in processMessage(messageString):
+        if afk or scrollText or (not playMsg):
+          break
         if x == "*":
           sendMsg(" ㅤ")
         else:
@@ -1668,7 +1675,7 @@ def runmsg():
         sendMsg('')
     else:
       sendMsg('')
-    
+  textParseIterator = 0
   client.send_message("/chatbox/input", [ "", True, False])
     
 def msgPlayCheck():
