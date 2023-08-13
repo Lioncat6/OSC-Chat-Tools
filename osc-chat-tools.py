@@ -545,7 +545,7 @@ def uiThread():
               [sg.Column([
                   [sg.Text('Delay between frame updates, in seconds')],
                   [sg.Text('If you are getting a \'Timed out for x seconds\' message,\ntry adjusting this')],
-                  [sg.Slider(range=(1.5, 10), default_value=5, resolution=0.1, orientation='horizontal', size=(40, 15), key="msgDelay", trough_color=scrollbarBackgroundColor)]
+                  [sg.Slider(range=(1.5, 10), default_value=1.5, resolution=0.1, orientation='horizontal', size=(40, 15), key="msgDelay", trough_color=scrollbarBackgroundColor)]
       ], size=(379, 110))],
   ]
   
@@ -756,7 +756,7 @@ def uiThread():
 
   def resetVars():
     window['messageInput'].update(value='OSC Chat Tools\nBy Lioncat6')
-    window['msgDelay'].update(value=5)
+    window['msgDelay'].update(value=1.5)
     window['songDisplay'].update(value=' 🎵\'{title}\' ᵇʸ {artist}🎶')
     window['showOnChange'].update(value=False)
     window['songChangeTicks'].update(value=2)
