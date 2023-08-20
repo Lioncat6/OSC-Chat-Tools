@@ -4,8 +4,7 @@ An osc script I made for Vrchat. Now with UI!
 
 ![Preview](https://github.com/Lioncat6/OSC-Chat-Tools/blob/c4eafce187b862930472bb577c7fd0d021af7eda/preview.png)
 
-OCT Is a standalone Python script used for interacting with Vrchat's OSC
-### Python is not required to be installed on your system
+OCT Is a standalone program used for interacting with Vrchat's OSC to send chat messages to the chatbox as well as other data in some cases
 
 # Having Issues? 
  - Read the [FAQ](https://github.com/Lioncat6/OSC-Chat-Tools/wiki/FAQ)
