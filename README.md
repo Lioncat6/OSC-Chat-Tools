@@ -68,12 +68,13 @@ All keyboard shortcuts can be rebound
  - TONS of customizability
 
 # Coming soon:
+ - More modular plugins system to replace hardcoded objects
+ - Make the program install instead of being standalone to enable mods and assets and to improve boot time
+ - Switch to a different ui engine cause while PySimeGUI is great... its *too* simple
  - Heartrate data through stronmo (Cheaper alternative to Pulsoid)
  - Speech To Text (Almost Done!)
- - Overhaul of the top/bottom system to be replaced with a more modular one
  - GPU Stats
  - Framerate
  - Ping
  - VR/Desktop Display
- - Voice mute status
  - Other fun shit!
