@@ -8,7 +8,7 @@ OCT Is a standalone program used for interacting with Vrchat's OSC to send chat 
 
 # Having Issues? 
  - Read the [FAQ](https://github.com/Lioncat6/OSC-Chat-Tools/wiki/FAQ)
- - Find me on discord @lioncat6
+ - Message me on discord @lioncat6
  - Create an issue https://github.com/Lioncat6/OSC-Chat-Tools/issues
 # Installation:
 ## Exe file
