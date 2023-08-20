@@ -10,6 +10,22 @@ OCT Is a standalone program used for interacting with Vrchat's OSC to send chat 
  - Read the [FAQ](https://github.com/Lioncat6/OSC-Chat-Tools/wiki/FAQ)
  - Message me on discord @lioncat6
  - Create an issue https://github.com/Lioncat6/OSC-Chat-Tools/issues
+
+# Features
+ - Split top/bottom layout with customizable dividers
+ - Animated text
+ - Current time
+ - Song info using the Windows media manager
+ - CPU Info
+ - RAM Info
+ - Heart rate info using Pulsoid (Get a token from the 'Tokens' section of the dashboard)
+ - AFK message activated with a keyboard shortcut or using the OSC to watch for when the player activates AFK mode in game
+ - Customizable keyboard shortcuts
+ - OSC Port forwarding (So multiple programs can listen to the OSC!)
+ - Customizable OSC Listen port/address
+ - TONS of customizability
+
+
 # Installation:
 ## Exe file
  - https://github.com/Lioncat6/OSC-Chat-Tools/releases/latest
@@ -52,19 +68,6 @@ All keyboard shortcuts can be rebound
 # Guide- last updated for 1.1.0
 ### [https://youtu.be/an7PLpDf5kE](https://youtu.be/an7PLpDf5kE)
 
-# Features
- - Split top/bottom layout with customizable dividers
- - Animated text
- - Current time
- - Song info using the Windows media manager
- - CPU Info
- - RAM Info
- - Heart rate info using Pulsoid (Get a token from the 'Tokens' section of the dashboard)
- - AFK message activated with a keyboard shortcut or using the OSC to watch for when the player activates AFK mode in game
- - Customizable keyboard shortcuts
- - OSC Port forwarding (So multiple programs can listen to the OSC!)
- - Customizable OSC Listen port/address
- - TONS of customizability
 
 # Coming soon:
  - Modular plugins system to replace hardcoded objects
