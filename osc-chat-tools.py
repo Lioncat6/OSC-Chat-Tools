@@ -562,7 +562,7 @@ def uiThread():
       [sg.Text('Advanced Sending Options')],
       [sg.Checkbox('Clear the chatbox when toggled or on program close\nTurn off if you are getting issues with the chatbox blinking', key='sendBlank', default=True)],
       [sg.Checkbox('Skip sending duplicate messages', key='suppressDuplicates', default=True)],
-      [sg.Checkbox('Send next message as soon as any data is updated\nOnly skips delay if previous message was skipped\nDoes not apply when using a text element', key='sendASAP', default=True)]
+      [sg.Checkbox('Send next message as soon as any data is updated\nOnly skips delay if previous message was skipped', key='sendASAP', default=True)]
     ], size=(379, 155))]
   ]
   
@@ -1612,7 +1612,7 @@ if __name__ == "__main__":
           sendSkipped = True
       msgDelayMemory = message_delay
       for x in range(int(message_delay*10)):
-        if not playMsg or not run or ((msgDelayMemory != message_delay) and sendASAP and not 'text(' in layoutString) or sendSkipped == True:
+        if not playMsg or not run or ((msgDelayMemory != message_delay) and sendASAP) or sendSkipped == True:
           break
         time.sleep(.1)
 
