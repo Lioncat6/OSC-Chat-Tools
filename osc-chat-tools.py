@@ -30,7 +30,7 @@ import socket
 run = True
 playMsg = True
 textParseIterator = 0
-version = "1.5.2"
+version = "1.5.3"
 message_delay = 1.5
 msgOutput = ''
 topTextToggle = False #Deprecated, only in use for converting old save files
@@ -108,6 +108,10 @@ unmutedDisplay = '🔊'#in conf
 
 darkMode = 'False' #in conf
 
+sendBlank = True
+suppressDuplicates = True
+sendASAP = True
+
 ###########Program Variables (not in conf)#########
 
 useHR = False
@@ -137,6 +141,8 @@ vrcPID = None
 playTimeDat = time.mktime(time.localtime(psutil.Process(vrcPID).create_time()))
 
 lastSent = ''
+sentTime = 0
+sendSkipped = False
 
 def afk_handler(unused_address, args):
     global isAfk
@@ -291,7 +297,8 @@ confDataDict = { #this dictionary will always exclude position 0 which is the co
   "1.4.20" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput'],
   "1.5.0" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay'],
   "1.5.1" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode'],
-  "1.5.2" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode']
+  "1.5.2" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode'],
+  "1.5.3" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP']
 }
 
 if os.path.isfile('please-do-not-delete.txt'):
@@ -459,11 +466,14 @@ def uiThread():
   global mutedDisplay
   global unmutedDisplay
   global darkMode
+  global sendBlank
+  global suppressDuplicates
+  global sendASAP
   
   if darkMode:
     bgColor = '#333333'
     accentColor = '#4d4d4d'
-    fontColor = 'grey90'
+    fontColor = 'grey85'
     buttonColor = accentColor
     scrollbarColor = accentColor
     scrollbarBackgroundColor = accentColor
@@ -488,6 +498,7 @@ def uiThread():
   sg.set_options(sbar_trough_color=scrollbarBackgroundColor)
   sg.set_options(border_width=0)
   sg.set_options(use_ttk_buttons=True)
+  sg.set_options(input_elements_background_color=fontColor)
   
   
   new_layout_layout =  [[sg.Column(
@@ -505,7 +516,7 @@ def uiThread():
                 [sg.Text('💓HR', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display Heart Rate', ), sg.Push(), sg.Button('Add to Layout', key='addHR')],
                 [sg.Text('🔇Mute', font=('Arial', 12, 'bold')), sg.Text('*', text_color='cyan', pad=(0, 0), font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display Mic Mute Status', ), sg.Push(), sg.Button('Add to Layout', key='addMute')],
                 [sg.Text('⌚Play Time', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Show Play Time', ), sg.Push(), sg.Button('Add to Layout',  key='addPlaytime')],
-                [sg.Text('⌨️STT', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Speech recognition object', ), sg.Push(), sg.Button('Coming  Soon', disabled=True, key='addSTT')],
+                [sg.Text('⌨️STT', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Speech recognition object', ), sg.Push(), sg.Button('Coming Soon', disabled=True, key='addSTT')],
                 [sg.Text('☵Divider', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Horizontal Divider', ), sg.Push(), sg.Button('Add to Layout',  key='addDiv')],
                 
                 ],size=(350, 520), scrollable=True, vertical_scroll_only=True, element_justification='center'), sg.Column([
@@ -542,11 +553,17 @@ def uiThread():
                   [sg.Text('File to use for the text file read functionality')],
                   [sg.Button('Open File'), sg.Text('', key='message_file_path_display')]
               ], size=(379, 70))],
-              [sg.Column([
+    [sg.Column([
                   [sg.Text('Delay between frame updates, in seconds')],
                   [sg.Text('If you are getting a \'Timed out for x seconds\' message,\ntry adjusting this')],
                   [sg.Slider(range=(1.5, 10), default_value=1.5, resolution=0.1, orientation='horizontal', size=(40, 15), key="msgDelay", trough_color=scrollbarBackgroundColor)]
       ], size=(379, 110))],
+    [sg.Column([
+      [sg.Text('Advanced Sending Options')],
+      [sg.Checkbox('Clear the chatbox when toggled or on program close\nTurn off if you are getting issues with the chatbox blinking', key='sendBlank', default=True)],
+      [sg.Checkbox('Skip sending duplicate messages', key='suppressDuplicates', default=True)],
+      [sg.Checkbox('Send next message as soon as any data is updated\nOnly skips delay if previous message was skipped', key='sendASAP', default=True)]
+    ], size=(379, 140))]
   ]
   
   text_conf_layout = [
@@ -695,7 +712,7 @@ def uiThread():
               ]
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=accentColor)]]
   preview_layout = [[sg.Column(
-              [[sg.Text('Preview (Not Perfect)', background_color=accentColor, font=('Arial', 12, 'bold'))],
+              [[sg.Text('Preview (Not Perfect)', background_color=accentColor, font=('Arial', 12, 'bold')),sg.Text('', key='sentCountdown')],
               [sg.Column([
                 [sg.Text('', key = 'messagePreviewFill', font=('Arial', 12 ), auto_size_text=True, size=(21, 100), justification='center')]
               ], size=(379, 150))]
@@ -795,6 +812,9 @@ def uiThread():
     window['mutedDisplay'].update(value='Muted 🔇')
     window['unmutedDisplay'].update(value='🔊')
     window['darkMode'].update(value=False)
+    window['sendBlank'].update(value=True)
+    window['suppressDuplicates'].update(value=True)
+    window['sendASAP'].update(value=True)
   def updateUI():
     global bgColor
     global accentColor
@@ -806,6 +826,10 @@ def uiThread():
     global tabTextColor
     global playMsg
     global msgOutput
+    global sentTime
+    global sent
+    global sendSkipped
+    global message_delay
     if os.path.isfile('please-do-not-delete.txt'):
       window['msgDelay'].update(value=message_delay)
       window['messageInput'].update(value=messageString)
@@ -825,6 +849,7 @@ def uiThread():
       window['bottomBar'].update(value=bottomBar)
       window['pulsoidToken'].update(value=pulsoidToken)
       window['avatarHR'].update(value=avatarHR) 
+      window['useAfkKeybind'].update(value=useAfkKeybind)
       window['updatePrompt'].update(value=updatePrompt)
       window['oscListenAddress'].update(value=oscListenAddress)
       window['oscListenPort'].update(value=oscListenPort)
@@ -845,6 +870,9 @@ def uiThread():
       window['mutedDisplay'].update(value=mutedDisplay)
       window['unmutedDisplay'].update(value=unmutedDisplay)
       window['darkMode'].update(value=darkMode)
+      window['sendBlank'].update(value=sendBlank)
+      window['suppressDuplicates'].update(value=suppressDuplicates)
+      window['sendASAP'].update(value=sendASAP)
     while run:
       if run:
         try:
@@ -852,6 +880,12 @@ def uiThread():
           window['runThing'].update(value=playMsg)
           window['afk'].update(value=afk)   
           layoutPreviewBuilder(window['layoutStorage'].get(), window)
+          if playMsg:
+            sentTime = sentTime + 0.1
+          if sendSkipped:
+            window['sentCountdown'].update('Last sent: '+str(round(sentTime, 1)) +"/"+ str(message_delay) +" [Skipped Send]")
+          else:
+            window['sentCountdown'].update('Last sent: '+str(round(sentTime, 1)) +"/"+ str(message_delay))
         except Exception as e:
           print(e)
         if run:
@@ -918,9 +952,12 @@ def uiThread():
           mutedDisplay = values['mutedDisplay']
           unmutedDisplay = values['unmutedDisplay']
           darkMode = values['darkMode']
+          sendBlank = values['sendBlank']
+          suppressDuplicates = values['suppressDuplicates']
+          sendASAP = values['sendASAP']
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode]))
+              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode, sendBlank, suppressDuplicates, sendASAP]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
           
@@ -1401,6 +1438,8 @@ if __name__ == "__main__":
     global hrInfo
     global gpuDat
     global lastSent
+    global sentTime
+    global sendSkipped
     #end of stupid crap
     if playMsg:
       #preassembles
@@ -1564,12 +1603,16 @@ if __name__ == "__main__":
       else:
         msgOutput = a
       if playMsg:
-        if str(msgOutput) != lastSent:
+        if (str(msgOutput) != lastSent) or not suppressDuplicates:
           client.send_message("/chatbox/input", [ str(msgOutput), True, False])
           lastSent = str(msgOutput)
+          sentTime = 0
+          sendSkipped = False
+        else:
+          sendSkipped = True
       msgDelayMemory = message_delay
       for x in range(int(message_delay*10)):
-        if not playMsg or not run or msgDelayMemory != message_delay:
+        if not playMsg or not run or ((msgDelayMemory != message_delay) and sendASAP) or sendSkipped == True:
           break
         time.sleep(.1)
 
@@ -1676,7 +1719,8 @@ def runmsg():
     else:
       sendMsg('')
   textParseIterator = 0
-  client.send_message("/chatbox/input", [ "", True, False])
+  if sendBlank:
+    client.send_message("/chatbox/input", [ "", True, False])
     
 def msgPlayCheck():
   if keyboard.is_pressed(keybind_run):
