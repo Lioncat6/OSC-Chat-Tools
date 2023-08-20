@@ -68,7 +68,7 @@ All keyboard shortcuts can be rebound
  - TONS of customizability
 
 # Coming soon:
- - More modular plugins system to replace hardcoded objects
+ - Modular plugins system to replace hardcoded objects
  - Make the program install instead of being standalone to enable mods and assets and to improve boot time
  - Switch to a different ui engine cause while PySimeGUI is great... its *too* simple
  - Heartrate data through stronmo (Cheaper alternative to Pulsoid)
