@@ -2,7 +2,7 @@
 An osc script I made for Vrchat. Now with UI!
 - Feature Requests are encouraged. You need something added? Let me know
 
-![Preview](https://github.com/Lioncat6/OSC-Chat-Tools/blob/c4eafce187b862930472bb577c7fd0d021af7eda/preview.png)
+![Preview](https://raw.githubusercontent.com/Lioncat6/OSC-Chat-Tools/main/preview.png)
 
 OCT Is a standalone program used for interacting with Vrchat's OSC to send chat messages to the chatbox as well as other data in some cases
 
