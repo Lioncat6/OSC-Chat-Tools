@@ -1603,7 +1603,7 @@ if __name__ == "__main__":
       else:
         msgOutput = a
       if playMsg:
-        if (str(msgOutput) != lastSent) or not suppressDuplicates:
+        if (str(msgOutput) != lastSent) or (not suppressDuplicates) or sentTime > 30:
           client.send_message("/chatbox/input", [ str(msgOutput), True, False])
           lastSent = str(msgOutput)
           sentTime = 0
