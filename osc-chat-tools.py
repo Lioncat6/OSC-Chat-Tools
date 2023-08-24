@@ -195,7 +195,7 @@ def outputLog(text):
     print(text)
     global threadName
     threadName = threading.current_thread().name
-    def waitThread():
+    def outputQueue():
         global threadName
         timestamp = datetime.now()
         with queue_lock:
@@ -208,8 +208,8 @@ def outputLog(text):
                 windowAccess.write_event_value('outputSend', str(message[0]) + " " + message[1])
                 windowAccess['output'].Widget.see('end')
             message_queue.clear()
-    waitThreadHandler = Thread(target=waitThread)
-    waitThreadHandler.start()
+    outputQueueHandler = Thread(target=outputQueue)
+    outputQueueHandler.start()
     
 outputLog("OCT Starting...")
 
@@ -232,16 +232,14 @@ def update_checker(a):
                   time.sleep(.1)
                   pass
                 windowAccess.write_event_value('updateAvailable', data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
-              updatePromptWaitThreadHandler = Thread(target=updatePromptWaitThread)
-              updatePromptWaitThreadHandler.start()
+              updatePromptWaitThreadHandler = Thread(target=updatePromptWaitThread).start()
             outOfDate = True
             def waitThread():
               while windowAccess == None:
                   time.sleep(.1)
                   pass
               windowAccess.write_event_value('markOutOfDate', '')
-            waitThreadHandler = Thread(target=waitThread)
-            waitThreadHandler.start()
+            waitThreadHandler = Thread(target=waitThread).start()
           else:
             if a:
               windowAccess.write_event_value('popup', "Program is up to date! Version "+version)
@@ -886,7 +884,7 @@ def uiThread():
           if playMsg:
             sentTime = sentTime + 0.1
           if sendSkipped:
-            window['sentCountdown'].update('Last sent: '+str(round(sentTime, 1)) +"/"+ str(message_delay) +" [Skipped Send]")
+            window['sentCountdown'].update('Last sent: '+str(round(sentTime, 1)) +"/"+ "30" +" [Skipped Send]")
           else:
             window['sentCountdown'].update('Last sent: '+str(round(sentTime, 1)) +"/"+ str(message_delay))
         except Exception as e:
@@ -1247,8 +1245,7 @@ if __name__ == "__main__":
                         time.sleep(.1)
                         pass
                     windowAccess.write_event_value('listenError', str(err))
-                updatePromptWaitThreadHandler = Thread(target=WaitThread, args=(err,))
-                updatePromptWaitThreadHandler.start()
+                updatePromptWaitThreadHandler = Thread(target=WaitThread, args=(err,)).start()
 
         # Set the IP addresses and port numbers to forward data to
         if oscForeword:
@@ -1486,10 +1483,11 @@ if __name__ == "__main__":
         songInfo=songDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist))+" (paused)"
       letsGetThatTime =" "+str(current_hour)+":"+current_minute+dayThing
       cpu_percent = str(psutil.cpu_percent())
-      ram_percent = str(int(psutil.virtual_memory()[2]))
-      ram_used = str(round(int(psutil.virtual_memory()[0])/1073741824-int(psutil.virtual_memory()[1])/1073741824, 1))
-      ram_available = str(round(int(psutil.virtual_memory()[1])/1073741824, 1))
-      ram_total = str(round(int(psutil.virtual_memory()[0])/1073741824, 1))
+      psutilVirtualMemory = psutil.virtual_memory()
+      ram_percent = str(int(psutilVirtualMemory[2]))
+      ram_used = str(round(int(psutilVirtualMemory[0])/1073741824-int(psutilVirtualMemory[1])/1073741824, 1))
+      ram_available = str(round(int(psutilVirtualMemory[1])/1073741824, 1))
+      ram_total = str(round(int(psutilVirtualMemory[0])/1073741824, 1))
       #gpu_percent = str(round((GPUtil.getGPUs()[0].load*100), 1))
       gpu_percent = "0"
       hr = str(heartRate)
@@ -1618,6 +1616,7 @@ if __name__ == "__main__":
         if not playMsg or not run or ((msgDelayMemory != message_delay) and sendASAP) or sendSkipped == True:
           break
         time.sleep(.1)
+        print(x)
 
 def hrConnectionThread():
   while run:
@@ -1634,7 +1633,7 @@ def hrConnectionThread():
       if not hrConnected:
         try:
           ws = create_connection("wss://dev.pulsoid.net/api/v1/data/real_time?access_token="+pulsoidToken+"&response_mode=text_plain_only_heart_rate")
-          ws.settimeout(.4) # Set a timeout of 1 second so the thread stops 
+          ws.settimeout(.4)
           hrConnected = True
           def pulsoidListen():
               global heartRate
@@ -1783,7 +1782,7 @@ def vrcRunningCheck():
           if "VRChat.exe" in proc.name():
               vrcPID = proc.pid
               break
-          time.sleep(.001)
+          time.sleep(.01)
       playTimeDat = time.mktime(time.localtime(psutil.Process(vrcPID).create_time()))
     time.sleep(1)
 
