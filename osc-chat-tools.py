@@ -1616,7 +1616,6 @@ if __name__ == "__main__":
         if not playMsg or not run or ((msgDelayMemory != message_delay) and sendASAP) or sendSkipped == True:
           break
         time.sleep(.1)
-        print(x)
 
 def hrConnectionThread():
   while run:
