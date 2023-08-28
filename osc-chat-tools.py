@@ -1442,74 +1442,6 @@ if __name__ == "__main__":
     global sendSkipped
     #end of stupid crap
     if playMsg:
-      #preassembles
-      now = datetime.now()
-      current_hour = now.strftime("%H")
-      current_minute = now.strftime("%M")
-      if int(current_hour) >= 12:
-          current_hour = int(current_hour)-12
-          dayThing = "PM"
-      else:
-          dayThing = "AM"
-      if int(current_hour) == 0:
-          current_hour = 12  
-      try:
-        current_media_info = asyncio.run(get_media_info())
-        artist = current_media_info['artist']
-        title = current_media_info['title']
-        album_title = current_media_info['album_title'] 
-        album_artist = current_media_info['album_artist'] 
-        mediaPlaying = mediaIs('PLAYING')
-      except Exception as e:
-        artist = ''
-        title = ''
-        album_title = ''
-        album_artist = ''
-        mediaPlaying = False
-        if 'TARGET_PROGRAM' in str(e):
-          logOutput('Can\'t get media info, please make sure an application is playing audio')
-          pass
-        else:
-          if windowAccess != None:
-            try:
-                logOutput('mediaManagerError '+str(e))
-                windowAccess.write_event_value('mediaManagerError', e)
-            except:
-              pass
-      if mediaPlaying or (not showPaused):
-        songInfo = songDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist))
-        
-      else:
-        songInfo=songDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist))+" (paused)"
-      letsGetThatTime =" "+str(current_hour)+":"+current_minute+dayThing
-      cpu_percent = str(psutil.cpu_percent())
-      psutilVirtualMemory = psutil.virtual_memory()
-      ram_percent = str(int(psutilVirtualMemory[2]))
-      ram_used = str(round(int(psutilVirtualMemory[0])/1073741824-int(psutilVirtualMemory[1])/1073741824, 1))
-      ram_available = str(round(int(psutilVirtualMemory[1])/1073741824, 1))
-      ram_total = str(round(int(psutilVirtualMemory[0])/1073741824, 1))
-      #gpu_percent = str(round((GPUtil.getGPUs()[0].load*100), 1))
-      gpu_percent = "0"
-      hr = str(heartRate)
-      cpuDat = cpuDisplay.format_map(defaultdict(str, cpu_percent=cpu_percent))
-      ramDat = ramDisplay.format_map(defaultdict(str, ram_percent=ram_percent, ram_available=ram_available, ram_total=ram_total, ram_used=ram_used))
-      gpuDat = gpuDisplay.format_map(defaultdict(str, gpu_percent=gpu_percent))
-      hrInfo = hrDisplay.format_map(defaultdict(str, hr=hr))
-      """hours, remainder = divmod(playTime, 3600)
-      minutes, seconds = divmod(remainder, 60)
-      play_time =  f'{hours:02d}:{minutes:02d}:{seconds:02d}'"""
-      try:
-        minutes = int((time.time()-playTimeDat)/60)
-        hours, remainder_minutes = divmod(minutes, 60)
-        if vrcPID == None:
-          minutes = 0
-          hours = 0
-          remainder_minutes = 0
-      except:
-        minutes = 0
-        hours = 0
-        remainder_minutes = 0
-      playDat = playTimeDisplay.format_map(defaultdict(str, hours="{:02d}".format(hours), remainder_minutes="{:02d}".format(remainder_minutes), minutes="{:02d}".format(minutes)))
       #message Assembler:
       if not scrollText and not afk:
         
@@ -1534,15 +1466,52 @@ if __name__ == "__main__":
               msg =  msg + lf
             return msg
           def time(data):
-            global letsGetThatTime
+            now = datetime.now()
+            current_hour = now.strftime("%H")
+            current_minute = now.strftime("%M")
+            if int(current_hour) >= 12:
+                current_hour = int(current_hour)-12
+                dayThing = "PM"
+            else:
+                dayThing = "AM"
+            if int(current_hour) == 0:
+                current_hour = 12  
+            letsGetThatTime =" "+str(current_hour)+":"+current_minute+dayThing
             return(checkData(letsGetThatTime, data))
           def text(data):
             return(checkData(a.replace("\\n", "\v").replace("\\v", "\v"), data))
           def song(data):
+            try:
+              current_media_info = asyncio.run(get_media_info())
+              artist = current_media_info['artist']
+              title = current_media_info['title']
+              album_title = current_media_info['album_title'] 
+              album_artist = current_media_info['album_artist'] 
+              mediaPlaying = mediaIs('PLAYING')
+            except Exception as e:
+              artist = ''
+              title = ''
+              album_title = ''
+              album_artist = ''
+              mediaPlaying = False
+              if 'TARGET_PROGRAM' in str(e):
+                logOutput('Can\'t get media info, please make sure an application is playing audio')
+                pass
+              else:
+                if windowAccess != None:
+                  try:
+                      logOutput('mediaManagerError '+str(e))
+                      windowAccess.write_event_value('mediaManagerError', e)
+                  except:
+                    pass
+            if mediaPlaying or (not showPaused):
+              songInfo = songDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist))
+            else:
+              songInfo=songDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist))+" (paused)"
             global showOnChange
             global songChangeTicks
             global tickCount
-            global songInfo
+            #global songInfo
             global songName
             if hideSong and not mediaPlaying:
               return ''
@@ -1559,15 +1528,26 @@ if __name__ == "__main__":
               else:
                 return(checkData(songInfo, data))
           def cpu(data):
-            global cpuDat
+            cpu_percent = str(psutil.cpu_percent())
+            cpuDat = cpuDisplay.format_map(defaultdict(str, cpu_percent=cpu_percent))
             return (checkData(cpuDat, data))
           def ram(data):
+            psutilVirtualMemory = psutil.virtual_memory()
+            ram_percent = str(int(psutilVirtualMemory[2]))
+            ram_used = str(round(int(psutilVirtualMemory[0])/1073741824-int(psutilVirtualMemory[1])/1073741824, 1))
+            ram_available = str(round(int(psutilVirtualMemory[1])/1073741824, 1))
+            ram_total = str(round(int(psutilVirtualMemory[0])/1073741824, 1))
+            ramDat = ramDisplay.format_map(defaultdict(str, ram_percent=ram_percent, ram_available=ram_available, ram_total=ram_total, ram_used=ram_used))
             return (checkData(ramDat, data))
           def gpu(data):
+            #gpu_percent = str(round((GPUtil.getGPUs()[0].load*100), 1))
+            gpu_percent = "0"
+            gpuDat = gpuDisplay.format_map(defaultdict(str, gpu_percent=gpu_percent))
             return (checkData(gpuDat, data))
           def hr(data):
-            global hrInfo
             global useHR
+            hr = str(heartRate)
+            hrInfo = hrDisplay.format_map(defaultdict(str, hr=hr))
             useHR = True
             return (checkData(hrInfo, data))
           def mute(data):
@@ -1582,6 +1562,18 @@ if __name__ == "__main__":
             else:
               return (checkData(unmutedDisplay, data))
           def playtime(data):
+            try:
+              minutes = int((time.time()-playTimeDat)/60)
+              hours, remainder_minutes = divmod(minutes, 60)
+              if vrcPID == None:
+                minutes = 0
+                hours = 0
+                remainder_minutes = 0
+            except:
+              minutes = 0
+              hours = 0
+              remainder_minutes = 0
+            playDat = playTimeDisplay.format_map(defaultdict(str, hours="{:02d}".format(hours), remainder_minutes="{:02d}".format(remainder_minutes), minutes="{:02d}".format(minutes)))
             return(checkData(playDat, data))
           try:
             msgOutput = eval("f'"f'{layoutString}'"'")
