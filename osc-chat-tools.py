@@ -5,7 +5,7 @@ from threading import Thread, Lock
 import ast
 import requests
 from collections import defaultdict
-import subprocess
+import ctypes
 
 if not os.path.isfile('please-do-not-delete.txt'):
   with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
@@ -26,6 +26,7 @@ from websocket import create_connection # websocket-client
 from pythonosc.dispatcher import Dispatcher
 from pythonosc import osc_server
 import socket
+import pyperclip
 #import GPUtil
 run = True
 playMsg = True
@@ -144,6 +145,18 @@ lastSent = ''
 sentTime = 0
 sendSkipped = False
 
+def fatal_error(error = None):
+  run = False
+  ctypes.windll.user32.MessageBoxW(None, u"OSC Chat Tools has encountered a fatal error.", u"OCT Fatal Error", 16)
+  if error != None:
+    result = ctypes.windll.user32.MessageBoxW(None, u"The program crashed with an error message. Would you like to copy it to your clipboard?", u"OCT Fatal Error", 3 + 64)
+    if result == 6:
+      pyperclip.copy(str(datetime.now())+" ["+threading.current_thread().name+"] "+str(error))
+  result = ctypes.windll.user32.MessageBoxW(None, u"Open the github page to get support?", u"OCT Fatal Error", 3 + 64)
+  if result == 6:
+      webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/wiki/Fatal-Error-Crash')
+  os._exit(0)
+
 def afk_handler(unused_address, args):
     global isAfk
     isAfk = args
@@ -206,7 +219,10 @@ def outputLog(text):
             message_queue.sort(key=lambda x: x[0])
             for message in message_queue:
                 windowAccess.write_event_value('outputSend', str(message[0]) + " " + message[1])
-                windowAccess['output'].Widget.see('end')
+                try:
+                  windowAccess['output'].Widget.see('end')
+                except Exception as e:
+                  fatal_error(e)
             message_queue.clear()
     outputQueueHandler = Thread(target=outputQueue)
     outputQueueHandler.start()
@@ -832,48 +848,51 @@ def uiThread():
     global sendSkipped
     global message_delay
     if os.path.isfile('please-do-not-delete.txt'):
-      window['msgDelay'].update(value=message_delay)
-      window['messageInput'].update(value=messageString)
-      window['message_file_path_display'].update(value=FileToRead)
-      window['scroll'].update(value=scrollText)
-      window['hideSong'].update(value=hideSong)
-      window['hideOutside'].update(value=hideOutside)
-      window['showPaused'].update(value=showPaused)
-      window['songDisplay'].update(value=songDisplay)
-      window['showOnChange'].update(value=showOnChange)
-      window['songChangeTicks'].update(value=songChangeTicks)
-      window['minimizeOnStart'].update(value=minimizeOnStart)
-      window['keybind_run'].update(value=keybind_run)
-      window['keybind_afk'].update(value=keybind_afk)
-      window['topBar'].update(value=topBar)
-      window['middleBar'].update(value=middleBar)
-      window['bottomBar'].update(value=bottomBar)
-      window['pulsoidToken'].update(value=pulsoidToken)
-      window['avatarHR'].update(value=avatarHR) 
-      window['useAfkKeybind'].update(value=useAfkKeybind)
-      window['updatePrompt'].update(value=updatePrompt)
-      window['oscListenAddress'].update(value=oscListenAddress)
-      window['oscListenPort'].update(value=oscListenPort)
-      window['oscSendAddress'].update(value=oscSendAddress)
-      window['oscSendPort'].update(value=oscSendPort)
-      window['oscForewordAddress'].update(value=oscForewordAddress)
-      window['oscForewordPort'].update(value=oscForewordPort)
-      window['oscListen'].update(value=oscListen)
-      window['oscForeword'].update(value=oscForeword)
-      window['logOutput'].update(value=logOutput)
-      window['layoutStorage'].update(value=layoutString)
-      window['verticalDivider'].update(value=verticalDivider)
-      window['cpuDisplay'].update(value=cpuDisplay)
-      window['ramDisplay'].update(value=ramDisplay)
-      window['gpuDisplay'].update(value=gpuDisplay)
-      window['hrDisplay'].update(value=hrDisplay)
-      window['playTimeDisplay'].update(value=playTimeDisplay)
-      window['mutedDisplay'].update(value=mutedDisplay)
-      window['unmutedDisplay'].update(value=unmutedDisplay)
-      window['darkMode'].update(value=darkMode)
-      window['sendBlank'].update(value=sendBlank)
-      window['suppressDuplicates'].update(value=suppressDuplicates)
-      window['sendASAP'].update(value=sendASAP)
+      try:
+        window['msgDelay'].update(value=message_delay)
+        window['messageInput'].update(value=messageString)
+        window['message_file_path_display'].update(value=FileToRead)
+        window['scroll'].update(value=scrollText)
+        window['hideSong'].update(value=hideSong)
+        window['hideOutside'].update(value=hideOutside)
+        window['showPaused'].update(value=showPaused)
+        window['songDisplay'].update(value=songDisplay)
+        window['showOnChange'].update(value=showOnChange)
+        window['songChangeTicks'].update(value=songChangeTicks)
+        window['minimizeOnStart'].update(value=minimizeOnStart)
+        window['keybind_run'].update(value=keybind_run)
+        window['keybind_afk'].update(value=keybind_afk)
+        window['topBar'].update(value=topBar)
+        window['middleBar'].update(value=middleBar)
+        window['bottomBar'].update(value=bottomBar)
+        window['pulsoidToken'].update(value=pulsoidToken)
+        window['avatarHR'].update(value=avatarHR) 
+        window['useAfkKeybind'].update(value=useAfkKeybind)
+        window['updatePrompt'].update(value=updatePrompt)
+        window['oscListenAddress'].update(value=oscListenAddress)
+        window['oscListenPort'].update(value=oscListenPort)
+        window['oscSendAddress'].update(value=oscSendAddress)
+        window['oscSendPort'].update(value=oscSendPort)
+        window['oscForewordAddress'].update(value=oscForewordAddress)
+        window['oscForewordPort'].update(value=oscForewordPort)
+        window['oscListen'].update(value=oscListen)
+        window['oscForeword'].update(value=oscForeword)
+        window['logOutput'].update(value=logOutput)
+        window['layoutStorage'].update(value=layoutString)
+        window['verticalDivider'].update(value=verticalDivider)
+        window['cpuDisplay'].update(value=cpuDisplay)
+        window['ramDisplay'].update(value=ramDisplay)
+        window['gpuDisplay'].update(value=gpuDisplay)
+        window['hrDisplay'].update(value=hrDisplay)
+        window['playTimeDisplay'].update(value=playTimeDisplay)
+        window['mutedDisplay'].update(value=mutedDisplay)
+        window['unmutedDisplay'].update(value=unmutedDisplay)
+        window['darkMode'].update(value=darkMode)
+        window['sendBlank'].update(value=sendBlank)
+        window['suppressDuplicates'].update(value=suppressDuplicates)
+        window['sendASAP'].update(value=sendASAP)
+      except:
+        pass
     while run:
       if run:
         try:
@@ -888,7 +907,7 @@ def uiThread():
           else:
             window['sentCountdown'].update('Last sent: '+str(round(sentTime, 1)) +"/"+ str(message_delay))
         except Exception as e:
-          print(e)
+          fatal_error(e)
         if run:
           time.sleep(.1)
   updateUIThread = Thread(target=updateUI)
@@ -967,7 +986,7 @@ def uiThread():
       if event == 'Open Github Page':
         webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools')
       if event == 'About':
-        about_popop_layout =  [[sg.Text('OSC Chat Tools by', font=('Arial', 11, 'bold'), pad=(0, 20)), sg.Text('Lioncat6', font=('Arial', 12, 'bold'))],[sg.Text('Modules Used:',font=('Arial', 11, 'bold'))], [sg.Text('- PySimpleGUI\n - argparse\n - datetime\n - pythonosc (udp_client)\n - keyboard\n - asyncio\n - psutil\n - webbrowser\n - winsdk (windows.media.control)\n - websocket-client')], [sg.Button('Ok')]]
+        about_popop_layout =  [[sg.Text('OSC Chat Tools by', font=('Arial', 11, 'bold'), pad=(0, 20)), sg.Text('Lioncat6', font=('Arial', 12, 'bold'))],[sg.Text('Modules Used:',font=('Arial', 11, 'bold'))], [sg.Text('- PySimpleGUI\n - argparse\n - datetime\n - pythonosc (udp_client)\n - keyboard\n - asyncio\n - psutil\n - webbrowser\n - winsdk (windows.media.control)\n - websocket-client\n - pyperclip')], [sg.Button('Ok')]]
         about_window = sg.Window('About', about_popop_layout, keep_on_top=True)
         event, values = about_window.read()
         about_window.close()
