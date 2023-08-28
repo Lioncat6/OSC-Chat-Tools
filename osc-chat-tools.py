@@ -766,7 +766,7 @@ def uiThread():
   menu_def = [['&File', ['A&pply', '&Reset', '---', 'Open Config File', '---','E&xit', 'Re&start' ]],
           ['&Help', ['&About', '---', 'Submit Feedback', '---', 'Open &Github Page', '&Check For Updates', '&FAQ']]]
   topMenuBar = sg.Menu(menu_def, key="menuBar")
-  right_click_menu = ['&Right', ['You thought']]
+  right_click_menu = ['&Right', ['Copy', 'Paste']]
   layout = [
       [[topMenuBar]],
       [   
@@ -787,7 +787,6 @@ def uiThread():
   window = sg.Window('OSC Chat Tools', layout,
                   default_element_size=(12, 1), resizable=True, finalize= True, size=(900, 620), right_click_menu=right_click_menu)
   window.set_min_size((500, 350))
-
   def resetVars():
     window['messageInput'].update(value='OSC Chat Tools\nBy Lioncat6')
     window['msgDelay'].update(value=1.5)
@@ -1171,6 +1170,10 @@ def uiThread():
             toggleValues(x, 2)
           else:
             toggleValues(x, 0)
+      if event == 'Copy':
+        keyboard.press_and_release('ctrl+c')
+      if event == 'Paste':
+        keyboard.press_and_release('ctrl+v')
   window.close()
   playMsg = False
   run = False
