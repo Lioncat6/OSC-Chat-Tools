@@ -31,7 +31,7 @@ import pyperclip
 run = True
 playMsg = True
 textParseIterator = 0
-version = "1.5.41"
+version = "1.5.4"
 message_delay = 1.5
 msgOutput = ''
 topTextToggle = False #Deprecated, only in use for converting old save files
