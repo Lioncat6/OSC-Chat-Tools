@@ -147,14 +147,14 @@ sendSkipped = False
 
 def fatal_error(error = None):
   run = False
-  ctypes.windll.user32.MessageBoxW(None, u"OSC Chat Tools has encountered a fatal error.", u"OCT Fatal Error", 16)
+  """ctypes.windll.user32.MessageBoxW(None, u"OSC Chat Tools has encountered a fatal error.", u"OCT Fatal Error", 16)
   if error != None:
     result = ctypes.windll.user32.MessageBoxW(None, u"The program crashed with an error message. Would you like to copy it to your clipboard?", u"OCT Fatal Error", 3 + 64)
     if result == 6:
       pyperclip.copy(str(datetime.now())+" ["+threading.current_thread().name+"] "+str(error))
   result = ctypes.windll.user32.MessageBoxW(None, u"Open the github page to get support?", u"OCT Fatal Error", 3 + 64)
   if result == 6:
-      webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/wiki/Fatal-Error-Crash')
+      webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/wiki/Fatal-Error-Crash')"""
   os._exit(0)
 
 def afk_handler(unused_address, args):
