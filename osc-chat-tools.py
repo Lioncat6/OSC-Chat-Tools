@@ -1463,6 +1463,8 @@ if __name__ == "__main__":
     global sentTime
     global sendSkipped
     #end of stupid crap
+    global timeVar
+    timeVar = time.time()
     if playMsg:
       #message Assembler:
       if not scrollText and not afk:
@@ -1479,6 +1481,7 @@ if __name__ == "__main__":
           global showPaused
           global useHR
           global gpuDat
+          global timeVar
           useHR = False
           def checkData(msg, data):
             lf = "\v"
@@ -1584,14 +1587,15 @@ if __name__ == "__main__":
             else:
               return (checkData(unmutedDisplay, data))
           def playtime(data):
+            global timeVar
             try:
-              minutes = int((time.time()-playTimeDat)/60)
+              minutes = int((timeVar-playTimeDat)/60)
               hours, remainder_minutes = divmod(minutes, 60)
               if vrcPID == None:
                 minutes = 0
                 hours = 0
                 remainder_minutes = 0
-            except:
+            except Exception as e:
               minutes = 0
               hours = 0
               remainder_minutes = 0
