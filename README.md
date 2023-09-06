@@ -60,10 +60,12 @@ All keyboard shortcuts can be rebound
 - **`P`** Toggle Chatbox
 - **`end`** Toggle AFK
 
-# TO GET A PULSOID TOKEN
- - First set up a pulsoid account and link a device: https://pulsoid.net/registration
-    - [Pulsoid App link](https://pulsoid.net/oauth2/authorize?response_type=token&client_id=8070496f-f886-4030-8340-96d1d68b25cb&redirect_uri=&scope=data:heart_rate:read&state=&response_mode=web_page)
+# To get a Pulsoid Token
+ - First set up a Pulsoid account and link a device: https://pulsoid.net/registration
+ - Next, grab a Pulsoid token using one of the two below methods:
+    - [OCT Pulsoid App link](https://pulsoid.net/oauth2/authorize?response_type=token&client_id=8070496f-f886-4030-8340-96d1d68b25cb&redirect_uri=&scope=data:heart_rate:read&state=&response_mode=web_page)
     - https://pulsoid.net/ui/keys - If you have a BRO Subscription
+ - Paste the copied token into the behavior tab under the `💓HR` section
 
 # Guide- last updated for 1.1.0
 ### [https://youtu.be/an7PLpDf5kE](https://youtu.be/an7PLpDf5kE)
