@@ -74,7 +74,7 @@ All keyboard shortcuts can be rebound
 # Coming soon:
  - Modular plugins system to replace hardcoded objects
  - Make the program install instead of being standalone to enable mods and assets and to improve boot time
- - Switch to a different ui engine cause while PySimeGUI is great... its *too* simple
+ - Switch to a different ui, probably some sort of electron app rather than a python based one
  - Heartrate data through stronmo (Cheaper alternative to Pulsoid)
  - Speech To Text (Almost Done!)
  - GPU Stats
