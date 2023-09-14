@@ -27,11 +27,15 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc import osc_server
 import socket
 import pyperclip
+from flask import Flask, request
+from werkzeug.serving import make_server
+import hashlib
+import base64
 #import GPUtil
 run = True
 playMsg = True
 textParseIterator = 0
-version = "1.5.4"
+version = "1.5.5"
 message_delay = 1.5
 msgOutput = ''
 topTextToggle = False #Deprecated, only in use for converting old save files
@@ -97,7 +101,7 @@ output = ''
 logOutput = False  #in conf
 
 layoutString = '' #in conf
-verticalDivider = "┊" #in conf
+verticalDivider = "〣" #in conf
 
 cpuDisplay = 'ᴄᴘᴜ: {cpu_percent}%'#in conf
 ramDisplay = 'ʀᴀᴍ: {ram_percent}%  ({ram_used}/{ram_total})'#in conf
@@ -106,14 +110,21 @@ hrDisplay = '💓 {hr}'#in conf
 playTimeDisplay = '⏳{hours}:{remainder_minutes}'#in conf
 mutedDisplay = 'Muted 🔇'#in conf
 unmutedDisplay = '🔊'#in conf
-
+ 
 darkMode = 'False' #in conf
 
 sendBlank = True
-suppressDuplicates = True
-sendASAP = True
+suppressDuplicates = False
+sendASAP = False
 
-###########Program Variables (not in conf)#########
+useMediaManager = True
+useSpotifyApi = False
+spotifySongDisplay =  '🎵\'{title}\' ᵇʸ {artist}🎶 『{song_progress} / {song_length}』'
+
+spotifyAccessToken = ''
+spotifyRefreshToken = ''
+
+###########Program Variables (not in conf)######### 
 
 useHR = False
 
@@ -128,14 +139,12 @@ isListenServerRunning = False
 listenServer = None
 useForewordMemory = False
 
-
 isAfk = False
 isVR = False #Never used as the game never actually updates vrmode 
 isMute = False
 isInSeat = False
 voiceVolume = 0
 isUsingEarmuffs = False
-
 
 vrcPID = None
 
@@ -145,7 +154,17 @@ lastSent = ''
 sentTime = 0
 sendSkipped = False
 
+spotifyAuthCode = None #<- only needed for the spotify linking process (temp var)
+
+spotify_client_id = '915e1de141b3408eb430d25d0d39b380'
+spotify_redirect_uri = 'http://localhost:8000/callback'
+spotifyLinkStatus = 'Unlinked'
+cancelLink = False
+spotifyPlayState = ''
+
+
 def fatal_error(error = None):
+  global run
   run = False
   """ctypes.windll.user32.MessageBoxW(None, u"OSC Chat Tools has encountered a fatal error.", u"OCT Fatal Error", 16)
   if error != None:
@@ -155,6 +174,7 @@ def fatal_error(error = None):
   result = ctypes.windll.user32.MessageBoxW(None, u"Open the github page to get support?", u"OCT Fatal Error", 3 + 64)
   if result == 6:
       webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/wiki/Fatal-Error-Crash')"""
+  time.sleep(5)
   os._exit(0)
 
 def afk_handler(unused_address, args):
@@ -313,7 +333,8 @@ confDataDict = { #this dictionary will always exclude position 0 which is the co
   "1.5.1" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode'],
   "1.5.2" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode'],
   "1.5.3" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP'],
-  "1.5.4" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP']
+  "1.5.4" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP'],
+  "1.5.5" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken']
 }
 
 if os.path.isfile('please-do-not-delete.txt'):
@@ -417,8 +438,84 @@ def layoutPreviewBuilder(layout, window):
   except:
     for x in range(1, 16):
       window['layout'+str(x)].update(visible=False)
-    
-      
+ 
+def refreshAccessToken(oldRefreshToken):
+  global spotifyRefreshToken
+  global spotifyAccessToken
+  global spotify_client_id
+  token_url = 'https://accounts.spotify.com/api/token'
+  data = {
+      'grant_type': 'refresh_token',
+      'refresh_token': oldRefreshToken,
+      'client_id': spotify_client_id
+    }       
+  response = requests.post(token_url, data=data)
+  #print(response.json())
+  spotifyRefreshToken = response.json().get('refresh_token')
+  spotifyAccessToken =  response.json().get('access_token')    
+
+def getSpotifyPlaystate():
+  global spotifyRefreshToken
+  global spotifyAccessToken
+  
+  def get_playstate(accessToken):
+    global spotifyRefreshToken
+    global spotifyAccessToken
+    #print(spotifyAccessToken)
+    #print(accessToken)
+    headers = {
+        'Authorization': 'Bearer ' + accessToken,
+    }
+
+    response = requests.get('https://api.spotify.com/v1/me/player', headers=headers)
+    if response.status_code == 204:
+      data = ''
+    else:
+      data = response.json()
+    return data
+  try:
+      playState = get_playstate(spotifyAccessToken)
+      if playState != '' and playState != None:
+        if 'error' in str(playState):
+          raise Exception('Error '+str(playState.get('error')))
+  except Exception as e:
+      outputLog("Regenerating spotify access token... "+str(e))
+      accessToken = refreshAccessToken(spotifyRefreshToken)
+      #windowAccess.write_event_value('Apply', '')  
+      playState = get_playstate(accessToken) 
+  if playState == None:
+    playState = ''
+  return playState
+def loadSpotifyTokens():  
+  global spotifyLinkStatus 
+  if spotifyAccessToken != '' and spotifyAccessToken != None:
+      outputLog("Loading spotify tokens...")
+      def get_profile(accessToken):
+          headers = {
+              'Authorization': 'Bearer ' + accessToken,
+          }
+          response = requests.get('https://api.spotify.com/v1/me', headers=headers)
+          data = response.json()
+          if response.status_code != 200:
+            raise Exception(response.json())
+          return data
+      try:
+        outputLog("Trying old access token...")
+        profile = get_profile(spotifyAccessToken)
+      except Exception as e:
+        outputLog("Attempting to regenerate outdated access token...\nReason: "+str(e))
+        refreshAccessToken(spotifyRefreshToken)    
+        profile = get_profile(spotifyAccessToken)
+      linkedUserName = profile.get('display_name')  
+      outputLog("Spotify linked to "+linkedUserName+" successfully!")
+      spotifyLinkStatus = 'Linked to '+linkedUserName  
+try:
+  loadSpotifyTokens()
+except Exception as e:
+  spotifyLinkStatus = 'Error - Please Relink!'
+  spotifyAccessToken = ''
+  spotifyRefreshToken = ''
+  outputLog("Spotify token load error! Please relink!\nFull Error: "+str(e))
 def uiThread():
   global fontColor
   global bgColor
@@ -487,6 +584,14 @@ def uiThread():
   global suppressDuplicates
   global sendASAP
   
+  global useMediaManager
+  global useSpotifyApi
+  global spotifySongDisplay
+  global spotifyAccessToken
+  global spotifyRefreshToken
+  global cancelLink
+  global spotifyLinkStatus
+
   if darkMode:
     bgColor = '#333333'
     accentColor = '#4d4d4d'
@@ -578,8 +683,8 @@ def uiThread():
     [sg.Column([
       [sg.Text('Advanced Sending Options')],
       [sg.Checkbox('Clear the chatbox when toggled or on program close\nTurn off if you are getting issues with the chatbox blinking', key='sendBlank', default=True)],
-      [sg.Checkbox('Skip sending duplicate messages', key='suppressDuplicates', default=True)],
-      [sg.Checkbox('Send next message as soon as any data is updated\nOnly skips delay if previous message was skipped', key='sendASAP', default=True)]
+      [sg.Checkbox('Skip sending duplicate messages', key='suppressDuplicates', default=False)],
+      [sg.Checkbox('Send next message as soon as any data is updated\nOnly skips delay if previous message was skipped', key='sendASAP', default=False)]
     ], size=(379, 155))]
   ]
   
@@ -594,12 +699,23 @@ def uiThread():
   ]
   song_conf_layout = [
     [sg.Column([
+                  [sg.Text("Select audio info source:")],
+                  [sg.Checkbox("Windows Now Playing", key='useMediaManager', default=True, enable_events=True), sg.Checkbox("Spotify API", key='useSpotifyApi', default=False, enable_events=True)], #Its called the Now Playing Session Manager btw
+                  ], size=(379, 80))],
+    [sg.Column([
+                  [sg.Text("Windows Now Playing settings:")],
                   [sg.Text('Template to use for song display.\nVariables: {artist}, {title}, {album_title}, {album_artist}')],
                   [sg.Input(key='songDisplay', size=(50, 1))]
-    ], size=(379, 80))],
+    ], size=(379, 100))],
+    [sg.Column([
+                  [sg.Text("Spotify settings:")],
+                  [sg.Text('Template to use for song display.\nVariables: {artist}, {title}, {album_title}, {album_artist}, \n{song_progress}, {song_length}, {volume}, {song_id}')],
+                  [sg.Input(key='spotifySongDisplay', size=(50, 1))],
+                  [sg.Button("Link Spotify 🔗", key="linkSpotify", button_color="#00a828", font="System"), sg.Text('Unlinked', key='spotifyLinkStatus', font="System", text_color='orange')],
+    ], size=(379, 140))],
     [sg.Column([
                   [sg.Text('Music Settings:')],
-                  [sg.Checkbox('Show \"(paused)\" after song when song is paused', default=True, key='showPaused', enable_events= True)],
+                  [sg.Checkbox('Show \"⏸️\" after song when song is paused', default=True, key='showPaused', enable_events= True)],
                   [sg.Checkbox('Hide song when music is paused', default=False, key='hideSong', enable_events= True)],
                   [sg.HorizontalSeparator()],
                   [sg.Checkbox('Only show music on song change', default=False, key='showOnChange', enable_events=True)],
@@ -634,12 +750,12 @@ def uiThread():
     [sg.Column([
                   [sg.Text('Heartrate Settings:')],
                   [sg.Checkbox('Pass through heartrate avatar parameters\neven when not running', default=False, key='avatarHR', enable_events= True)],
-                  [sg.Text('Pulsoid Token:')],
+                  [sg.Text('Pulsoid Token:'), sg.Button('Get Token 💓', key='getPulsoidToken', font="System", button_color="#f92f60")],
                   [sg.Input(key='pulsoidToken', size=(50, 1))],
                   [sg.Checkbox('Heart Rate Beat', default=True, key='toggleBeat', enable_events=True)],
                   [sg.Checkbox('Override Beat', default=False, key='blinkOverride', enable_events=True)],
                   [sg.Text('Blink Speed (If Overridden)')],
-                  [sg.Slider(range=(0, 5), default_value=.5, resolution=.1, orientation='horizontal', size=(40, 15), key="blinkSpeed", trough_color=scrollbarBackgroundColor)]
+                  [sg.Slider(range=(0, 5), default_value=.5, resolution=.01, orientation='horizontal', size=(40, 15), key="blinkSpeed", trough_color=scrollbarBackgroundColor)]
               ], size=(379, 260))]
   ]
   playTime_conf_layout = [
@@ -731,7 +847,7 @@ def uiThread():
   preview_layout = [[sg.Column(
               [[sg.Text('Preview (Not Perfect)', background_color=accentColor, font=('Arial', 12, 'bold')),sg.Text('', key='sentCountdown')],
               [sg.Column([
-                [sg.Text('', key = 'messagePreviewFill', font=('Arial', 12 ), auto_size_text=True, size=(21, 100), justification='center')]
+                [sg.Text('', key = 'messagePreviewFill', font=('Arial', 12 ), auto_size_text=True, size=(23, 100), justification='center')]
               ], size=(379, 150))]
               ]
   
@@ -819,7 +935,7 @@ def uiThread():
     window['oscForeword'].update(value=False)
     window['logOutput'].update(value=False)
     window['layoutStorage'].update(value=False)
-    window['verticalDivider'].update(value='┊')
+    window['verticalDivider'].update(value='〣')
     window['cpuDisplay'].update(value='ᴄᴘᴜ: {cpu_percent}%')
     window['ramDisplay'].update(value='ʀᴀᴍ: {ram_percent}%  ({ram_used}/{ram_total})')
     window['gpuDisplay'].update(value='ɢᴘᴜ: {gpu_percent}%')
@@ -829,8 +945,13 @@ def uiThread():
     window['unmutedDisplay'].update(value='🔊')
     window['darkMode'].update(value=False)
     window['sendBlank'].update(value=True)
-    window['suppressDuplicates'].update(value=True)
-    window['sendASAP'].update(value=True)
+    window['suppressDuplicates'].update(value=False)
+    window['sendASAP'].update(value=False)
+    window['useMediaManager'].update(value=True)
+    window['useSpotifyApi'].update(value=False)
+    window['spotifySongDisplay'].update(value='🎵\'{title}\' ᵇʸ {artist}🎶 『{song_progress} / {song_length}』')
+    """window['spotifyAccessToken'].update(value='')
+    window['spotifyRefreshToken'].update(value='')"""
   def updateUI():
     global bgColor
     global accentColor
@@ -846,6 +967,9 @@ def uiThread():
     global sent
     global sendSkipped
     global message_delay
+    global spotifyLinkStatus
+    global spotifyAccessToken
+    global spotifyRefreshToken
     if os.path.isfile('please-do-not-delete.txt'):
       try:
         window['msgDelay'].update(value=message_delay)
@@ -890,7 +1014,23 @@ def uiThread():
         window['sendBlank'].update(value=sendBlank)
         window['suppressDuplicates'].update(value=suppressDuplicates)
         window['sendASAP'].update(value=sendASAP)
-      except:
+        window['useMediaManager'].update(value=useMediaManager)
+        window['useSpotifyApi'].update(value=useSpotifyApi)
+        window['spotifySongDisplay'].update(value=spotifySongDisplay)
+        """window['spotifyAccessToken'].update(value=spotifyAccessToken)
+        window['spotifyRefreshToken'].update(value=spotifyRefreshToken)"""
+        if spotifyLinkStatus != 'Unlinked':
+          if 'Error' in spotifyLinkStatus:
+            window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
+            window['spotifyLinkStatus'].update(text_color='red')
+            window['linkSpotify'].update(text='Relink Spotify ⚠️', button_color= "red")
+          else:
+            window['linkSpotify'].update(text='Unlink Spotify 🔗', button_color= "#c68341")
+            window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
+            window['spotifyLinkStatus'].update(text_color='green')
+          window.write_event_value('Apply', '')    
+      except Exception as e:
+        print(str(e))
         pass
     while run:
       if run:
@@ -974,9 +1114,14 @@ def uiThread():
           sendBlank = values['sendBlank']
           suppressDuplicates = values['suppressDuplicates']
           sendASAP = values['sendASAP']
+          useMediaManager = values['useMediaManager']
+          useSpotifyApi = values['useSpotifyApi']
+          spotifySongDisplay = values['spotifySongDisplay']
+          """spotifyAccessToken = values['spotifyAccessToken']
+          spotifyRefreshToken = values['spotifyRefreshToken']"""
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode, sendBlank, suppressDuplicates, sendASAP]))
+              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode, sendBlank, suppressDuplicates, sendASAP,useMediaManager, useSpotifyApi, spotifySongDisplay, spotifyAccessToken, spotifyRefreshToken]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
           
@@ -1174,6 +1319,71 @@ def uiThread():
         keyboard.press_and_release('ctrl+c')
       if event == 'Paste':
         keyboard.press_and_release('ctrl+v')
+      if event == 'getPulsoidToken':
+        webbrowser.open('https://pulsoid.net/oauth2/authorize?response_type=token&client_id=8070496f-f886-4030-8340-96d1d68b25cb&redirect_uri=&scope=data:heart_rate:read&state=&response_mode=web_page')
+      if event == 'useSpotifyApi':
+        if spotifyAccessToken != '':
+          window['useSpotifyApi'].update(value=True)
+          window['useMediaManager'].update(value=False)
+        else:
+          sg.popup('Please link Spotify first!')
+          window['useSpotifyApi'].update(value=False)
+      if event == 'useMediaManager':
+        window['useMediaManager'].update(value=True)
+        window['useSpotifyApi'].update(value=False)
+      if event == 'linkSpotify':
+        if "Unlinked" in spotifyLinkStatus or "Error" in spotifyLinkStatus:
+          linking_layout = [[sg.Text('')],[sg.Text('Linking Spotify...')],[sg.Button('Cancel')]]
+          spotify_link_window = sg.Window('Linking Spotify...', linking_layout, size=(300, 90), element_justification='center', no_titlebar=True, modal=True)
+          def spotifyLinkManager():
+            global linking
+            global linkedUserName
+            linkedUserName = linkSpotify()
+            linking = False
+            spotify_link_window.write_event_value('done', 'done') 
+          spotifyLinkThread = Thread(target=spotifyLinkManager).start()
+          linking = True
+          while linking:
+            event, values = spotify_link_window.read()
+            if event == 'Cancel':
+              cancelLink = True
+              linking = False
+              break
+            else:
+              linking = False
+              break
+          spotify_link_window.close()
+          window.write_event_value('Apply', '')
+          window['spotifyLinkStatus'].update(value='Linked to '+linkedUserName)
+          spotifyLinkStatus = 'Linked to '+linkedUserName
+          window['spotifyLinkStatus'].update(text_color='green')
+          window['linkSpotify'].update(text='Unlink Spotify 🔗', button_color= "#c68341")
+        else:    
+          spotifyAccessToken = ''
+          spotifyRefreshToken = ''
+          spotifyLinkStatus = 'Unlinked'
+          window['useSpotifyApi'].update(value=False)
+          window['useMediaManager'].update(value=True)
+          useSpotifyApi = False
+          useMediaManager = True
+          window.write_event_value('Apply', '')
+          window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
+          window['spotifyLinkStatus'].update(text_color='orange')
+          window['linkSpotify'].update(text="Link Spotify 🔗", button_color="#00a828")
+      if event == 'spotifyApiError':
+        window['useSpotifyApi'].update(value=False)
+        window['useMediaManager'].update(value=True)
+        useSpotifyApi = False
+        useMediaManager = True
+        spotifyLinkStatus = 'Error - Please Relink!'
+        spotifyAccessToken = ''
+        spotifyRefreshToken = ''
+        window.write_event_value('Apply', '')
+        outputLog("Spotify api fetch error! Please relink!\nFull Error: "+str(values[event]))
+        window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
+        window['spotifyLinkStatus'].update(text_color='red')
+        window['linkSpotify'].update(text='Relink Spotify ⚠️', button_color= "red")
+        sg.popup('Spotify api fetch error!\nAutomatically reverted to using Windows Now Playing\nPlease relink spotify in the behavior tab to continue...\nFull Error: '+str(values[event]))
   window.close()
   playMsg = False
   run = False
@@ -1482,6 +1692,8 @@ if __name__ == "__main__":
           global useHR
           global gpuDat
           global timeVar
+          global useSpotifyApi
+          global useMediaManager
           useHR = False
           def checkData(msg, data):
             lf = "\v"
@@ -1506,39 +1718,80 @@ if __name__ == "__main__":
           def text(data):
             return(checkData(a.replace("\\n", "\v").replace("\\v", "\v"), data))
           def song(data):
-            try:
-              current_media_info = asyncio.run(get_media_info())
-              artist = current_media_info['artist']
-              title = current_media_info['title']
-              album_title = current_media_info['album_title'] 
-              album_artist = current_media_info['album_artist'] 
-              mediaPlaying = mediaIs('PLAYING')
-            except Exception as e:
-              artist = ''
-              title = ''
-              album_title = ''
-              album_artist = ''
-              mediaPlaying = False
-              if 'TARGET_PROGRAM' in str(e):
-                logOutput('Can\'t get media info, please make sure an application is playing audio')
-                pass
+            global songInfo
+            global useSpotifyApi
+            global useMediaManager
+            global spotifyLinkStatus
+            global spotifyAccessToken
+            global spotifyRefreshToken
+            global spotifyPlayState
+            if useMediaManager:
+              try:
+                current_media_info = asyncio.run(get_media_info())
+                artist = current_media_info['artist']
+                title = current_media_info['title']
+                album_title = current_media_info['album_title'] 
+                album_artist = current_media_info['album_artist'] 
+                mediaPlaying = mediaIs('PLAYING')
+              except Exception as e:
+                artist = ''
+                title = ''
+                album_title = ''
+                album_artist = ''
+                mediaPlaying = False
+                if 'TARGET_PROGRAM' in str(e):
+                  logOutput('Can\'t get media info, please make sure an application is playing audio')
+                  pass
+                else:
+                  if windowAccess != None:
+                    try:
+                        logOutput('mediaManagerError '+str(e))
+                        windowAccess.write_event_value('mediaManagerError', e)
+                    except:
+                      pass
+              if mediaPlaying or (not showPaused):
+                songInfo = songDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist))
               else:
-                if windowAccess != None:
-                  try:
-                      logOutput('mediaManagerError '+str(e))
-                      windowAccess.write_event_value('mediaManagerError', e)
-                  except:
-                    pass
-            if mediaPlaying or (not showPaused):
-              songInfo = songDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist))
+                songInfo=songDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist))+" ⏸️"
+                
             else:
-              songInfo=songDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist))+" (paused)"
+              def formatTime(seconds = 0):
+                  minutes = int(seconds // 60)
+                  remaining_seconds = int(seconds % 60)
+                  return f"{minutes}:{remaining_seconds:02}"
+              global spotifySongDisplay
+              playState = spotifyPlayState
+              if playState != None and playState != '': 
+                artist = playState.get('item').get('artists')[0].get('name')
+                title = playState.get('item').get('name')
+                album_title = ''
+                album_artist = ''
+                song_progress = formatTime(playState.get('progress_ms')/1000)
+                song_length = formatTime(playState.get('item').get('duration_ms')/1000)
+                volume = str()
+                song_id = playState.get('item').get('id')
+                mediaPlaying = playState.get('is_playing')
+              else:
+                artist = ''
+                title = ''
+                album_title = ''
+                album_artist = ''
+                song_progress = formatTime(0)
+                song_length = formatTime(0)
+                volume = '0'
+                song_id = 'N/A'
+                mediaPlaying = False
+
+              if mediaPlaying or (not showPaused):
+                songInfo = spotifySongDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist, song_progress=song_progress, song_length=song_length, volume=volume, song_id=song_id))
+              else:
+                songInfo=spotifySongDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist, song_progress=song_progress, song_length=song_length, volume=volume, song_id=song_id))+" ⏸️"
             global showOnChange
             global songChangeTicks
             global tickCount
             #global songInfo
             global songName
-            if hideSong and not mediaPlaying:
+            if hideSong and not mediaPlaying or title == '':
               return ''
             else:
               if showOnChange:
@@ -1701,9 +1954,120 @@ def hrConnectionThread():
       #print('Pulsoid Connection Stopped')
       outputLog('Pulsoid Connection Stopped')
     time.sleep(.3)
-hrConnectionThreadRun = Thread(target=hrConnectionThread)
-hrConnectionThreadRun.start()
+pulsoidConnectionThread = Thread(target=hrConnectionThread).start()
 
+def spotifyConnectionCheck():
+  global spotifyPlayState
+  while run:
+    if playMsg and "song(" in layoutString and useSpotifyApi and windowAccess != None:
+      try:
+        if spotifyAccessToken == '':
+          raise Exception('Spotify access token missing!\nCheck output tab for more details...')
+        spotifyPlayState = getSpotifyPlaystate()
+      except Exception as e:  
+        spotifyPlayState = ''
+        windowAccess.write_event_value('spotifyApiError', e) 
+    for x in range(4): #This sets the polling rate of the spotify api!!!
+      if run:
+        time.sleep(1)
+spotifyConnectionThread = Thread(target=spotifyConnectionCheck).start()
+def linkSpotify():
+  outputLog('Begin Spotify Linking...')
+  global spotify_client_id
+  global spotify_redirect_uri
+  global checkForCancel
+  global NameToReturn
+  global spotifyAccessToken
+  global spotifyRefreshToken
+  app = Flask(__name__)
+  server = make_server('127.0.0.1', 8000, app)
+
+  code_verifier = base64.urlsafe_b64encode(os.urandom(40)).decode('utf-8')
+  code_verifier = code_verifier.rstrip('=')
+
+  code_challenge = hashlib.sha256(code_verifier.encode('utf-8')).digest()
+  code_challenge = base64.urlsafe_b64encode(code_challenge).decode('utf-8')
+  code_challenge = code_challenge.replace('=', '')
+
+  auth_url = 'https://accounts.spotify.com/authorize'
+  params = {
+      'client_id': spotify_client_id,
+      'response_type': 'code',
+      'scope': "user-read-playback-state, user-read-currently-playing",
+      'redirect_uri': spotify_redirect_uri,
+      'code_challenge_method': 'S256',
+      'code_challenge': code_challenge
+  }
+  spotify_auth_url = requests.Request('GET', auth_url, params=params).prepare().url
+
+  @app.route('/callback')
+
+
+  def callback():
+      global authCode
+      global spotifyAccessToken
+      global spotifyRefreshToken
+      global checkForCancel
+      global nameToReturn
+      code = request.args.get('code')
+      #print('Authorization code:', code)
+      authCode = code
+      
+          
+      def getAccessToken(code):
+          global spotifyRefreshToken
+          token_url = 'https://accounts.spotify.com/api/token'
+          data = {
+              'grant_type': 'authorization_code',
+              'code': code,
+              'redirect_uri': spotify_redirect_uri,
+              'client_id': spotify_client_id,      
+              'code_verifier': code_verifier
+          }
+          response = requests.post(token_url, data=data)
+          spotifyRefreshToken = response.json().get('refresh_token')
+          return response.json().get('access_token')
+
+      spotifyAccessToken = getAccessToken(code)
+      with open('spotifyCreds.txt', 'w', encoding="utf-8") as f:
+          writeList = [spotifyRefreshToken, spotifyAccessToken]
+          f.write(str(writeList))
+      #print('Access token:', accessToken)
+      
+      def get_profile(accessToken):
+          headers = {
+              'Authorization': 'Bearer ' + accessToken,
+          }
+
+          response = requests.get('https://api.spotify.com/v1/me', headers=headers)
+          data = response.json()
+          return data
+      profile = get_profile(spotifyAccessToken)
+      def shutdown():
+        server.shutdown()
+      shutdownThread = Thread(target=shutdown).start()
+      nameToReturn = profile.get('display_name')
+      outputLog("Spotify linked to "+nameToReturn+" successfully!")
+      
+      return """<!DOCTYPE html> <html> <head> <title>OSC Chat Tools | Spotify Authorization</title> <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/Lioncat6/OSC-Chat-Tools/main/oscicon.ico"> </head> <body> <style> body { font-family: sans-serif; background-color: darkslategrey; color: whitesmoke; } .mainbox { position: absolute; left: 50%; top: 50%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%); } h1 { text-align: center; } p { text-align: center; } img { display: block; margin-left: auto; margin-right: auto; width: 50%; } </style> <div class="mainbox"> <img src="https://raw.githubusercontent.com/Lioncat6/OSC-Chat-Tools/main/oscicon.ico"> <h1 class="maintext">Authorization Successful</h1><p class="subtext">You can now close this tab and return to OCT</p> <div><p>Linked to:<b style="color:green;"> """+profile.get('display_name')+""" </b></p</div> </div> </body> </html>"""
+  webbrowser.open_new(spotify_auth_url)
+  
+  def spotifyLinkCancelCheck():
+    global checkForCancel
+    checkForCancel = True
+    global cancelLink
+    while checkForCancel:
+      time.sleep(.1)
+      if cancelLink:
+        outputLog("Spotify linking canceled by user")
+        server.shutdown()
+        checkForCancel = False
+        cancelLink = False
+        break
+  spotifyLinkCancelCheckThread= Thread(target=spotifyLinkCancelCheck).start()
+  server.serve_forever()
+  checkForCancel = False 
+  return nameToReturn
 def runmsg():
   global textParseIterator
   global playMsg
