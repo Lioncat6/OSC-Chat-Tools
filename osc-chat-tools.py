@@ -450,6 +450,8 @@ def refreshAccessToken(oldRefreshToken):
       'client_id': spotify_client_id
     }       
   response = requests.post(token_url, data=data)
+  if response.status_code != 200: 
+    raise Exception('AccessToken refresh error... '+response.json())
   #print(response.json())
   spotifyRefreshToken = response.json().get('refresh_token')
   spotifyAccessToken =  response.json().get('access_token')    
@@ -1768,7 +1770,7 @@ if __name__ == "__main__":
                 album_artist = ''
                 song_progress = formatTime(playState.get('progress_ms')/1000)
                 song_length = formatTime(playState.get('item').get('duration_ms')/1000)
-                volume = str()
+                volume = str(playState.get('device').get('volume_percent'))
                 song_id = playState.get('item').get('id')
                 mediaPlaying = playState.get('is_playing')
               else:
@@ -1785,7 +1787,7 @@ if __name__ == "__main__":
               if mediaPlaying or (not showPaused):
                 songInfo = spotifySongDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist, song_progress=song_progress, song_length=song_length, volume=volume, song_id=song_id))
               else:
-                songInfo=spotifySongDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist, song_progress=song_progress, song_length=song_length, volume=volume, song_id=song_id))+" ⏸️"
+                songInfo=spotifySongDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist, song_progress=song_progress, song_length=song_length, volume=volume, song_id=song_id))+"⏸️"
             global showOnChange
             global songChangeTicks
             global tickCount
@@ -1953,7 +1955,7 @@ def hrConnectionThread():
       hrConnected = False
       #print('Pulsoid Connection Stopped')
       outputLog('Pulsoid Connection Stopped')
-    time.sleep(.3)
+    time.sleep(.5)
 pulsoidConnectionThread = Thread(target=hrConnectionThread).start()
 
 def spotifyConnectionCheck():
@@ -1967,7 +1969,7 @@ def spotifyConnectionCheck():
       except Exception as e:  
         spotifyPlayState = ''
         windowAccess.write_event_value('spotifyApiError', e) 
-    for x in range(4): #This sets the polling rate of the spotify api!!!
+    for x in range(2): #This sets the polling rate of the spotify api!!!
       if run:
         time.sleep(1)
 spotifyConnectionThread = Thread(target=spotifyConnectionCheck).start()
@@ -2029,9 +2031,6 @@ def linkSpotify():
           return response.json().get('access_token')
 
       spotifyAccessToken = getAccessToken(code)
-      with open('spotifyCreds.txt', 'w', encoding="utf-8") as f:
-          writeList = [spotifyRefreshToken, spotifyAccessToken]
-          f.write(str(writeList))
       #print('Access token:', accessToken)
       
       def get_profile(accessToken):
