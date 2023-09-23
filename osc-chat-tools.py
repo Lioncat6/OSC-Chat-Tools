@@ -119,7 +119,7 @@ sendASAP = False
 
 useMediaManager = True
 useSpotifyApi = False
-spotifySongDisplay =  '🎵\'{title}\' ᵇʸ {artist}🎶 『{song_progress} / {song_length}』'
+spotifySongDisplay =  '🎵\'{title}\' ᵇʸ {artist}🎶 『{song_progress}/{song_length}』'
 
 spotifyAccessToken = ''
 spotifyRefreshToken = ''
@@ -428,9 +428,6 @@ def layoutPreviewBuilder(layout, window):
           else:
             window['divider'+str(x)].update(value=False)
             window['newLine'+str(x)].update(value=False)
-            
-          
-          
 
     else:
       for x in range(1, 16):
@@ -451,7 +448,7 @@ def refreshAccessToken(oldRefreshToken):
     }       
   response = requests.post(token_url, data=data)
   if response.status_code != 200: 
-    raise Exception('AccessToken refresh error... '+response.json())
+    raise Exception('AccessToken refresh error... '+str(response.json()))
   #print(response.json())
   spotifyRefreshToken = response.json().get('refresh_token')
   spotifyAccessToken =  response.json().get('access_token')    
@@ -479,40 +476,49 @@ def getSpotifyPlaystate():
       playState = get_playstate(spotifyAccessToken)
       if playState != '' and playState != None:
         if 'error' in str(playState):
-          raise Exception('Error '+str(playState.get('error')))
+          raise Exception(str(playState))
   except Exception as e:
-      outputLog("Regenerating spotify access token... "+str(e))
-      accessToken = refreshAccessToken(spotifyRefreshToken)
-      #windowAccess.write_event_value('Apply', '')  
-      playState = get_playstate(accessToken) 
+      if "expired" in str(e):
+        outputLog("Attempting to regenerate outdated access token...\nReason: "+str(e))
+        refreshAccessToken(spotifyRefreshToken)
+        def waitThread():
+          while windowAccess == None:
+              time.sleep(.1)
+              pass
+          windowAccess.write_event_value('Apply', '')
+        waitThreadHandler = Thread(target=waitThread).start()  
+        playState = get_playstate(spotifyAccessToken) 
+      else:
+        outputLog("Spotify connection error... retrying\nFull Error: "+str(e))
+        playState = get_playstate(spotifyAccessToken) 
   if playState == None:
     playState = ''
   return playState
 def loadSpotifyTokens():  
   global spotifyLinkStatus 
-  if spotifyAccessToken != '' and spotifyAccessToken != None:
-      outputLog("Loading spotify tokens...")
-      def get_profile(accessToken):
-          headers = {
-              'Authorization': 'Bearer ' + accessToken,
-          }
-          response = requests.get('https://api.spotify.com/v1/me', headers=headers)
-          data = response.json()
-          if response.status_code != 200:
-            raise Exception(response.json())
-          return data
-      try:
-        outputLog("Trying old access token...")
-        profile = get_profile(spotifyAccessToken)
-      except Exception as e:
-        outputLog("Attempting to regenerate outdated access token...\nReason: "+str(e))
-        refreshAccessToken(spotifyRefreshToken)    
-        profile = get_profile(spotifyAccessToken)
-      linkedUserName = profile.get('display_name')  
-      outputLog("Spotify linked to "+linkedUserName+" successfully!")
-      spotifyLinkStatus = 'Linked to '+linkedUserName  
+  outputLog("Loading spotify tokens...")
+  def get_profile(accessToken):
+      headers = {
+          'Authorization': 'Bearer ' + accessToken,
+      }
+      response = requests.get('https://api.spotify.com/v1/me', headers=headers)
+      data = response.json()
+      if response.status_code != 200:
+        raise Exception(response.json())
+      return data
+  try:
+    outputLog("Trying old access token...")
+    profile = get_profile(spotifyAccessToken)
+  except Exception as e:
+    outputLog("Attempting to regenerate outdated access token...\nReason: "+str(e))
+    refreshAccessToken(spotifyRefreshToken)    
+    profile = get_profile(spotifyAccessToken)
+  linkedUserName = profile.get('display_name')  
+  outputLog("Spotify linked to "+linkedUserName+" successfully!")
+  spotifyLinkStatus = 'Linked to '+linkedUserName  
 try:
-  loadSpotifyTokens()
+  if spotifyAccessToken != '' and spotifyAccessToken != None:
+    loadSpotifyTokens()
 except Exception as e:
   spotifyLinkStatus = 'Error - Please Relink!'
   spotifyAccessToken = ''
@@ -951,7 +957,7 @@ def uiThread():
     window['sendASAP'].update(value=False)
     window['useMediaManager'].update(value=True)
     window['useSpotifyApi'].update(value=False)
-    window['spotifySongDisplay'].update(value='🎵\'{title}\' ᵇʸ {artist}🎶 『{song_progress} / {song_length}』')
+    window['spotifySongDisplay'].update(value='🎵\'{title}\' ᵇʸ {artist}🎶 『{song_progress}/{song_length}』')
     """window['spotifyAccessToken'].update(value='')
     window['spotifyRefreshToken'].update(value='')"""
   def updateUI():
@@ -1827,6 +1833,8 @@ if __name__ == "__main__":
           def hr(data):
             global useHR
             hr = str(heartRate)
+            if hr == "0" or hr == "1":
+              hr = "-"
             hrInfo = hrDisplay.format_map(defaultdict(str, hr=hr))
             useHR = True
             return (checkData(hrInfo, data))
@@ -1873,7 +1881,7 @@ if __name__ == "__main__":
           msgOutput = msgOutput.replace("\\n", "\v").replace("\\v", "\v")
         msgGen(a)
       elif afk:
-        msgOutput = topBar+a+" "+bottomBar
+        msgOutput = topBar+a+bottomBar
       else:
         msgOutput = a
       if playMsg:
@@ -1958,7 +1966,7 @@ def hrConnectionThread():
     time.sleep(.5)
 pulsoidConnectionThread = Thread(target=hrConnectionThread).start()
 
-def spotifyConnectionCheck():
+def spotifyConnectionManager():
   global spotifyPlayState
   while run:
     if playMsg and "song(" in layoutString and useSpotifyApi and windowAccess != None:
@@ -1967,12 +1975,19 @@ def spotifyConnectionCheck():
           raise Exception('Spotify access token missing!\nCheck output tab for more details...')
         spotifyPlayState = getSpotifyPlaystate()
       except Exception as e:  
-        spotifyPlayState = ''
-        windowAccess.write_event_value('spotifyApiError', e) 
-    for x in range(2): #This sets the polling rate of the spotify api!!!
+        if "timed out" in str(e): 
+          outputLog('Spotify API Timed out... retrying in 5 seconds\nFull Error: '+str(e))
+          time.sleep(5)
+        elif "Max retries" in str(e) or "aborted" in str(e):
+          outputLog('Spotify API connection issue... retrying in 5 seconds - Are you connected to the internet?\nFull Error: '+str(e))
+          time.sleep(5)
+        else: 
+          spotifyPlayState = ''
+          windowAccess.write_event_value('spotifyApiError', str(e)) 
+    for x in range(2): #This sets the polling rate of the spotify api!!! Value is seconds minus 1, so a timeout of 3 seconds would be 2
       if run:
         time.sleep(1)
-spotifyConnectionThread = Thread(target=spotifyConnectionCheck).start()
+spotifyConnectionThread = Thread(target=spotifyConnectionManager).start()
 def linkSpotify():
   outputLog('Begin Spotify Linking...')
   global spotify_client_id
@@ -2083,8 +2098,8 @@ def runmsg():
         else:
           sendMsg(" "+x)
     elif afk:
-      sendMsg('AFK')
-      sendMsg('ㅤ')
+      sendMsg('\vAFK\v')
+      sendMsg('\vㅤ\v')
     elif scrollText:
       try:
         fileToOpen = open(FileToRead, "r", encoding="utf-8")
