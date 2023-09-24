@@ -286,7 +286,7 @@ def update_checker(a):
         #print('Update Checking Error occurred:', response.status_code)
         outputLog('Update Checking Error occurred:', response.status_code)
   except Exception as e:
-    outputLog('Update Checking Error occurred:', str(e))
+    outputLog('Update Checking Error occurred: '+ str(e))
 
 async def get_media_info():
     sessions = await MediaManager.request_async()
@@ -520,10 +520,17 @@ try:
   if spotifyAccessToken != '' and spotifyAccessToken != None:
     loadSpotifyTokens()
 except Exception as e:
-  spotifyLinkStatus = 'Error - Please Relink!'
-  spotifyAccessToken = ''
-  spotifyRefreshToken = ''
-  outputLog("Spotify token load error! Please relink!\nFull Error: "+str(e))
+  if "timed out" in str(e): 
+    outputLog('Spotify API Timed out... tokens may be invalid\nFull Error: '+str(e))
+    spotifyLinkStatus = 'Status Unknown'
+  elif "Max retries" in str(e) or "aborted" in str(e):
+    outputLog('Spotify API connection error... tokens may be invalid. Are you connected to the internet?\nFull Error: '+str(e))
+    spotifyLinkStatus = 'Status Unknown'
+  else:
+    spotifyLinkStatus = 'Error - Please Relink!'
+    spotifyAccessToken = ''
+    spotifyRefreshToken = ''
+    outputLog("Spotify token load error! Please relink!\nFull Error: "+str(e))
 def uiThread():
   global fontColor
   global bgColor
@@ -1028,14 +1035,16 @@ def uiThread():
         """window['spotifyAccessToken'].update(value=spotifyAccessToken)
         window['spotifyRefreshToken'].update(value=spotifyRefreshToken)"""
         if spotifyLinkStatus != 'Unlinked':
-          if 'Error' in spotifyLinkStatus:
-            window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
+          window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
+          if 'Error' in spotifyLinkStatus:   
             window['spotifyLinkStatus'].update(text_color='red')
             window['linkSpotify'].update(text='Relink Spotify ⚠️', button_color= "red")
-          else:
+          elif 'Unknown' in spotifyLinkStatus:
+            window['spotifyLinkStatus'].update(text_color='#c68341')
             window['linkSpotify'].update(text='Unlink Spotify 🔗', button_color= "#c68341")
-            window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
+          else:
             window['spotifyLinkStatus'].update(text_color='green')
+            window['linkSpotify'].update(text='Unlink Spotify 🔗', button_color= "#c68341")
           window.write_event_value('Apply', '')    
       except Exception as e:
         print(str(e))
@@ -1210,7 +1219,7 @@ def uiThread():
         break
       if event == 'pulsoidError':
         playMsg = False
-        sg.popup('Pulsoid Error: Please double check your token in the behavior tab and then toggle run to try again.\n\nIf this problem persists, please report an issue on github: https://github.com/Lioncat6/OSC-Chat-Tools/issues')
+        sg.popup('Pulsoid Error:\nAre you connected to the internet?\nPlease double check your token in the behavior tab and then toggle run to try again.\n\nIf this problem persists, please report an issue on github: https://github.com/Lioncat6/OSC-Chat-Tools/issues')
       if event == 'scrollError':
         playMsg = False
         sg.popup('File Read Error: Please make sure you have a file selected to scroll though in the behavior tab, then toggle Run to try again!\nFull Error:\n' + str(values[event]), keep_on_top="True")
@@ -1979,7 +1988,7 @@ def spotifyConnectionManager():
           outputLog('Spotify API Timed out... retrying in 5 seconds\nFull Error: '+str(e))
           time.sleep(5)
         elif "Max retries" in str(e) or "aborted" in str(e):
-          outputLog('Spotify API connection issue... retrying in 5 seconds - Are you connected to the internet?\nFull Error: '+str(e))
+          outputLog('Spotify API Timed out... retrying in 5 seconds\nFull Error: '+str(e))
           time.sleep(5)
         else: 
           spotifyPlayState = ''
