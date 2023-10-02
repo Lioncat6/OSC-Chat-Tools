@@ -25,7 +25,7 @@ PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=commandline
 OutputDir=C:\Users\main\Downloads
 OutputBaseFilename=oct-setup
-SetupIconFile=C:\Users\bwhou\OneDrive\Documents\GitHub\OSC-Chat-Tools\oscicon.ico
+SetupIconFile=C:\Users\main\OneDrive\Documents\GitHub\OSC-Chat-Tools\oscicon.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -37,7 +37,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "C:\Users\bwhou\OneDrive\Documents\GitHub\OSC-Chat-Tools\dist\osc-chat-tools\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\main\OneDrive\Documents\GitHub\OSC-Chat-Tools\dist\osc-chat-tools\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\main\OneDrive\Documents\GitHub\OSC-Chat-Tools\dist\osc-chat-tools\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
