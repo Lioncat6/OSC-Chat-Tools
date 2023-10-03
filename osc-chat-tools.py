@@ -126,8 +126,6 @@ spotifyRefreshToken = ''
 
 ###########Program Variables (not in conf)######### 
 
-useHR = False
-
 playTime = 0
 
 oscForewordPortMemory = ''
@@ -1706,12 +1704,10 @@ if __name__ == "__main__":
           global msgOutput
           global hideSong
           global showPaused
-          global useHR
           global gpuDat
           global timeVar
           global useSpotifyApi
           global useMediaManager
-          useHR = False
           def checkData(msg, data):
             lf = "\v"
             if data == 1 or data == 3:
@@ -1840,12 +1836,10 @@ if __name__ == "__main__":
             gpuDat = gpuDisplay.format_map(defaultdict(str, gpu_percent=gpu_percent))
             return (checkData(gpuDat, data))
           def hr(data):
-            global useHR
             hr = str(heartRate)
             if hr == "0" or hr == "1":
               hr = "-"
             hrInfo = hrDisplay.format_map(defaultdict(str, hr=hr))
-            useHR = True
             return (checkData(hrInfo, data))
           def mute(data):
             return (checkData("Coming Soon", data))
@@ -1917,8 +1911,7 @@ def hrConnectionThread():
     global blinkSpeed
     global useAfkKeybind
     global toggleBeat
-    global useHR
-    if (useHR or avatarHR) and (playMsg or avatarHR):
+    if ("hr(" in layoutString or avatarHR) and (playMsg or avatarHR):
       if not hrConnected:
         try:
           ws = create_connection("wss://dev.pulsoid.net/api/v1/data/real_time?access_token="+pulsoidToken+"&response_mode=text_plain_only_heart_rate")
@@ -1968,7 +1961,7 @@ def hrConnectionThread():
           if windowAccess != None:
             if playMsg:
               windowAccess.write_event_value('pulsoidError', e)
-    if ((not useHR and not avatarHR) or not (playMsg or avatarHR)) and hrConnected:
+    if ((not "hr(" in layoutString and not avatarHR) or not (playMsg or avatarHR)) and hrConnected:
       hrConnected = False
       #print('Pulsoid Connection Stopped')
       outputLog('Pulsoid Connection Stopped')
