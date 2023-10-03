@@ -15,7 +15,7 @@ OCT Is a standalone program used for interacting with Vrchat's OSC to send chat 
  - Fully customizable layout with divider and newline toggles
  - Animated text
  - Current time
- - Song info using the Windows media manager
+ - Song info using the Windows media manager and now the spotify API!
  - CPU Info
  - RAM Info
  - Heart rate info using Pulsoid (Get a token from the 'Tokens' section of the dashboard)
