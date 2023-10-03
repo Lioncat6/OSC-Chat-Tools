@@ -32,12 +32,17 @@ from werkzeug.serving import make_server
 import hashlib
 import base64
 #import GPUtil
+
+#importantest variables :)
+
 run = True
 playMsg = True
 textParseIterator = 0
-version = "1.5.5"
-message_delay = 1.5
-msgOutput = ''
+version = "1.5.6"
+
+#conf variables
+
+message_delay = 1.5 # in conf
 topTextToggle = False #Deprecated, only in use for converting old save files
 topTimeToggle = False #Deprecated, only in use for converting old save files
 topSongToggle = False #Deprecated, only in use for converting old save files
@@ -52,7 +57,6 @@ bottomCPUToggle = False #Deprecated, only in use for converting old save files
 bottomRAMToggle = False #Deprecated, only in use for converting old save files
 bottomNoneToggle = True #Deprecated, only in use for converting old save files
 messageString = '' #in conf
-afk = False
 FileToRead = '' #in conf
 scrollText = False #in conf
 scrollTexTSpeed = 6
@@ -61,10 +65,8 @@ hideMiddle = False #Deprecated, only in use for converting old save files
 hideOutside = True #in conf
 showPaused = True #in conf
 songDisplay = ' 🎵\'{title}\' ᵇʸ {artist}🎶' #in conf
-songName = ''
 showOnChange = False #in conf
 songChangeTicks = 1 #in conf
-tickCount = 2
 minimizeOnStart = False #in conf
 keybind_run = 'p' #in conf
 keybind_afk = 'end' #in conf
@@ -73,11 +75,6 @@ middleBar = '╠═════════════╣' #in conf
 bottomBar = '╚═════════════╝' #in conf
 topHRToggle = False #Deprecated, only in use for converting old save files
 bottomHRToggle = False #Deprecated, only in use for converting old save files
-pulsoidToken = '' #in conf
-hrConnected = False
-heartRate = 0
-errorExit = False
-windowAccess = None
 avatarHR = False #in conf
 blinkOverride = False #in conf
 blinkSpeed  = .5 #in conf
@@ -111,7 +108,7 @@ playTimeDisplay = '⏳{hours}:{remainder_minutes}'#in conf
 mutedDisplay = 'Muted 🔇'#in conf
 unmutedDisplay = '🔊'#in conf
  
-darkMode = 'False' #in conf
+darkMode = False #in conf
 
 sendBlank = True
 suppressDuplicates = False
@@ -124,7 +121,26 @@ spotifySongDisplay =  '🎵\'{title}\' ᵇʸ {artist}🎶 『{song_progress}/{so
 spotifyAccessToken = ''
 spotifyRefreshToken = ''
 
+usePulsoid = True
+pulsoidToken = '' 
+useHypeRate = False
+hypeRateKey = 'FIrXkWWlf57iHjMu0x3lEMNst8IDIzwUA2UD6lmSxL4BqBUTYw8LCwQlM2n5U8RU' #<- my personal token that may or may not be working depending on how the hyperate gods are feeling today
+hypeRateSessionId = ''
+
 ###########Program Variables (not in conf)######### 
+
+msgOutput = ''
+
+afk = False
+
+songName = ''
+
+tickCount = 2
+
+hrConnected = False
+heartRate = 0
+
+windowAccess = None
 
 playTime = 0
 
@@ -563,7 +579,6 @@ def uiThread():
   global middleBar
   global bottomBar
   global pulsoidToken
-  global errorExit
   global windowAccess
   global avatarHR
   global blinkOverride
@@ -1661,7 +1676,6 @@ if __name__ == "__main__":
     global middleBar
     global bottomBar
     global pulsoidToken
-    global errorExit
     global avatarHR
     global blinkOverride
     global blinkSpeed
