@@ -6,6 +6,7 @@ import ast
 import requests
 from collections import defaultdict
 import ctypes
+import json
 
 if not os.path.isfile('please-do-not-delete.txt'):
   with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
@@ -121,8 +122,8 @@ spotifySongDisplay =  '🎵\'{title}\' ᵇʸ {artist}🎶 『{song_progress}/{so
 spotifyAccessToken = ''
 spotifyRefreshToken = ''
 
-usePulsoid = True
 pulsoidToken = '' 
+usePulsoid = True
 useHypeRate = False
 hypeRateKey = 'FIrXkWWlf57iHjMu0x3lEMNst8IDIzwUA2UD6lmSxL4BqBUTYw8LCwQlM2n5U8RU' #<- my personal token that may or may not be working depending on how the hyperate gods are feeling today
 hypeRateSessionId = ''
@@ -175,6 +176,9 @@ spotify_redirect_uri = 'http://localhost:8000/callback'
 spotifyLinkStatus = 'Unlinked'
 cancelLink = False
 spotifyPlayState = ''
+
+pulsoidLastUsed = True
+hypeRateLastUsed = False
 
 
 def fatal_error(error = None):
@@ -348,7 +352,8 @@ confDataDict = { #this dictionary will always exclude position 0 which is the co
   "1.5.2" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode'],
   "1.5.3" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP'],
   "1.5.4" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP'],
-  "1.5.5" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken']
+  "1.5.5" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken'],
+  "1.5.6" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId']
 }
 
 if os.path.isfile('please-do-not-delete.txt'):
@@ -620,6 +625,11 @@ def uiThread():
   global cancelLink
   global spotifyLinkStatus
 
+  global usePulsoid
+  global useHypeRate
+  global hypeRateKey
+  global hypeRateSessionId
+
   if darkMode:
     bgColor = '#333333'
     accentColor = '#4d4d4d'
@@ -777,14 +787,26 @@ def uiThread():
               ], size=(379, 80))],
     [sg.Column([
                   [sg.Text('Heartrate Settings:')],
+                  [sg.Text("Select heart rate data source:")],
+                  [sg.Checkbox("Pulsoid", key='usePulsoid', default=True, enable_events=True), sg.Checkbox("HypeRate", key='useHypeRate', default=False, enable_events=True)],
                   [sg.Checkbox('Pass through heartrate avatar parameters\neven when not running', default=False, key='avatarHR', enable_events= True)],
-                  [sg.Text('Pulsoid Token:'), sg.Button('Get Token 💓', key='getPulsoidToken', font="System", button_color="#f92f60")],
-                  [sg.Input(key='pulsoidToken', size=(50, 1))],
                   [sg.Checkbox('Heart Rate Beat', default=True, key='toggleBeat', enable_events=True)],
                   [sg.Checkbox('Override Beat', default=False, key='blinkOverride', enable_events=True)],
                   [sg.Text('Blink Speed (If Overridden)')],
                   [sg.Slider(range=(0, 5), default_value=.5, resolution=.01, orientation='horizontal', size=(40, 15), key="blinkSpeed", trough_color=scrollbarBackgroundColor)]
-              ], size=(379, 260))]
+              ], size=(379, 250))],
+    [sg.Column([
+      [sg.Text('Pulsoid Settings:')],
+      [sg.Text('Pulsoid Token:'), sg.Button('Get Token 💓', key='getPulsoidToken', font="System", button_color="#f92f60")],
+        [sg.Input(key='pulsoidToken', size=(50, 1))],
+    ], size=(379, 90))],
+    [sg.Column([
+      [sg.Text('HypeRate Settings:')],
+      [sg.Text('HypeRate API Key:'), sg.Button('Get Key 💞', key='getHypeRateKey', font="System", button_color="#f92f60")],
+        [sg.Input(key='hypeRateKey', size=(50, 1))],
+      [sg.Text('HypeRate Session ID:'),],
+        [sg.Input(key='hypeRateSessionId', size=(50, 1))],
+    ], size=(379, 130))]
   ]
   playTime_conf_layout = [
     [sg.Column([
@@ -823,7 +845,7 @@ def uiThread():
                   sg.Tab('⏱️CPU', [[sg.Column(cpu_conf_layout, background_color=accentColor)]], background_color=accentColor),
                   sg.Tab('🚦RAM', [[sg.Column(ram_conf_layout, background_color=accentColor)]], background_color=accentColor),
                   sg.Tab('⏳GPU', [[sg.Column(gpu_conf_layout, background_color=accentColor)]], background_color=accentColor),
-                  sg.Tab('💓HR', [[sg.Column(hr_conf_layout, background_color=accentColor)]], background_color=accentColor),
+                  sg.Tab('💓HR', [[sg.Column(hr_conf_layout, background_color=accentColor, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, size=(440, 300),)]], background_color=accentColor),
                   sg.Tab('🔇Mute', [[sg.Column(mute_conf_layout, background_color=accentColor)]], background_color=accentColor),
                   sg.Tab('⌚Play Time', [[sg.Column(playTime_conf_layout, background_color=accentColor)]], background_color=accentColor),
                   sg.Tab('⌨STT', [[sg.Text('Coming Soon')]], background_color=accentColor),
@@ -978,8 +1000,10 @@ def uiThread():
     window['useMediaManager'].update(value=True)
     window['useSpotifyApi'].update(value=False)
     window['spotifySongDisplay'].update(value='🎵\'{title}\' ᵇʸ {artist}🎶 『{song_progress}/{song_length}』')
-    """window['spotifyAccessToken'].update(value='')
-    window['spotifyRefreshToken'].update(value='')"""
+    window['usePulsoid'].update(value=True)
+    window['useHypeRate'].update(value=False)
+    window['hypeRateKey'].update(value='FIrXkWWlf57iHjMu0x3lEMNst8IDIzwUA2UD6lmSxL4BqBUTYw8LCwQlM2n5U8RU')
+    window['hypeRateSessionId'].update(value='')
   def updateUI():
     global bgColor
     global accentColor
@@ -998,6 +1022,11 @@ def uiThread():
     global spotifyLinkStatus
     global spotifyAccessToken
     global spotifyRefreshToken
+    global usePulsoid
+    global useHypeRate
+    global hypeRateKey
+    global hypeRateSessionId
+
     if os.path.isfile('please-do-not-delete.txt'):
       try:
         window['msgDelay'].update(value=message_delay)
@@ -1045,8 +1074,11 @@ def uiThread():
         window['useMediaManager'].update(value=useMediaManager)
         window['useSpotifyApi'].update(value=useSpotifyApi)
         window['spotifySongDisplay'].update(value=spotifySongDisplay)
-        """window['spotifyAccessToken'].update(value=spotifyAccessToken)
-        window['spotifyRefreshToken'].update(value=spotifyRefreshToken)"""
+        window['usePulsoid'].update(value=usePulsoid)
+        window['useHypeRate'].update(value=useHypeRate)
+        window['hypeRateKey'].update(value=hypeRateKey)
+        window['hypeRateSessionId'].update(value=hypeRateSessionId)
+        
         if spotifyLinkStatus != 'Unlinked':
           window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
           if 'Error' in spotifyLinkStatus:   
@@ -1147,11 +1179,13 @@ def uiThread():
           useMediaManager = values['useMediaManager']
           useSpotifyApi = values['useSpotifyApi']
           spotifySongDisplay = values['spotifySongDisplay']
-          """spotifyAccessToken = values['spotifyAccessToken']
-          spotifyRefreshToken = values['spotifyRefreshToken']"""
+          usePulsoid = values['usePulsoid']
+          useHypeRate = values['useHypeRate']
+          hypeRateKey = values['hypeRateKey']
+          hypeRateSessionId = values['hypeRateSessionId']
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode, sendBlank, suppressDuplicates, sendASAP,useMediaManager, useSpotifyApi, spotifySongDisplay, spotifyAccessToken, spotifyRefreshToken]))
+              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode, sendBlank, suppressDuplicates, sendASAP,useMediaManager, useSpotifyApi, spotifySongDisplay, spotifyAccessToken, spotifyRefreshToken, usePulsoid, useHypeRate, hypeRateKey, hypeRateSessionId]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
           
@@ -1230,9 +1264,9 @@ def uiThread():
       if event == 'mediaManagerError':
         sg.popup_error('Media Manager Failure. Please restart your system.\n\nIf this problem persists, please report an issue on github: https://github.com/Lioncat6/OSC-Chat-Tools/issues.\nFull Error:\n'+str(values[event]), keep_on_top="True")
         break
-      if event == 'pulsoidError':
+      if event == 'heartRateError':
         playMsg = False
-        sg.popup('Pulsoid Error:\nAre you connected to the internet?\nPlease double check your token in the behavior tab and then toggle run to try again.\n\nIf this problem persists, please report an issue on github: https://github.com/Lioncat6/OSC-Chat-Tools/issues')
+        sg.popup('Heart Rate Error:\nAre you connected to the internet?\nPlease double check your token, key, or session id in the behavior tab and then toggle run to try again.\n\nIf this problem persists, please report an issue on github: https://github.com/Lioncat6/OSC-Chat-Tools/issues')
       if event == 'scrollError':
         playMsg = False
         sg.popup('File Read Error: Please make sure you have a file selected to scroll though in the behavior tab, then toggle Run to try again!\nFull Error:\n' + str(values[event]), keep_on_top="True")
@@ -1351,6 +1385,8 @@ def uiThread():
         keyboard.press_and_release('ctrl+v')
       if event == 'getPulsoidToken':
         webbrowser.open('https://pulsoid.net/oauth2/authorize?response_type=token&client_id=8070496f-f886-4030-8340-96d1d68b25cb&redirect_uri=&scope=data:heart_rate:read&state=&response_mode=web_page')
+      if event == 'getHypeRateKey':
+        webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/wiki/HypeRate-Keys')
       if event == 'useSpotifyApi':
         if spotifyAccessToken != '':
           window['useSpotifyApi'].update(value=True)
@@ -1361,6 +1397,16 @@ def uiThread():
       if event == 'useMediaManager':
         window['useMediaManager'].update(value=True)
         window['useSpotifyApi'].update(value=False)
+      if event == 'useHypeRate':
+        if hypeRateSessionId != '':
+          window['useHypeRate'].update(value=True)
+          window['usePulsoid'].update(value=False)
+        else:
+          sg.popup('Please add a hyperate session id first!')
+          window['useHypeRate'].update(value=False)
+      if event == 'usePulsoid':
+        window['usePulsoid'].update(value=True)
+        window['useHypeRate'].update(value=False)
       if event == 'linkSpotify':
         if "Unlinked" in spotifyLinkStatus or "Error" in spotifyLinkStatus:
           linking_layout = [[sg.Text('')],[sg.Text('Linking Spotify...')],[sg.Button('Cancel')]]
@@ -1925,18 +1971,45 @@ def hrConnectionThread():
     global blinkSpeed
     global useAfkKeybind
     global toggleBeat
+    global ws
+    global pulsoidLastUsed
+    global hypeRateLastUsed
     if ("hr(" in layoutString or avatarHR) and (playMsg or avatarHR):
       if not hrConnected:
         try:
-          ws = create_connection("wss://dev.pulsoid.net/api/v1/data/real_time?access_token="+pulsoidToken+"&response_mode=text_plain_only_heart_rate")
+          url = "wss://dev.pulsoid.net/api/v1/data/real_time?access_token="+pulsoidToken+"&response_mode=text_plain_only_heart_rate"
+          if useHypeRate:
+            url = "wss://app.hyperate.io/socket/websocket?token="+hypeRateKey
+          ws = create_connection(url)
           ws.settimeout(.4)
           hrConnected = True
-          def pulsoidListen():
+          def heartRateListen():
+              global ws
               global heartRate
+              global pulsoidLastUsed
+              global hypeRateLastUsed
+              join_msg = {
+                    "topic": "hr:"+hypeRateSessionId,  # replace <ID> with the user session id
+                    "event": "phx_join",
+                    "payload": {},
+                    "ref": 0
+                }
+              if useHypeRate:
+                ws.send(json.dumps(join_msg))
               while True:
                   try:
                     event = ws.recv()
-                    heartRate = event
+                    if usePulsoid:
+                      heartRate = event
+                    else:
+                      try:
+                        heartRate = json.loads(event).get('payload').get('hr')
+                        if heartRate == None:
+                          heartRate = 1
+                      except Exception as e:
+                        outputLog('Refreshing hyperate...')
+                        ws = create_connection(url)
+                        ws.send(json.dumps(join_msg))
                     client.send_message("/avatar/parameters/isHRActive", True)
                     client.send_message("/avatar/parameters/isHRConnected", True)
                     client.send_message("/avatar/parameters/HR", int(event))
@@ -1945,8 +2018,8 @@ def hrConnectionThread():
                     time.sleep(.01)
                   if not run or not hrConnected:
                       break
-          pulsoidListenThread = Thread(target=pulsoidListen)
-          pulsoidListenThread.start()
+          heartRateListenThread = Thread(target=heartRateListen)
+          heartRateListenThread.start()
           def blinkHR():
             global blinkThread
             global heartRate
@@ -1970,16 +2043,31 @@ def hrConnectionThread():
           blinkHRThread = Thread(target=blinkHR)
           blinkHRThread.start()
           #print('Pulsoid Connection Started...')
-          outputLog('Pulsoid Connection Started...')
+          if usePulsoid:
+            outputLog('Heart Rate Connection Started... Connected to Pulsoid')
+            pulsoidLastUsed = True
+            hypeRateLastUsed = False
+          else:
+            outputLog('Heart Rate Connection Started... Connected to HypeRate')
+            pulsoidLastUsed = False
+            hypeRateLastUsed = True
         except Exception as e:
           if windowAccess != None:
             if playMsg:
-              windowAccess.write_event_value('pulsoidError', e)
-    if ((not "hr(" in layoutString and not avatarHR) or not (playMsg or avatarHR)) and hrConnected:
+              windowAccess.write_event_value('heartRateError', e)
+    if (((not "hr(" in layoutString and not avatarHR) or not (playMsg or avatarHR)) or (pulsoidLastUsed and useHypeRate) or (hypeRateLastUsed and usePulsoid)) and hrConnected:
       hrConnected = False
       #print('Pulsoid Connection Stopped')
-      outputLog('Pulsoid Connection Stopped')
+      if (pulsoidLastUsed and useHypeRate) or (hypeRateLastUsed and usePulsoid):
+        print('Switching HR Data source...')
+      heartRate = 0
+      if pulsoidLastUsed:
+        outputLog('Pulsoid Connection Stopped')
+      else:
+        outputLog('HypeRate Connection Stopped')
     time.sleep(.5)
+pulsoidLastUsed = usePulsoid
+hypeRateLastUsed = useHypeRate
 pulsoidConnectionThread = Thread(target=hrConnectionThread).start()
 
 def spotifyConnectionManager():
