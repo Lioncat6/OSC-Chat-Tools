@@ -30,7 +30,7 @@ OCT Is a standalone program used for interacting with Vrchat's OSC to send chat 
 ## Exe file
  - https://github.com/Lioncat6/OSC-Chat-Tools/releases/latest
  - Windows SmartScreen will complain due to it not being signed
- - Run it through https://www.virustotal.com/ if you would like. Might get some false positives due to the packaged Python file being compressed
+
 ## Build it yourself
 (Not recommended cause things might be broken before release)
  - Install python [https://www.python.org/downloads/](https://www.python.org/downloads/)
