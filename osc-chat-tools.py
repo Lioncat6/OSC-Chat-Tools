@@ -1837,8 +1837,8 @@ if __name__ == "__main__":
               if playState != None and playState != '': 
                 artist = playState.get('item').get('artists')[0].get('name')
                 title = playState.get('item').get('name')
-                album_title = ''
-                album_artist = ''
+                album_title = playState.get('item').get('album').get('name')
+                album_artist = playState.get('item').get('artists')[0].get('name')
                 song_progress = formatTime(playState.get('progress_ms')/1000)
                 song_length = formatTime(playState.get('item').get('duration_ms')/1000)
                 volume = str(playState.get('device').get('volume_percent'))
