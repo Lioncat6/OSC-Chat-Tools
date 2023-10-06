@@ -51,9 +51,7 @@ OCT Is a standalone program used for interacting with Vrchat's OSC to send chat 
  - Or run the included `build.bat` file
  - The resulting exe will be located in the `dist` folder
 
-## Open up `osc-chat-tools.exe` and the code will do the rest!
-
-### Side note... the song functionality will show whatever the last thing you were listening to was... including any website or video you were watching... So be careful.
+### Side note... the windows now playing song functionality will show whatever the last thing you were listening to was... including any website or video you were watching... So be careful.
 
 # Keyboard Shortcuts 
 All keyboard shortcuts can be rebound
