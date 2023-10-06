@@ -15,10 +15,10 @@ OCT Is a standalone program used for interacting with Vrchat's OSC to send chat 
  - Fully customizable layout with divider and newline toggles
  - Animated text
  - Current time
- - Song info using the Windows media manager and now the Spotify API!
+ - Song info using the Windows media manager and now the [Spotify](https://spotify.com/) API!
  - CPU Info
  - RAM Info
- - Heart rate info using Pulsoid (Get a token from the 'Tokens' section of the dashboard) or HypeRate 
+ - Heart rate info using [Pulsoid](https://pulsoid.net/) or [HypeRate](https://www.hyperate.io/) 
  - AFK message activated with a keyboard shortcut or using the OSC to watch for when the player activates AFK mode in-game
  - Customizable keyboard shortcuts
  - OSC Port forwarding (So multiple programs can listen to the OSC!)
