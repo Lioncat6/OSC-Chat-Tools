@@ -65,9 +65,8 @@ All keyboard shortcuts can be rebound
     - https://pulsoid.net/ui/keys - If you have a BRO Subscription
  - Paste the copied token into the behavior tab under the `💓HR` section
 
-# Guide - New guide coming soon...
-
-
+# Guide - Last update 1.5.6
+ - https://www.youtube.com/watch?v=8D23oUzb-0Q
 
 # Coming soon:
  - HypeRate support
