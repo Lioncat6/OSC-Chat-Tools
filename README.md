@@ -69,7 +69,6 @@ All keyboard shortcuts can be rebound
  - https://www.youtube.com/watch?v=8D23oUzb-0Q
 
 # Coming soon:
- - HypeRate support
  - Modular plugins system to replace hardcoded objects
  - Make the program install instead of being standalone to enable mods and assets and to improve boot time
  - Switch to a different ui, probably some sort of electron app rather than a python based one
