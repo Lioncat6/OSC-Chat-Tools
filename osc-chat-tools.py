@@ -39,7 +39,7 @@ import base64
 run = True
 playMsg = True
 textParseIterator = 0
-version = "1.5.6"
+version = "1.5.7"
 
 #conf variables
 
@@ -109,7 +109,7 @@ playTimeDisplay = '⏳{hours}:{remainder_minutes}'#in conf
 mutedDisplay = 'Muted 🔇'#in conf
 unmutedDisplay = '🔊'#in conf
  
-darkMode = False #in conf
+darkMode = True #in conf
 
 sendBlank = True
 suppressDuplicates = False
@@ -160,6 +160,8 @@ isMute = False
 isInSeat = False
 voiceVolume = 0
 isUsingEarmuffs = False
+isBooped= False
+isPat = False
 
 vrcPID = None
 
@@ -239,6 +241,22 @@ def vr_handler(unused_address, args):# The game never sends this value from what
             return True
     return False"""
     
+def boop_handler(unused_address, args):  
+    global isBooped
+    isBooped = args
+    outputLog(f'isBooped {isBooped}')
+
+def pat_handler(unused_address, args):  
+    global isPat
+    if isinstance(args, int) or isinstance(args, float):
+      if args > 0:
+        isPat = True
+      else:
+        isPat = False
+    else:
+      isPat = args
+    outputLog(f'isPat {isPat}') 
+
 message_queue = []
 queue_lock = Lock()
 def outputLog(text):
@@ -984,7 +1002,7 @@ def uiThread():
     window['oscListen'].update(value=False)
     window['oscForeword'].update(value=False)
     window['logOutput'].update(value=False)
-    window['layoutStorage'].update(value=False)
+    window['layoutStorage'].update(value='')
     window['verticalDivider'].update(value='〣')
     window['cpuDisplay'].update(value='ᴄᴘᴜ: {cpu_percent}%')
     window['ramDisplay'].update(value='ʀᴀᴍ: {ram_percent}%  ({ram_used}/{ram_total})')
@@ -993,7 +1011,7 @@ def uiThread():
     window['playTimeDisplay'].update(value='⏳{hours}:{remainder_minutes}')
     window['mutedDisplay'].update(value='Muted 🔇')
     window['unmutedDisplay'].update(value='🔊')
-    window['darkMode'].update(value=False)
+    window['darkMode'].update(value=True)
     window['sendBlank'].update(value=True)
     window['suppressDuplicates'].update(value=False)
     window['sendASAP'].update(value=False)
@@ -1004,6 +1022,24 @@ def uiThread():
     window['useHypeRate'].update(value=False)
     window['hypeRateKey'].update(value='FIrXkWWlf57iHjMu0x3lEMNst8IDIzwUA2UD6lmSxL4BqBUTYw8LCwQlM2n5U8RU')
     window['hypeRateSessionId'].update(value='')
+    #Disc Spotify
+    global spotifyAccessToken
+    global spotifyRefreshToken
+    global useSpotifyApi
+    global useMediaManager
+    spotifyAccessToken = ''
+    spotifyRefreshToken = ''
+    spotifyLinkStatus = 'Unlinked'
+    window['useSpotifyApi'].update(value=False)
+    window['useMediaManager'].update(value=True)
+    useSpotifyApi = False
+    useMediaManager = True
+    window.write_event_value('Apply', '')
+    window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
+    window['spotifyLinkStatus'].update(text_color='orange')
+    window['linkSpotify'].update(text="Link Spotify 🔗", button_color="#00a828")
+    #Apply
+    window.write_event_value('Apply', '')    
   def updateUI():
     global bgColor
     global accentColor
@@ -1362,23 +1398,26 @@ def uiThread():
           layList[pos] = layList[pos][:editpos+1] + ')' + layList[pos][editpos+1:]
         window['layoutStorage'].update(value=str(layList).replace("[", "").replace("\']", "}").replace("\"]", "}").replace("\",", "}").replace("\',", "}").replace("\"", "{").replace("\'", "{").replace("]", ""))
       for x in range(1, 16):
-        if event == "delete"+str(x):
-          listMod = ast.literal_eval("["+window['layoutStorage'].get().replace("{", "\"").replace("}", "\",")[:-1]+"]")
-          del listMod[x-1]
-          window['layoutStorage'].update(value=str(listMod).replace("[", "").replace("\']", "}").replace("\"]", "}").replace("\",", "}").replace("\',", "}").replace("\"", "{").replace("\'", "{").replace("]", ""))
-        if event == "up"+str(x):
-          layoutMove(x, True)
-        if event == "down"+str(x):
-          layoutMove(x, False)
-        if event == "divider"+str(x) or event == "newLine"+str(x):
-          if values['divider'+str(x)] and values['newLine'+str(x)]:
-            toggleValues(x, 3)
-          elif values['divider'+str(x)] and (not values['newLine'+str(x)]):
-            toggleValues(x, 1)
-          elif (not values['divider'+str(x)]) and values['newLine'+str(x)]:
-            toggleValues(x, 2)
-          else:
-            toggleValues(x, 0)
+        try:
+          if event == "delete"+str(x):
+            listMod = ast.literal_eval("["+window['layoutStorage'].get().replace("{", "\"").replace("}", "\",")[:-1]+"]")
+            del listMod[x-1]
+            window['layoutStorage'].update(value=str(listMod).replace("[", "").replace("\']", "}").replace("\"]", "}").replace("\",", "}").replace("\',", "}").replace("\"", "{").replace("\'", "{").replace("]", ""))
+          if event == "up"+str(x):
+            layoutMove(x, True)
+          if event == "down"+str(x):
+            layoutMove(x, False)
+          if event == "divider"+str(x) or event == "newLine"+str(x):
+            if values['divider'+str(x)] and values['newLine'+str(x)]:
+              toggleValues(x, 3)
+            elif values['divider'+str(x)] and (not values['newLine'+str(x)]):
+              toggleValues(x, 1)
+            elif (not values['divider'+str(x)]) and values['newLine'+str(x)]:
+              toggleValues(x, 2)
+            else:
+              toggleValues(x, 0)
+        except Exception as e:
+          pass
       if event == 'Copy':
         keyboard.press_and_release('ctrl+c')
       if event == 'Paste':
@@ -1503,9 +1542,14 @@ if __name__ == "__main__":
   dispatcher.map("/avatar/parameters/AFK", afk_handler)
   dispatcher.map("/avatar/parameters/VRMode", vr_handler) # The game never sends this value from what I've seen
   dispatcher.map("/avatar/parameters/MuteSelf", mute_handler)
-  dispatcher.map("/avatar/parameters/InStation", inSeat_handler)
-  dispatcher.map("/avatar/parameters/Voice", volume_handler)
-  dispatcher.map("/avatar/parameters/Earmuffs", usingEarmuffs_handler)
+  #dispatcher.map("/avatar/parameters/InStation", inSeat_handler)
+  #dispatcher.map("/avatar/parameters/Voice", volume_handler)
+  #dispatcher.map("/avatar/parameters/Earmuffs", usingEarmuffs_handler)
+  dispatcher.map("/avatar/parameters/Boop", boop_handler)
+  dispatcher.map("/avatar/parameters/Booped", boop_handler)
+  dispatcher.map("/avatar/parameters/HeadPat", pat_handler)
+  dispatcher.map("/avatar/parameters/Pat", pat_handler)
+  dispatcher.map("/avatar/parameters/PatBool", pat_handler)
   
   def oscForwardingManager():
     global runForewordServer
