@@ -14,7 +14,7 @@ if not os.path.isfile('please-do-not-delete.txt'):
 
 import PySimpleGUI as sg
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone
 from pythonosc import udp_client
 import keyboard
 import asyncio
@@ -32,13 +32,13 @@ from flask import Flask, request
 from werkzeug.serving import make_server
 import hashlib
 import base64
+import pytz
 #import GPUtil
 
 #importantest variables :)
 
 run = True
 playMsg = True
-textParseIterator = 0
 version = "1.5.7"
 
 #conf variables
@@ -128,7 +128,12 @@ useHypeRate = False
 hypeRateKey = 'FIrXkWWlf57iHjMu0x3lEMNst8IDIzwUA2UD6lmSxL4BqBUTYw8LCwQlM2n5U8RU' #<- my personal token that may or may not be working depending on how the hyperate gods are feeling today
 hypeRateSessionId = ''
 
+timeDisplayAM = "{hour}:{minute} AM"
+timeDisplayPM = "{hour}:{minute} PM"
+
 ###########Program Variables (not in conf)######### 
+
+textParseIterator = 0
 
 msgOutput = ''
 
@@ -182,6 +187,7 @@ spotifyPlayState = ''
 pulsoidLastUsed = True
 hypeRateLastUsed = False
 
+textStorage = ""
 
 def fatal_error(error = None):
   global run
@@ -371,7 +377,8 @@ confDataDict = { #this dictionary will always exclude position 0 which is the co
   "1.5.3" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP'],
   "1.5.4" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP'],
   "1.5.5" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken'],
-  "1.5.6" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId']
+  "1.5.6" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId'],
+  "1.5.7" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM']
 }
 
 if os.path.isfile('please-do-not-delete.txt'):
@@ -635,6 +642,9 @@ def uiThread():
   global suppressDuplicates
   global sendASAP
   
+  global timeDisplayAM
+  global timeDisplayPM
+  
   global useMediaManager
   global useSpotifyApi
   global spotifySongDisplay
@@ -752,6 +762,11 @@ def uiThread():
     ], size=(379, 240))],
   ]
   time_conf_layout = [
+    [sg.Column([
+                  [sg.Text('Template to use for Time display\nVariables:{hour}, {minute}, {time_zone}')],
+                  [sg.Text('AM:'), sg.Push(),  sg.Input(key='timeDisplayAM', size=(30, 1))],
+                  [sg.Text('PM:'), sg.Push(), sg.Input(key='timeDisplayPM', size=(30, 1))]
+              ], size=(379, 100))],
   ]
   song_conf_layout = [
     [sg.Column([
@@ -1022,6 +1037,8 @@ def uiThread():
     window['useHypeRate'].update(value=False)
     window['hypeRateKey'].update(value='FIrXkWWlf57iHjMu0x3lEMNst8IDIzwUA2UD6lmSxL4BqBUTYw8LCwQlM2n5U8RU')
     window['hypeRateSessionId'].update(value='')
+    window['timeDisplayAM'].update(value="{hour}:{minute} AM")
+    window['timeDisplayPM'].update(value="{hour}:{minute} PM")
     #Disc Spotify
     global spotifyAccessToken
     global spotifyRefreshToken
@@ -1062,7 +1079,9 @@ def uiThread():
     global useHypeRate
     global hypeRateKey
     global hypeRateSessionId
-
+    global timeDisplayAM
+    global timeDisplayPM
+    
     if os.path.isfile('please-do-not-delete.txt'):
       try:
         window['msgDelay'].update(value=message_delay)
@@ -1114,6 +1133,8 @@ def uiThread():
         window['useHypeRate'].update(value=useHypeRate)
         window['hypeRateKey'].update(value=hypeRateKey)
         window['hypeRateSessionId'].update(value=hypeRateSessionId)
+        window['timeDisplayAM'].update(value=timeDisplayAM)
+        window['timeDisplayPM'].update(value=timeDisplayPM)
         
         if spotifyLinkStatus != 'Unlinked':
           window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
@@ -1128,7 +1149,7 @@ def uiThread():
             window['linkSpotify'].update(text='Unlink Spotify 🔗', button_color= "#c68341")
           window.write_event_value('Apply', '')    
       except Exception as e:
-        print(str(e))
+        outputLog('Failed to update UI\n'+str(e))
         pass
     while run:
       if run:
@@ -1219,9 +1240,11 @@ def uiThread():
           useHypeRate = values['useHypeRate']
           hypeRateKey = values['hypeRateKey']
           hypeRateSessionId = values['hypeRateSessionId']
+          timeDisplayAM = values['timeDisplayAM']
+          timeDisplayPM = values['timeDisplayPM']
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode, sendBlank, suppressDuplicates, sendASAP,useMediaManager, useSpotifyApi, spotifySongDisplay, spotifyAccessToken, spotifyRefreshToken, usePulsoid, useHypeRate, hypeRateKey, hypeRateSessionId]))
+              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode, sendBlank, suppressDuplicates, sendASAP,useMediaManager, useSpotifyApi, spotifySongDisplay, spotifyAccessToken, spotifyRefreshToken, usePulsoid, useHypeRate, hypeRateKey, hypeRateSessionId, timeDisplayPM, timeDisplayAM]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
           
@@ -1781,6 +1804,8 @@ if __name__ == "__main__":
     global mutedDisplay
     global unmutedDisplay
     global playTimeDat
+    global timeDisplayAM
+    global timeDisplayPM
     #stupid crap
     global letsGetThatTime
     global songInfo
@@ -1812,6 +1837,8 @@ if __name__ == "__main__":
           global timeVar
           global useSpotifyApi
           global useMediaManager
+          global timeDisplayAM
+          global timeDisplayPM
           def checkData(msg, data):
             lf = "\v"
             if data == 1 or data == 3:
@@ -1820,17 +1847,23 @@ if __name__ == "__main__":
               msg =  msg + lf
             return msg
           def time(data):
+            global timeDisplayAM
+            global timeDisplayPM
             now = datetime.now()
-            current_hour = now.strftime("%H")
-            current_minute = now.strftime("%M")
-            if int(current_hour) >= 12:
-                current_hour = int(current_hour)-12
-                dayThing = "PM"
+            hour = now.strftime("%H")
+            minute = now.strftime("%M")
+            time_zone = datetime.now().astimezone().tzname()
+            if time_zone == 'Central Daylight Time':
+              time_zone = 'CDT'
+            if int(hour) >= 12:
+                hour = int(hour)-12
+                if int(hour) == 0:
+                  hour = 12 
+                letsGetThatTime = timeDisplayPM.format_map(defaultdict(str, hour=hour, minute=minute, time_zone=time_zone))     
             else:
-                dayThing = "AM"
-            if int(current_hour) == 0:
-                current_hour = 12  
-            letsGetThatTime =" "+str(current_hour)+":"+current_minute+dayThing
+                if int(hour) == 0:
+                  hour = 12 
+                letsGetThatTime = timeDisplayAM.format_map(defaultdict(str, hour=hour, minute=minute, time_zone=time_zone))       
             return(checkData(letsGetThatTime, data))
           def text(data):
             return(checkData(a.replace("\\n", "\v").replace("\\v", "\v"), data))
@@ -1892,7 +1925,7 @@ if __name__ == "__main__":
                 artist = ''
                 title = ''
                 album_title = ''
-                album_artist = ''
+                album_artist = '' 
                 song_progress = formatTime(0)
                 song_length = formatTime(0)
                 volume = '0'
@@ -2236,15 +2269,19 @@ def runmsg():
   global afk
   global FileToRead
   global scrollText
+  global textStorage
   while playMsg:
+    textStorage = messageString
     if not afk and not scrollText:
       for x in processMessage(messageString):
-        if afk or scrollText or (not playMsg):
+        if afk or scrollText or (not playMsg) or (not run) or (messageString != textStorage):
+          textStorage = messageString
           break
         if x == "*":
           sendMsg(" ㅤ")
         else:
           sendMsg(" "+x)
+        
     elif afk:
       sendMsg('\vAFK\v')
       sendMsg('\vㅤ\v')
