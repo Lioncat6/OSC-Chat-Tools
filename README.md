@@ -15,11 +15,11 @@ OCT Is a standalone program used for interacting with Vrchat's OSC to send chat 
  - Fully customizable layout with divider and newline toggles
  - Animated text
  - Current time
- - Song info using the Windows media manager and now the spotify API!
+ - Song info using the Windows media manager and now the [Spotify](https://spotify.com/) API!
  - CPU Info
  - RAM Info
- - Heart rate info using Pulsoid (Get a token from the 'Tokens' section of the dashboard)
- - AFK message activated with a keyboard shortcut or using the OSC to watch for when the player activates AFK mode in game
+ - Heart rate info using [Pulsoid](https://pulsoid.net/) or [HypeRate](https://www.hyperate.io/) 
+ - AFK message activated with a keyboard shortcut or using the OSC to watch for when the player activates AFK mode in-game
  - Customizable keyboard shortcuts
  - OSC Port forwarding (So multiple programs can listen to the OSC!)
  - Customizable OSC Listen port/address
@@ -51,9 +51,7 @@ OCT Is a standalone program used for interacting with Vrchat's OSC to send chat 
  - Or run the included `build.bat` file
  - The resulting exe will be located in the `dist` folder
 
-## Open up `osc-chat-tools.exe` and the code will do the rest!
-
-### Side note... the song functionality will show whatever the last thing you were listening to was... including any website or video you were watching... So be careful.
+### Side note... the windows now playing song functionality will show whatever the last thing you were listening to was... including any website or video you were watching... So be careful.
 
 # Keyboard Shortcuts 
 All keyboard shortcuts can be rebound
@@ -67,12 +65,10 @@ All keyboard shortcuts can be rebound
     - https://pulsoid.net/ui/keys - If you have a BRO Subscription
  - Paste the copied token into the behavior tab under the `💓HR` section
 
-# Guide - New guide coming soon...
-
-
+# Guide - Last update 1.5.6
+ - https://www.youtube.com/watch?v=8D23oUzb-0Q
 
 # Coming soon:
- - HypeRate support
  - Modular plugins system to replace hardcoded objects
  - Make the program install instead of being standalone to enable mods and assets and to improve boot time
  - Switch to a different ui, probably some sort of electron app rather than a python based one
