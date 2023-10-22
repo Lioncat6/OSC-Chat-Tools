@@ -5,8 +5,9 @@ from threading import Thread, Lock
 import ast
 import requests
 from collections import defaultdict
-import ctypes
+#import ctypes
 import json
+#import traceback
 
 if not os.path.isfile('please-do-not-delete.txt'):
   with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
@@ -32,14 +33,14 @@ from flask import Flask, request
 from werkzeug.serving import make_server
 import hashlib
 import base64
-import pytz
 #import GPUtil
+from pynvml import *
 
 #importantest variables :)
 
 run = True
 playMsg = True
-version = "1.5.7"
+version = "1.5.8"
 
 #conf variables
 
@@ -69,7 +70,7 @@ songDisplay = ' 🎵\'{title}\' ᵇʸ {artist}🎶' #in conf
 showOnChange = False #in conf
 songChangeTicks = 1 #in conf
 minimizeOnStart = False #in conf
-keybind_run = 'p' #in conf
+keybind_run = '`' #in conf
 keybind_afk = 'end' #in conf
 topBar = '╔═════════════╗' #in conf
 middleBar = '╠═════════════╣' #in conf
@@ -189,6 +190,8 @@ hypeRateLastUsed = False
 
 textStorage = ""
 
+cpu_percent = 0
+
 def fatal_error(error = None):
   global run
   run = False
@@ -304,7 +307,7 @@ def update_checker(a):
           if int(data[0]["tag_name"].replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', '')) != int(version.replace('v', '').replace('.', '').replace(' ', '').replace('Version', '').replace('version', '')):
             #print("A new version is available! "+ data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', '')+" > " + version.replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
             outputLog("A new version is available! "+ data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', '')+" > " + version.replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
-            if updatePrompt:
+            if updatePrompt or a:
               def updatePromptWaitThread():
                 while windowAccess == None:
                   time.sleep(.1)
@@ -700,7 +703,7 @@ def uiThread():
                 [sg.Text('🎵Song', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Customizable song display', ), sg.Push(), sg.Button('Add to Layout', key='addSong')],
                 [sg.Text('⏱️CPU', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display CPU Utilization %', ), sg.Push(), sg.Button('Add to Layout', key='addCPU')],
                 [sg.Text('🚦RAM', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display RAM Usage %', ), sg.Push(), sg.Button('Add to Layout', key='addRAM')],
-                [sg.Text('⏳GPU', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display GPU Utilization %', ), sg.Push(), sg.Button('Coming Soon', disabled=True, key='addGPU')],
+                [sg.Text('⏳GPU', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display GPU Utilization %', ), sg.Push(), sg.Button('Add to Layout', key='addGPU')],
                 [sg.Text('💓HR', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display Heart Rate', ), sg.Push(), sg.Button('Add to Layout', key='addHR')],
                 [sg.Text('🔇Mute', font=('Arial', 12, 'bold')), sg.Text('*', text_color='cyan', pad=(0, 0), font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Display Mic Mute Status', ), sg.Push(), sg.Button('Add to Layout', key='addMute')],
                 [sg.Text('⌚Play Time', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Show Play Time', ), sg.Push(), sg.Button('Add to Layout',  key='addPlaytime')],
@@ -763,7 +766,7 @@ def uiThread():
   ]
   time_conf_layout = [
     [sg.Column([
-                  [sg.Text('Template to use for Time display\nVariables:{hour}, {minute}, {time_zone}')],
+                  [sg.Text('Template to use for Time display\nVariables:{hour}, {minute}, {time_zone}, {hour24}')],
                   [sg.Text('AM:'), sg.Push(),  sg.Input(key='timeDisplayAM', size=(30, 1))],
                   [sg.Text('PM:'), sg.Push(), sg.Input(key='timeDisplayPM', size=(30, 1))]
               ], size=(379, 100))],
@@ -996,7 +999,7 @@ def uiThread():
     window['showPaused'].update(value=True)
     window['hideSong'].update(value=False)
     window['minimizeOnStart'].update(value=False)
-    window['keybind_run'].update(value='p')
+    window['keybind_run'].update(value='`')
     window['keybind_afk'].update(value='end')
     window['topBar'].update(value='╔═════════════╗')
     window['middleBar'].update(value='╠═════════════╣')
@@ -1850,6 +1853,7 @@ if __name__ == "__main__":
             global timeDisplayAM
             global timeDisplayPM
             now = datetime.now()
+            hour24 = now.strftime("%H")
             hour = now.strftime("%H")
             minute = now.strftime("%M")
             time_zone = datetime.now().astimezone().tzname()
@@ -1859,11 +1863,11 @@ if __name__ == "__main__":
                 hour = int(hour)-12
                 if int(hour) == 0:
                   hour = 12 
-                letsGetThatTime = timeDisplayPM.format_map(defaultdict(str, hour=hour, minute=minute, time_zone=time_zone))     
+                letsGetThatTime = timeDisplayPM.format_map(defaultdict(str, hour=hour, minute=minute, time_zone=time_zone, hour24=hour24))     
             else:
                 if int(hour) == 0:
                   hour = 12 
-                letsGetThatTime = timeDisplayAM.format_map(defaultdict(str, hour=hour, minute=minute, time_zone=time_zone))       
+                letsGetThatTime = timeDisplayAM.format_map(defaultdict(str, hour=hour, minute=minute, time_zone=time_zone, hour24=hour24))       
             return(checkData(letsGetThatTime, data))
           def text(data):
             return(checkData(a.replace("\\n", "\v").replace("\\v", "\v"), data))
@@ -1890,12 +1894,12 @@ if __name__ == "__main__":
                 album_artist = ''
                 mediaPlaying = False
                 if 'TARGET_PROGRAM' in str(e):
-                  logOutput('Can\'t get media info, please make sure an application is playing audio')
+                  #outputLog('Can\'t get media info, please make sure an application is playing audio')
                   pass
                 else:
                   if windowAccess != None:
                     try:
-                        logOutput('mediaManagerError '+str(e))
+                        outputLog('mediaManagerError '+str(e))
                         windowAccess.write_event_value('mediaManagerError', e)
                     except:
                       pass
@@ -1968,8 +1972,13 @@ if __name__ == "__main__":
             ramDat = ramDisplay.format_map(defaultdict(str, ram_percent=ram_percent, ram_available=ram_available, ram_total=ram_total, ram_used=ram_used))
             return (checkData(ramDat, data))
           def gpu(data):
+            nvmlInit()
+            handle = nvmlDeviceGetHandleByIndex(0)
+            info = nvmlDeviceGetUtilizationRates(handle)
+            gpu_percent = info.gpu
+            nvmlShutdown()
             #gpu_percent = str(round((GPUtil.getGPUs()[0].load*100), 1))
-            gpu_percent = "0"
+            #gpu_percent = "0"
             gpuDat = gpuDisplay.format_map(defaultdict(str, gpu_percent=gpu_percent))
             return (checkData(gpuDat, data))
           def hr(data):
@@ -2110,6 +2119,8 @@ def hrConnectionThread():
                 client.send_message("/avatar/parameters/isHRBeat", False)
                 if blinkOverride:
                   time.sleep(blinkSpeed)
+                if heartRate == '':
+                  heartRate = 0
                 else:
                   if int(heartRate) <= 0:
                     heartRate = 1
@@ -2365,6 +2376,7 @@ def vrcRunningCheck():
           time.sleep(.01)
       playTimeDat = time.mktime(time.localtime(psutil.Process(vrcPID).create_time()))
     time.sleep(1)
+
 
 vrcRunningCheckThread = Thread(target=vrcRunningCheck)
 vrcRunningCheckThread.start()

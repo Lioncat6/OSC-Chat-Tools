@@ -9,4 +9,5 @@ pip install winsdk
 pip install websocket-client
 pip install PyInstaller
 pip install pyperclip
+pip install pynvml
 python -m PyInstaller -wF --icon=oscicon.ico --clean osc-chat-tools.py
