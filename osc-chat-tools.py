@@ -1018,7 +1018,7 @@ def uiThread():
     window['oscListenAddress'].update(value='127.0.0.1')
     window['oscListenPort'].update(value='9001')
     window['oscSendAddress'].update(value='127.0.0.1')
-    window['oscSendPort'].update(value='9002')
+    window['oscSendPort'].update(value='9000')
     window['oscForewordAddress'].update(value='127.0.0.1')
     window['oscForewordPort'].update(value='9002')
     window['oscListen'].update(value=False)
@@ -1992,13 +1992,16 @@ if __name__ == "__main__":
               nvmlInit()
               handle = nvmlDeviceGetHandleByIndex(0)
               info = nvmlDeviceGetUtilizationRates(handle)
+              print(info)
               gpu_percent = info.gpu
+              vram_percent = info.memory
               nvmlShutdown()
             except:
               gpu_percent = "0"
+              vram_percent = "0"
             #gpu_percent = str(round((GPUtil.getGPUs()[0].load*100), 1))
             #gpu_percent = "0"
-            gpuDat = gpuDisplay.format_map(defaultdict(str, gpu_percent=gpu_percent))
+            gpuDat = gpuDisplay.format_map(defaultdict(str, gpu_percent=gpu_percent, vram_percent=vram_percent))
             return (checkData(gpuDat, data))
           def hr(data):
             hr = str(heartRate)
