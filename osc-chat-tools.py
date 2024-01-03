@@ -943,6 +943,11 @@ def uiThread():
   
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=accentColor)]]
   
+  debugTypes = [
+                    int,
+                    float,
+                    bool
+                  ]
   osc_layout = [[sg.Column(
               [[sg.Text('OSC Options - Experimental\n(Turning on debug logging is recommended)', background_color=accentColor, font=('Arial', 12, 'bold'))],
               [sg.Column([
@@ -961,7 +966,13 @@ def uiThread():
                   [sg.Checkbox('Use OSC Forwarding', key='oscForeword')],
                   [sg.Text('Address: '), sg.Input('', size=(30, 1), key='oscForewordAddress')],
                   [sg.Text('Port: '), sg.Input('', size=(30, 1), key='oscForewordPort')]
-                ], size=(379, 150))]
+                ], size=(379, 120))],
+              [sg.Column([
+                  [sg.Text('Avatar Debugging')],
+                  [sg.Text('Path:'), sg.Input('', size=(30, 1), key='debugPath')],
+                  [sg.Text('Value'), sg.Input('', size=(30, 1), key='debugValue'), sg.Combo(debugTypes, default_value=int, readonly=True, size=(10, 1), key='debugType')],
+                  [sg.Button('Send', key='sendDebug')]
+                ], size=(379, 110))]
               ]  , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=accentColor)]]
   
   output_layout =  [[sg.Column(
@@ -1529,6 +1540,13 @@ def uiThread():
         window['spotifyLinkStatus'].update(text_color='red')
         window['linkSpotify'].update(text='Relink Spotify ⚠️', button_color= "red")
         sg.popup('Spotify api fetch error!\nAutomatically reverted to using Windows Now Playing\nPlease relink spotify in the behavior tab to continue...\nFull Error: '+str(values[event]))
+      if event == 'sendDebug':
+        try:
+          valueToSend = eval("values['debugType'](values['debugValue'])")
+          client.send_message(values['debugPath'], valueToSend)
+          outputLog(f"{values['debugPath']} => {values['debugValue']} | {type(valueToSend)}")
+        except Exception as e:
+          outputLog(f"Error sending debug command for reason: {e}")
   window.close()
   playMsg = False
   run = False
@@ -1992,7 +2010,7 @@ if __name__ == "__main__":
               nvmlInit()
               handle = nvmlDeviceGetHandleByIndex(0)
               info = nvmlDeviceGetUtilizationRates(handle)
-              print(info)
+              #print(info)
               gpu_percent = info.gpu
               vram_percent = info.memory
               nvmlShutdown()
