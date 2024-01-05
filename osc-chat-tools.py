@@ -914,14 +914,8 @@ def uiThread():
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=accentColor)]]"""
 
   keybindings_layout = [[sg.Column(
-              [[sg.Text('Keybindings Configuration', background_color=accentColor, font=('Arial', 12, 'bold'))],
-              [sg.Text('You must press Apply for new keybinds to take affect!', background_color=accentColor)],
-                [sg.Column([
-                  [sg.Text('Toggle Run'), sg.Frame('',[[sg.Text('Unbound', key='keybind_run', background_color=accentColor, pad=(10, 0))]],background_color=accentColor), sg.Button('Bind Key', key='run_binding')],
-                  [sg.Checkbox('Use keybind', default=True, enable_events=True, key='useRunKeybind', disabled=True)],
-                  [sg.Text('Toggle Afk'), sg.Frame('',[[sg.Text('Unbound', key='keybind_afk', background_color=accentColor, pad=(10, 0))]],background_color=accentColor), sg.Button('Bind Key', key='afk_binding')],
-                  [sg.Checkbox('Use keybind (Otherwise, uses OSC to check afk status)', default=False, enable_events=True, key='useAfkKeybind')]
-                ], expand_x=True, size=(379, 130))]
+              [
+                
               ]
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=accentColor)]]
   
@@ -931,7 +925,15 @@ def uiThread():
                   [sg.Checkbox('Minimize on startup', default=False, key='minimizeOnStart', enable_events= True)],
                   [sg.Checkbox('Show update prompt', default=True, key='updatePrompt', enable_events= True)],
                   [sg.Checkbox('Dark Mode (applies on restart)', default=False, key='darkMode', enable_events=True)]
-                ], size=(379, 90))]
+                ], size=(379, 90))],
+                [sg.Text('Keybindings Configuration', background_color=accentColor, font=('Arial', 12, 'bold'))],
+              [sg.Text('You must press Apply for new keybinds to take affect!', background_color=accentColor)],
+                [sg.Column([
+                  [sg.Text('Toggle Run'), sg.Frame('',[[sg.Text('Unbound', key='keybind_run', background_color=accentColor, pad=(10, 0))]],background_color=accentColor), sg.Button('Bind Key', key='run_binding')],
+                  [sg.Checkbox('Use keybind', default=True, enable_events=True, key='useRunKeybind', disabled=True)],
+                  [sg.Text('Toggle Afk'), sg.Frame('',[[sg.Text('Unbound', key='keybind_afk', background_color=accentColor, pad=(10, 0))]],background_color=accentColor), sg.Button('Bind Key', key='afk_binding')],
+                  [sg.Checkbox('Use keybind (Otherwise, uses OSC to check afk status)', default=False, enable_events=True, key='useAfkKeybind')]
+                ], expand_x=True, size=(379, 130))]
               ]
   , scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=accentColor)]]
   preview_layout = [[sg.Column(
@@ -991,7 +993,7 @@ def uiThread():
                   sg.Tab('🧩Layout', new_layout_layout, background_color=accentColor),
                   sg.Tab('🤖Behavior', new_behavior_layout, background_color=accentColor),
                   sg.Tab('📺Preview', preview_layout, background_color=accentColor),
-                  sg.Tab('⌨Keybindings', keybindings_layout, background_color=accentColor),
+                  #sg.Tab('⌨Keybindings', keybindings_layout, background_color=accentColor),
                   sg.Tab('💻Options', options_layout, background_color=accentColor),
                   sg.Tab('📲OSC Options', osc_layout, background_color=accentColor),
                   sg.Tab('💾Output', output_layout, background_color=accentColor)
