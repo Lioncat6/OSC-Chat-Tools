@@ -948,7 +948,8 @@ def uiThread():
   debugTypes = [
                     int,
                     float,
-                    bool
+                    bool,
+                    str
                   ]
   osc_layout = [[sg.Column(
               [[sg.Text('OSC Options - Experimental\n(Turning on debug logging is recommended)', background_color=accentColor, font=('Arial', 12, 'bold'))],
@@ -1601,7 +1602,7 @@ if __name__ == "__main__":
   dispatcher.map("/avatar/parameters/Pat", pat_handler)
   dispatcher.map("/avatar/parameters/PatBool", pat_handler)
   
-  def oscForwardingManager():
+  def oscForwardingManwager():
     global runForewordServer
     global oscListenAddressMemory
     global oscListenPortMemory
