@@ -132,6 +132,8 @@ hypeRateSessionId = ''
 timeDisplayAM = "{hour}:{minute} AM"
 timeDisplayPM = "{hour}:{minute} PM"
 
+showSongInfo = True
+
 ###########Program Variables (not in conf)######### 
 
 textParseIterator = 0
@@ -191,6 +193,8 @@ hypeRateLastUsed = False
 textStorage = ""
 
 cpu_percent = 0
+
+spotifySongUrl = 'https://spotify.com'
 
 def fatal_error(error = None):
   global run
@@ -315,12 +319,12 @@ def update_checker(a):
                 windowAccess.write_event_value('updateAvailable', data[0]["tag_name"].replace('v', '').replace(' ', '').replace('Version', '').replace('version', ''))
               updatePromptWaitThreadHandler = Thread(target=updatePromptWaitThread).start()
             outOfDate = True
-            def waitThread():
+            def updatePromptWaitThread2():
               while windowAccess == None:
                   time.sleep(.1)
                   pass
               windowAccess.write_event_value('markOutOfDate', '')
-            waitThreadHandler = Thread(target=waitThread).start()
+            updatePromptWaitThreadHandler2 = Thread(target=updatePromptWaitThread2).start()
           else:
             if a:
               windowAccess.write_event_value('popup', "Program is up to date! Version "+version)
@@ -385,7 +389,7 @@ confDataDict = { #this dictionary will always exclude position 0 which is the co
   "1.5.8" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM'],
   "1.5.8.1" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM'],
   "1.5.8.2" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM'],
-  "1.5.9" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM']
+  "1.5.9" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo']
 }
 
 if os.path.isfile('please-do-not-delete.txt'):
@@ -505,6 +509,7 @@ def refreshAccessToken(oldRefreshToken):
   spotifyAccessToken =  response.json().get('access_token')    
 
 def getSpotifyPlaystate():
+  global spotifySongUrl
   global spotifyRefreshToken
   global spotifyAccessToken
   
@@ -665,6 +670,8 @@ def uiThread():
   global hypeRateKey
   global hypeRateSessionId
 
+  global showSongInfo
+  
   if darkMode:
     bgColor = '#333333'
     accentColor = '#4d4d4d'
@@ -775,7 +782,7 @@ def uiThread():
                   [sg.Text('PM:'), sg.Push(), sg.Input(key='timeDisplayPM', size=(30, 1))]
               ], size=(379, 100))],
   ]
-  song_conf_layout = [
+  song_conf_layout = [[sg.Column([
     [sg.Column([
                   [sg.Text("Select audio info source:")],
                   [sg.Checkbox("Windows Now Playing", key='useMediaManager', default=True, enable_events=True), sg.Checkbox("Spotify API", key='useSpotifyApi', default=False, enable_events=True)], #Its called the Now Playing Session Manager btw
@@ -800,7 +807,7 @@ def uiThread():
                   [sg.Text('Amount of frames to wait before the song name disappears')],
                   [sg.Slider(range=(1, 5), default_value=2, resolution=1, orientation='horizontal', size=(40, 15), key="songChangeTicks", trough_color=scrollbarBackgroundColor)]
               ], size=(379, 220))],
-  ]
+  ], background_color=accentColor)]]
   cpu_conf_layout = [
     [sg.Column([
                   [sg.Text('Template to use for CPU display.\nVariables: {cpu_percent}')],
@@ -881,7 +888,7 @@ def uiThread():
                   sg.Tab('❔Misc.', [[sg.Column(misc_conf_layout, background_color=accentColor)]], background_color=accentColor),
                   sg.Tab('💬Text', [[sg.Column(text_conf_layout, background_color=accentColor)]], background_color=accentColor),
                   sg.Tab('🕒Time', [[sg.Column(time_conf_layout, background_color=accentColor)]], background_color=accentColor),
-                  sg.Tab('🎵Song', [[sg.Column(song_conf_layout, background_color=accentColor)]], background_color=accentColor),
+                  sg.Tab('🎵Song', song_conf_layout, background_color=accentColor),
                   sg.Tab('⏱️CPU', [[sg.Column(cpu_conf_layout, background_color=accentColor)]], background_color=accentColor),
                   sg.Tab('🚦RAM', [[sg.Column(ram_conf_layout, background_color=accentColor)]], background_color=accentColor),
                   sg.Tab('⏳GPU', [[sg.Column(gpu_conf_layout, background_color=accentColor)]], background_color=accentColor),
@@ -924,8 +931,9 @@ def uiThread():
                 [sg.Column([
                   [sg.Checkbox('Minimize on startup', default=False, key='minimizeOnStart', enable_events= True)],
                   [sg.Checkbox('Show update prompt', default=True, key='updatePrompt', enable_events= True)],
-                  [sg.Checkbox('Dark Mode (applies on restart)', default=False, key='darkMode', enable_events=True)]
-                ], size=(379, 90))],
+                  [sg.Checkbox('Dark Mode (applies on restart)', default=False, key='darkMode', enable_events=True)],
+                  [sg.Checkbox('Show song info on bottom ribbon', default=True, key ='showSongInfo')]
+                ], size=(379, 115))],
                 [sg.Text('Keybindings Configuration', background_color=accentColor, font=('Arial', 12, 'bold'))],
               [sg.Text('You must press Apply for new keybinds to take affect!', background_color=accentColor)],
                 [sg.Column([
@@ -1002,7 +1010,7 @@ def uiThread():
               key='mainTabs', tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True, size=(440, 300), font=('Arial', 11, 'normal'), tab_background_color=tabBackgroundColor, tab_border_width=0, title_color=tabTextColor
           )
       ],
-      [sg.Button('Apply', tooltip='Apply all changes to options'), sg.Button('Reset'), sg.Text(" Version "+str(version), key='versionText'), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru'), sg.Checkbox('AFK', default=False, key='afk', enable_events= True, background_color='#cb7cef')]]
+      [sg.Button('Apply', tooltip='Apply all changes to options'), sg.Button('Reset'), sg.Text(" Version "+str(version), key='versionText'), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru'), sg.Checkbox('AFK', default=False, key='afk', enable_events= True, background_color='#cb7cef'), sg.Push(), sg.Text("⏸️", key='spotifyPlayStatus', font = ('Helvetica', 11), visible=False, pad=(0, 0)), sg.Text("---", key='spotifySongName', enable_events=True, font = ('Helvetica', 11, 'underline'), visible=False, pad=(0, 0)), sg.Text("『00:00/00:00』", key='spotifyDuration', font = ('Helvetica', 11), visible=False, pad=(0, 0)), sg.Image("./assets/spotify.png", key='spotifyIcon', visible=False)]]
 
   window = sg.Window('OSC Chat Tools', layout,
                   default_element_size=(12, 1), resizable=True, finalize= True, size=(900, 620), right_click_menu=right_click_menu, icon="osc-chat-tools.exe", titlebar_icon="osc-chat-tools.exe")
@@ -1060,6 +1068,7 @@ def uiThread():
     window['hypeRateSessionId'].update(value='')
     window['timeDisplayAM'].update(value="{hour}:{minute} AM")
     window['timeDisplayPM'].update(value="{hour}:{minute} PM")
+    window['showSongInfo'].update(value=True)
     #Disc Spotify
     global spotifyAccessToken
     global spotifyRefreshToken
@@ -1102,6 +1111,7 @@ def uiThread():
     global hypeRateSessionId
     global timeDisplayAM
     global timeDisplayPM
+    global showSongInfo
     
     if os.path.isfile('please-do-not-delete.txt'):
       try:
@@ -1156,7 +1166,7 @@ def uiThread():
         window['hypeRateSessionId'].update(value=hypeRateSessionId)
         window['timeDisplayAM'].update(value=timeDisplayAM)
         window['timeDisplayPM'].update(value=timeDisplayPM)
-        
+        window['showSongInfo'].update(value=showSongInfo)
         if spotifyLinkStatus != 'Unlinked':
           window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
           if 'Error' in spotifyLinkStatus:   
@@ -1180,11 +1190,16 @@ def uiThread():
           window['afk'].update(value=afk)   
           layoutPreviewBuilder(window['layoutStorage'].get(), window)
           if playMsg:
-            sentTime = sentTime + 0.1
+            sentTime = sentTime + 0.1    
           if sendSkipped:
             window['sentCountdown'].update('Last sent: '+str(round(sentTime, 1)) +"/"+ "30" +" [Skipped Send]")
           else:
             window['sentCountdown'].update('Last sent: '+str(round(sentTime, 1)) +"/"+ str(message_delay))
+          if not playMsg or not 'song(' in layoutString or not showSongInfo:
+            window['spotifyPlayStatus'].update(visible=False)
+            window['spotifySongName'].update(visible=False)
+            window['spotifyDuration'].update(visible=False)
+            window['spotifyIcon'].update(visible=False)
         except Exception as e:
           fatal_error(e)
         if run:
@@ -1263,9 +1278,10 @@ def uiThread():
           hypeRateSessionId = values['hypeRateSessionId']
           timeDisplayAM = values['timeDisplayAM']
           timeDisplayPM = values['timeDisplayPM']
+          showSongInfo = values['showSongInfo']
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode, sendBlank, suppressDuplicates, sendASAP,useMediaManager, useSpotifyApi, spotifySongDisplay, spotifyAccessToken, spotifyRefreshToken, usePulsoid, useHypeRate, hypeRateKey, hypeRateSessionId, timeDisplayPM, timeDisplayAM]))
+              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode, sendBlank, suppressDuplicates, sendASAP,useMediaManager, useSpotifyApi, spotifySongDisplay, spotifyAccessToken, spotifyRefreshToken, usePulsoid, useHypeRate, hypeRateKey, hypeRateSessionId, timeDisplayPM, timeDisplayAM, showSongInfo]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
           
@@ -1550,6 +1566,31 @@ def uiThread():
           outputLog(f"{values['debugPath']} => {values['debugValue']} | {type(valueToSend)}")
         except Exception as e:
           outputLog(f"Error sending debug command for reason: {e}")
+      if event == 'updateSpotifySongName':
+        if showSongInfo:
+          nameToDisplay = values[event][0] + ' ᵇʸ ' +values[event][4]
+          playPause = values[event][1]
+          elapsedTime = values[event][2]
+          duration = values[event][3]
+          if len(nameToDisplay) >30:
+            nameToDisplay = nameToDisplay[:30]+"..."
+          if playPause:
+            window['spotifyPlayStatus'].update(value='▶️', visible=True)
+          else:
+            window['spotifyPlayStatus'].update(value='⏸️', visible=True)
+          window['spotifySongName'].update(value=nameToDisplay, visible=True)
+          if useSpotifyApi:
+            window['spotifyDuration'].update(value=f'『{elapsedTime}/{duration}』', visible=True)
+            window['spotifyIcon'].update(visible=True)
+          else:
+            window['spotifyDuration'].update(visible=False)
+            window['spotifyIcon'].update(visible=False)
+      if event == 'spotifySongName':
+        try:
+          if spotifySongUrl != '':
+            webbrowser.open(spotifySongUrl)
+        except Exception as e:
+          pass
   window.close()
   playMsg = False
   run = False
@@ -1977,6 +2018,18 @@ if __name__ == "__main__":
                 songInfo = spotifySongDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist, song_progress=song_progress, song_length=song_length, volume=volume, song_id=song_id))
               else:
                 songInfo=spotifySongDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist, song_progress=song_progress, song_length=song_length, volume=volume, song_id=song_id))+"⏸️"
+            global spotifySongUrl
+            try:
+              if useSpotifyApi:
+                spotifySongUrl = playState.get('item').get('external_urls').get('spotify')
+                windowAccess.write_event_value('updateSpotifySongName', [title, mediaPlaying, song_progress, song_length, artist])
+              else:
+                spotifySongUrl = ''
+                windowAccess.write_event_value('updateSpotifySongName', [title, mediaPlaying, 0, 0, artist])
+            except Exception as e:
+              #print(e)
+              pass
+            
             global showOnChange
             global songChangeTicks
             global tickCount
@@ -2000,7 +2053,7 @@ if __name__ == "__main__":
             cpu_percent = str(psutil.cpu_percent())
             cpuDat = cpuDisplay.format_map(defaultdict(str, cpu_percent=cpu_percent))
             return (checkData(cpuDat, data))
-          def ram(data):
+          def ram(data): 
             psutilVirtualMemory = psutil.virtual_memory()
             ram_percent = str(int(psutilVirtualMemory[2]))
             ram_used = str(round(int(psutilVirtualMemory[0])/1073741824-int(psutilVirtualMemory[1])/1073741824, 1))
