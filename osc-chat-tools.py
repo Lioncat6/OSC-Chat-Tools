@@ -1602,7 +1602,7 @@ if __name__ == "__main__":
   dispatcher.map("/avatar/parameters/Pat", pat_handler)
   dispatcher.map("/avatar/parameters/PatBool", pat_handler)
   
-  def oscForwardingManwager():
+  def oscForwardingManager():
     global runForewordServer
     global oscListenAddressMemory
     global oscListenPortMemory
