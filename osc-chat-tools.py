@@ -40,7 +40,7 @@ from pynvml import *
 
 run = True
 playMsg = True
-version = "1.5.9"
+version = "1.5.9.1"
 
 #conf variables
 
@@ -195,6 +195,8 @@ textStorage = ""
 cpu_percent = 0
 
 spotifySongUrl = 'https://spotify.com'
+
+nameToReturn = ''
 
 def fatal_error(error = None):
   global run
@@ -389,7 +391,8 @@ confDataDict = { #this dictionary will always exclude position 0 which is the co
   "1.5.8" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM'],
   "1.5.8.1" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM'],
   "1.5.8.2" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM'],
-  "1.5.9" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo']
+  "1.5.9" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo'],
+  "1.5.9.1" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo']
 }
 
 if os.path.isfile('please-do-not-delete.txt'):
@@ -1169,7 +1172,7 @@ def uiThread():
         window['showSongInfo'].update(value=showSongInfo)
         if spotifyLinkStatus != 'Unlinked':
           window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
-          if 'Error' in spotifyLinkStatus:   
+          if 'Error' in spotifyLinkStatus and not 'Linked' in spotifyLinkStatus:   
             window['spotifyLinkStatus'].update(text_color='red')
             window['linkSpotify'].update(text='Relink Spotify ⚠️', button_color= "red")
           elif 'Unknown' in spotifyLinkStatus:
@@ -1510,12 +1513,17 @@ def uiThread():
         if "Unlinked" in spotifyLinkStatus or "Error" in spotifyLinkStatus:
           linking_layout = [[sg.Text('')],[sg.Text('Linking Spotify...')],[sg.Button('Cancel')]]
           spotify_link_window = sg.Window('Linking Spotify...', linking_layout, size=(300, 90), element_justification='center', no_titlebar=True, modal=True)
+          global linkedUserName
+          linkedUserName = 'Canceled'
           def spotifyLinkManager():
             global linking
             global linkedUserName
             linkedUserName = linkSpotify()
             linking = False
-            spotify_link_window.write_event_value('done', 'done') 
+            try:
+              spotify_link_window.write_event_value('done', 'done') 
+            except Exception as e:
+              pass
           spotifyLinkThread = Thread(target=spotifyLinkManager).start()
           linking = True
           while linking:
@@ -1529,10 +1537,18 @@ def uiThread():
               break
           spotify_link_window.close()
           window.write_event_value('Apply', '')
-          window['spotifyLinkStatus'].update(value='Linked to '+linkedUserName)
-          spotifyLinkStatus = 'Linked to '+linkedUserName
-          window['spotifyLinkStatus'].update(text_color='green')
-          window['linkSpotify'].update(text='Unlink Spotify 🔗', button_color= "#c68341")
+          if linkedUserName == 'Error':
+            window['spotifyLinkStatus'].update(value='Authentication Error')
+            spotifyLinkStatus = 'Authentication Error'
+            window['spotifyLinkStatus'].update(text_color='red')
+            window['linkSpotify'].update(text='Relink Spotify ⚠️', button_color= "red")
+          elif linkedUserName == 'Canceled':
+            pass
+          else:
+            window['spotifyLinkStatus'].update(value='Linked to '+linkedUserName)
+            spotifyLinkStatus = 'Linked to '+linkedUserName
+            window['spotifyLinkStatus'].update(text_color='green')
+            window['linkSpotify'].update(text='Unlink Spotify 🔗', button_color= "#c68341")
         else:    
           spotifyAccessToken = ''
           spotifyRefreshToken = ''
@@ -2200,6 +2216,7 @@ def hrConnectionThread():
                   except Exception as e:
                     if not 'Connection timed out' in str(e):
                       outputLog(str(e))
+                      break
                     pass
                     time.sleep(.01)
                   if not run or not hrConnected:
@@ -2247,7 +2264,7 @@ def hrConnectionThread():
       hrConnected = False
       #print('Pulsoid Connection Stopped')
       if (pulsoidLastUsed and useHypeRate) or (hypeRateLastUsed and usePulsoid):
-        print('Switching HR Data source...')
+        outputLog('Switching HR Data source...')
       heartRate = 0
       if pulsoidLastUsed:
         outputLog('Pulsoid Connection Stopped')
@@ -2288,6 +2305,7 @@ def linkSpotify():
   global NameToReturn
   global spotifyAccessToken
   global spotifyRefreshToken
+  
   app = Flask(__name__)
   server = make_server('127.0.0.1', 8000, app)
 
@@ -2318,54 +2336,69 @@ def linkSpotify():
       global spotifyRefreshToken
       global checkForCancel
       global nameToReturn
-      code = request.args.get('code')
-      #print('Authorization code:', code)
-      authCode = code
-      
-          
-      def getAccessToken(code):
-          global spotifyRefreshToken
-          token_url = 'https://accounts.spotify.com/api/token'
-          data = {
-              'grant_type': 'authorization_code',
-              'code': code,
-              'redirect_uri': spotify_redirect_uri,
-              'client_id': spotify_client_id,      
-              'code_verifier': code_verifier
-          }
-          response = requests.post(token_url, data=data)
-          spotifyRefreshToken = response.json().get('refresh_token')
-          return response.json().get('access_token')
-
-      spotifyAccessToken = getAccessToken(code)
-      #print('Access token:', accessToken)
-      
-      def get_profile(accessToken):
-          headers = {
-              'Authorization': 'Bearer ' + accessToken,
-          }
-
-          response = requests.get('https://api.spotify.com/v1/me', headers=headers)
-          data = response.json()
-          return data
-      profile = get_profile(spotifyAccessToken)
+      global cancelLink
       def shutdown():
         server.shutdown()
-      shutdownThread = Thread(target=shutdown).start()
-      nameToReturn = profile.get('display_name')
-      outputLog("Spotify linked to "+nameToReturn+" successfully!")
+      if 'error' in request.args:
+        outputLog('Spotify Link Error: '+str(request.args.get('error')))
+        shutdownThread = Thread(target=shutdown).start()
+        cancelLink = True
+        nameToReturn = 'Error'
+        return """<!DOCTYPE html> <html> <head> <title>OSC Chat Tools | Spotify Authorization</title> <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/Lioncat6/OSC-Chat-Tools/main/oscicon.ico"> </head> <body> <style> body { font-family: sans-serif; background-color: darkslategrey; color: whitesmoke; } .mainbox { position: absolute; left: 50%; top: 50%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%); } h1 { text-align: center; } p { text-align: center; } img { display: block; margin-left: auto; margin-right: auto; width: 50%; } </style> <div class="mainbox"> <img src="https://raw.githubusercontent.com/Lioncat6/OSC-Chat-Tools/main/oscicon.ico"> <h1 class="maintext">Authorization Failed</h1><p class="subtext">If you did not cancel the authentication at the previous screen please submit a bug report at <a href='https://github.com/Lioncat6/OSC-Chat-Tools/issues'>https://github.com/Lioncat6/OSC-Chat-Tools/issues</a></p><div><p>Full error:<b style="color:red;"> """+str(request.args.get('error'))+""" </b></p></div> </div> </body> </html>"""
+      try:   
+        code = request.args.get('code')
+        #print('Authorization code:', code)
+        authCode = code 
+        def getAccessToken(code):
+            global spotifyRefreshToken
+            token_url = 'https://accounts.spotify.com/api/token'
+            data = {
+                'grant_type': 'authorization_code',
+                'code': code,
+                'redirect_uri': spotify_redirect_uri,
+                'client_id': spotify_client_id,      
+                'code_verifier': code_verifier
+            }
+            response = requests.post(token_url, data=data)
+            if response.status_code != 200:
+              raise Exception('Access token fetch error '+str(response.status_code)+' : '+response.text)
+            spotifyRefreshToken = response.json().get('refresh_token')
+            return response.json().get('access_token')
+
+        spotifyAccessToken = getAccessToken(code)
+        #print('Access token:', accessToken)
+        
+        def get_profile(accessToken):
+            headers = {
+                'Authorization': 'Bearer ' + accessToken,
+            }
+
+            response = requests.get('https://api.spotify.com/v1/me', headers=headers)
+            if response.status_code != 200:
+              raise Exception('Profile fetch error '+str(response.status_code)+' : '+response.text)
+            data = response.json()
+            return data
+        profile = get_profile(spotifyAccessToken)
+        shutdownThread = Thread(target=shutdown).start()
+        nameToReturn = profile.get('display_name')
+        outputLog("Spotify linked to "+nameToReturn+" successfully!")
+        return """<!DOCTYPE html> <html> <head> <title>OSC Chat Tools | Spotify Authorization</title> <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/Lioncat6/OSC-Chat-Tools/main/oscicon.ico"> </head> <body> <style> body { font-family: sans-serif; background-color: darkslategrey; color: whitesmoke; } .mainbox { position: absolute; left: 50%; top: 50%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%); } h1 { text-align: center; } p { text-align: center; } img { display: block; margin-left: auto; margin-right: auto; width: 50%; } </style> <div class="mainbox"> <img src="https://raw.githubusercontent.com/Lioncat6/OSC-Chat-Tools/main/oscicon.ico"> <h1 class="maintext">Authorization Successful</h1><p class="subtext">You can now close this tab and return to OCT</p> <div><p>Linked to:<b style="color:green;"> """+profile.get('display_name')+""" </b></p></div> </div> </body> </html>"""
+      except Exception as e:
+        nameToReturn = 'Error'
+        outputLog('Spotify Link Error: '+str(e))
+        return """<!DOCTYPE html> <html> <head> <title>OSC Chat Tools | Spotify Authorization</title> <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/Lioncat6/OSC-Chat-Tools/main/oscicon.ico"> </head> <body> <style> body { font-family: sans-serif; background-color: darkslategrey; color: whitesmoke; } .mainbox { position: absolute; left: 50%; top: 50%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%); } h1 { text-align: center; } p { text-align: center; } img { display: block; margin-left: auto; margin-right: auto; width: 50%; } </style> <div class="mainbox"> <img src="https://raw.githubusercontent.com/Lioncat6/OSC-Chat-Tools/main/oscicon.ico"> <h1 class="maintext">Authorization Failed</h1><p class="subtext">If you did not cancel the authentication at the previous screen please submit a bug report at <a href='https://github.com/Lioncat6/OSC-Chat-Tools/issues'>https://github.com/Lioncat6/OSC-Chat-Tools/issues</a></p><div><p>Full error:<b style="color:red;"> """+str(e)+""" </b></p></div> </div> </body> </html>"""
       
-      return """<!DOCTYPE html> <html> <head> <title>OSC Chat Tools | Spotify Authorization</title> <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/Lioncat6/OSC-Chat-Tools/main/oscicon.ico"> </head> <body> <style> body { font-family: sans-serif; background-color: darkslategrey; color: whitesmoke; } .mainbox { position: absolute; left: 50%; top: 50%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%); } h1 { text-align: center; } p { text-align: center; } img { display: block; margin-left: auto; margin-right: auto; width: 50%; } </style> <div class="mainbox"> <img src="https://raw.githubusercontent.com/Lioncat6/OSC-Chat-Tools/main/oscicon.ico"> <h1 class="maintext">Authorization Successful</h1><p class="subtext">You can now close this tab and return to OCT</p> <div><p>Linked to:<b style="color:green;"> """+profile.get('display_name')+""" </b></p</div> </div> </body> </html>"""
   webbrowser.open_new(spotify_auth_url)
   
   def spotifyLinkCancelCheck():
     global checkForCancel
     checkForCancel = True
     global cancelLink
+    global nameToReturn
     while checkForCancel:
       time.sleep(.1)
       if cancelLink:
-        outputLog("Spotify linking canceled by user")
+        outputLog("Spotify linking canceled")
         server.shutdown()
         checkForCancel = False
         cancelLink = False
