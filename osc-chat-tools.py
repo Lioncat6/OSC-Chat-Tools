@@ -1638,11 +1638,13 @@ if __name__ == "__main__":
   #dispatcher.map("/avatar/parameters/Voice", volume_handler)
   #dispatcher.map("/avatar/parameters/Earmuffs", usingEarmuffs_handler)
   dispatcher.map("/avatar/parameters/Boop", boop_handler)
+  dispatcher.map("/avatar/parameters/boop", boop_handler)
   dispatcher.map("/avatar/parameters/Booped", boop_handler)
   dispatcher.map("/avatar/parameters/HeadPat", pat_handler)
   dispatcher.map("/avatar/parameters/Pat", pat_handler)
   dispatcher.map("/avatar/parameters/PatBool", pat_handler)
-  
+  dispatcher.map("/avatar/parameters/Headpat", pat_handler)
+
   def oscForwardingManager():
     global runForewordServer
     global oscListenAddressMemory
@@ -2195,7 +2197,9 @@ def hrConnectionThread():
                     client.send_message("/avatar/parameters/isHRActive", True)
                     client.send_message("/avatar/parameters/isHRConnected", True)
                     client.send_message("/avatar/parameters/HR", int(heartRate))
-                  except:
+                  except Exception as e:
+                    if not 'Connection timed out' in str(e):
+                      outputLog(str(e))
                     pass
                     time.sleep(.01)
                   if not run or not hrConnected:
