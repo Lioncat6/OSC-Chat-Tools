@@ -2188,6 +2188,7 @@ def hrConnectionThread():
               global heartRate
               global pulsoidLastUsed
               global hypeRateLastUsed
+              global hrConnected
               join_msg = {
                     "topic": "hr:"+hypeRateSessionId,  # replace <ID> with the user session id
                     "event": "phx_join",
@@ -2196,7 +2197,7 @@ def hrConnectionThread():
                 }
               if useHypeRate:
                 ws.send(json.dumps(join_msg))
-              while True:
+              while run:
                   try:
                     event = ws.recv()
                     if usePulsoid:
@@ -2213,9 +2214,11 @@ def hrConnectionThread():
                     client.send_message("/avatar/parameters/isHRActive", True)
                     client.send_message("/avatar/parameters/isHRConnected", True)
                     client.send_message("/avatar/parameters/HR", int(heartRate))
+                    
                   except Exception as e:
                     if not 'Connection timed out' in str(e):
                       outputLog(str(e))
+                      hrConnected = False
                       break
                     pass
                     time.sleep(.01)
