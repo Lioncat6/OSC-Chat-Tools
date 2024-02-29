@@ -46,6 +46,7 @@ OCT Is a standalone program used for interacting with Vrchat's OSC to send chat 
    - websocket-client
    - pyperclip
    - pynvml
+   - tendo
  - In a command prompt window in the folder the `osc-chat-tools.py` is located in:
  - `pip install PyInstaller`
  - `python -m PyInstaller -wF --icon=oscicon.ico --clean osc-chat-tools.py`

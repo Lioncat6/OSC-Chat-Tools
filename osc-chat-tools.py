@@ -5,9 +5,11 @@ from threading import Thread, Lock
 import ast
 import requests
 from collections import defaultdict
-#import ctypes
+import ctypes
 import json
 #import traceback
+
+
 
 if not os.path.isfile('please-do-not-delete.txt'):
   with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
@@ -36,11 +38,13 @@ import base64
 #import GPUtil
 from pynvml import *
 
+from tendo import singleton
+
 #importantest variables :)
 
 run = True
 playMsg = True
-version = "1.5.9.1"
+version = "1.5.10"
 
 #conf variables
 
@@ -94,9 +98,6 @@ oscForewordPort = '9002' #in conf
 oscListen = False #in conf
 oscForeword = False #in conf
 
-layoutStorage = ''
-
-output = ''
 logOutput = False  #in conf
 
 layoutString = '' #in conf
@@ -135,6 +136,13 @@ timeDisplayPM = "{hour}:{minute} PM"
 showSongInfo = True
 
 ###########Program Variables (not in conf)######### 
+
+
+layoutStorage = ''
+
+layoutUpdate = '' #making sure the code for updating the layout editor only run when needed as opposed to every .1 seconds!
+
+output = ''
 
 textParseIterator = 0
 
@@ -198,17 +206,25 @@ spotifySongUrl = 'https://spotify.com'
 
 nameToReturn = ''
 
+#check to see if code is already running
+
+try:
+    me = singleton.SingleInstance()
+except:
+    ctypes.windll.user32.MessageBoxW(None, u"OSC Chat Tools is already running!.", u"OCT is already running!", 16)
+    os._exit(0)
+
 def fatal_error(error = None):
   global run
   run = False
-  """ctypes.windll.user32.MessageBoxW(None, u"OSC Chat Tools has encountered a fatal error.", u"OCT Fatal Error", 16)
+  ctypes.windll.user32.MessageBoxW(None, u"OSC Chat Tools has encountered a fatal error.", u"OCT Fatal Error", 16)
   if error != None:
     result = ctypes.windll.user32.MessageBoxW(None, u"The program crashed with an error message. Would you like to copy it to your clipboard?", u"OCT Fatal Error", 3 + 64)
     if result == 6:
       pyperclip.copy(str(datetime.now())+" ["+threading.current_thread().name+"] "+str(error))
   result = ctypes.windll.user32.MessageBoxW(None, u"Open the github page to get support?", u"OCT Fatal Error", 3 + 64)
   if result == 6:
-      webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/wiki/Fatal-Error-Crash')"""
+      webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/wiki/Fatal-Error-Crash')
   time.sleep(5)
   os._exit(0)
 
@@ -392,7 +408,9 @@ confDataDict = { #this dictionary will always exclude position 0 which is the co
   "1.5.8.1" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM'],
   "1.5.8.2" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM'],
   "1.5.9" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo'],
-  "1.5.9.1" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo']
+  "1.5.9.1" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo'],
+  "1.5.10" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo']
+  
 }
 
 if os.path.isfile('please-do-not-delete.txt'):
@@ -1116,6 +1134,8 @@ def uiThread():
     global timeDisplayPM
     global showSongInfo
     
+    global layoutUpdate
+    
     if os.path.isfile('please-do-not-delete.txt'):
       try:
         window['msgDelay'].update(value=message_delay)
@@ -1191,7 +1211,10 @@ def uiThread():
           window['messagePreviewFill'].update(value=msgOutput.replace("\v", "\n"))
           window['runThing'].update(value=playMsg)
           window['afk'].update(value=afk)   
-          layoutPreviewBuilder(window['layoutStorage'].get(), window)
+          layoutStorageAccess = window['layoutStorage'].get()
+          if layoutStorageAccess != layoutUpdate:
+            layoutPreviewBuilder(layoutStorageAccess, window)
+            layoutUpdate = layoutStorageAccess
           if playMsg:
             sentTime = sentTime + 0.1    
           if sendSkipped:
@@ -1203,6 +1226,7 @@ def uiThread():
             window['spotifySongName'].update(visible=False)
             window['spotifyDuration'].update(visible=False)
             window['spotifyIcon'].update(visible=False)
+          raise Exception('fuck')
         except Exception as e:
           fatal_error(e)
         if run:
@@ -1656,10 +1680,12 @@ if __name__ == "__main__":
   dispatcher.map("/avatar/parameters/Boop", boop_handler)
   dispatcher.map("/avatar/parameters/boop", boop_handler)
   dispatcher.map("/avatar/parameters/Booped", boop_handler)
+  dispatcher.map("/avatar/parameters/Contact/Receiver/Boop", boop_handler)
   dispatcher.map("/avatar/parameters/HeadPat", pat_handler)
   dispatcher.map("/avatar/parameters/Pat", pat_handler)
   dispatcher.map("/avatar/parameters/PatBool", pat_handler)
   dispatcher.map("/avatar/parameters/Headpat", pat_handler)
+  dispatcher.map("/avatar/parameters/Contact/Receiver/Pat", pat_handler)
 
   def oscForwardingManager():
     global runForewordServer
@@ -1749,6 +1775,8 @@ if __name__ == "__main__":
                     data, addr = listen_socket.recvfrom(1024)
 
                     # Forward the data to each forward socket
+                    if 'Contact' in str(data):
+                      print(data)
                     for forward_socket, (ip, port) in zip(forward_sockets, forward_addresses):
                         forward_socket.sendto(data, (ip, port))
                 except Exception as e:
