@@ -212,6 +212,7 @@ try:
     me = singleton.SingleInstance()
 except:
     ctypes.windll.user32.MessageBoxW(None, u"OSC Chat Tools is already running!.", u"OCT is already running!", 16)
+    run = False
     os._exit(0)
 
 def fatal_error(error = None):
@@ -1329,7 +1330,7 @@ def uiThread():
           [sg.Text('Note: While putting plain text in the layout editor is supported,\nit will break the visual editor!', text_color="#6699ff", justification='center')],
           [sg.Text('Objects:', font=('Arial', 10, 'bold'))],
           [sg.Text(str(layoutDisplayDict).replace("\"", "").replace("(", "(data)").replace("\'", "").replace(",", "\n").replace("{", "").replace("}", "").replace(": ", " : "), font=('Arial', 11, 'bold'), justification='center')],
-          [sg.Text('Data Guide (A data value is REQUIRED!):', font=('Arial', 10, 'bold'))],
+          [sg.Text('Data Guide (Defaults to 0):', font=('Arial', 10, 'bold'))],
           [sg.Text("0 : No Data\n1 : Vertical Line\n2 : New Line\n3 : Both Vertical Line and New Line", font=('Arial', 11, 'bold'), justification='center')],
         ],element_justification='center')]                      
         ,[sg.Text()], 
@@ -1962,7 +1963,7 @@ if __name__ == "__main__":
             if data == 2 or data == 3:
               msg =  msg + lf
             return msg
-          def time(data):
+          def time(data=0):
             global timeDisplayAM
             global timeDisplayPM
             now = datetime.now()
@@ -1982,9 +1983,9 @@ if __name__ == "__main__":
                   hour = 12 
                 letsGetThatTime = timeDisplayAM.format_map(defaultdict(str, hour=hour, minute=minute, time_zone=time_zone, hour24=hour24))       
             return(checkData(letsGetThatTime, data))
-          def text(data):
+          def text(data=0):
             return(checkData(a.replace("\\n", "\v").replace("\\v", "\v"), data))
-          def song(data):
+          def song(data=0):
             global songInfo
             global useSpotifyApi
             global useMediaManager
@@ -2096,11 +2097,11 @@ if __name__ == "__main__":
                   return ''
               else:
                 return(checkData(songInfo, data))
-          def cpu(data):
+          def cpu(data=0):
             cpu_percent = str(psutil.cpu_percent())
             cpuDat = cpuDisplay.format_map(defaultdict(str, cpu_percent=cpu_percent))
             return (checkData(cpuDat, data))
-          def ram(data): 
+          def ram(data=0): 
             psutilVirtualMemory = psutil.virtual_memory()
             ram_percent = str(int(psutilVirtualMemory[2]))
             ram_used = str(round(int(psutilVirtualMemory[0])/1073741824-int(psutilVirtualMemory[1])/1073741824, 1))
@@ -2108,7 +2109,7 @@ if __name__ == "__main__":
             ram_total = str(round(int(psutilVirtualMemory[0])/1073741824, 1))
             ramDat = ramDisplay.format_map(defaultdict(str, ram_percent=ram_percent, ram_available=ram_available, ram_total=ram_total, ram_used=ram_used))
             return (checkData(ramDat, data))
-          def gpu(data):
+          def gpu(data=0):
             try:
               nvmlInit()
               handle = nvmlDeviceGetHandleByIndex(0)
@@ -2124,24 +2125,24 @@ if __name__ == "__main__":
             #gpu_percent = "0"
             gpuDat = gpuDisplay.format_map(defaultdict(str, gpu_percent=gpu_percent, vram_percent=vram_percent))
             return (checkData(gpuDat, data))
-          def hr(data):
+          def hr(data=0):
             hr = str(heartRate)
             if hr == "0" or hr == "1":
               hr = "-"
             hrInfo = hrDisplay.format_map(defaultdict(str, hr=hr))
             return (checkData(hrInfo, data))
-          def mute(data):
+          def mute(data=0):
             return (checkData("Coming Soon", data))
-          def stt(data):
+          def stt(data=0):
             return (checkData("Coming Soon", data))
-          def div(data):
+          def div(data=0):
             return (checkData(middleBar, data))
-          def mute(data):
+          def mute(data=0):
             if isMute: 
               return (checkData(mutedDisplay, data))
             else:
               return (checkData(unmutedDisplay, data))
-          def playtime(data):
+          def playtime(data=0):
             global timeVar
             try:
               minutes = int((timeVar-playTimeDat)/60)
