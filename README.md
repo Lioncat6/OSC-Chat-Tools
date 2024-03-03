@@ -53,6 +53,10 @@ OCT Is a standalone program used for interacting with Vrchat's OSC to send chat 
  - Or run the included `build.bat` file
  - The resulting exe will be located in the `dist` folder
 
+## Run it locally
+ - Install python [https://www.python.org/downloads/](https://www.python.org/downloads/)
+ - Clone the repo and run `osc-chat-tools.py`
+
 ### Side note... the windows now playing song functionality will show whatever the last thing you were listening to was... including any website or video you were watching... So be careful.
 
 # Keyboard Shortcuts 
