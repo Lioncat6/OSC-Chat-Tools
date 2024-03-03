@@ -311,7 +311,8 @@ def outputLog(text):
                   windowAccess['output'].Widget.see('end')
                 except Exception as e:
                   if run:
-                    fatal_error(e)
+                    pass
+                    #fatal_error(e)
             message_queue.clear()
     outputQueueHandler = Thread(target=outputQueue)
     outputQueueHandler.start()
@@ -1230,7 +1231,8 @@ def uiThread():
             window['spotifyIcon'].update(visible=False)
         except Exception as e:
           if run:
-            fatal_error(e)
+            pass
+            #fatal_error(e)
         if run:
           time.sleep(.1)
   updateUIThread = Thread(target=updateUI)
