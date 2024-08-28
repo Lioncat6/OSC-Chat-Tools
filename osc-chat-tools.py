@@ -44,7 +44,7 @@ from tendo import singleton
 
 run = True
 playMsg = True
-version = "1.5.11"
+version = "1.5.12"
 
 #conf variables
 
@@ -136,6 +136,8 @@ timeDisplayPM = "{hour}:{minute} PM"
 
 showSongInfo = True
 
+useTimeParameters = False
+
 ###########Program Variables (not in conf)######### 
 
 
@@ -172,7 +174,7 @@ listenServer = None
 useForewordMemory = False
 
 isAfk = False
-isVR = False #Never used as the game never actually updates vrmode 
+isVR = False #Never used as the game never actually updates vrmode (well, it does *sometimes*)
 isMute = False
 isInSeat = False
 voiceVolume = 0
@@ -209,7 +211,7 @@ nameToReturn = ''
 #check to see if code is already running
 
 try:
-    me = singleton.SingleInstance()
+    me = singleton.SingleInstance() #also me (who's single)
 except:
     ctypes.windll.user32.MessageBoxW(None, u"OSC Chat Tools is already running!.", u"OCT is already running!", 16)
     run = False
@@ -413,7 +415,8 @@ confDataDict = { #this dictionary will always exclude position 0 which is the co
   "1.5.9" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo'],
   "1.5.9.1" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo'],
   "1.5.10" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo'],
-  "1.5.11" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo', 'spotify_client_id']
+  "1.5.11" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo', 'spotify_client_id'],
+  "1.5.12" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo', 'spotify_client_id', 'useTimeParameters']
   
 }
 
@@ -698,6 +701,8 @@ def uiThread():
 
   global showSongInfo
   
+  global useTimeParameters
+  
   if darkMode:
     bgColor = '#333333'
     accentColor = '#4d4d4d'
@@ -805,8 +810,9 @@ def uiThread():
     [sg.Column([
                   [sg.Text('Template to use for Time display\nVariables:{hour}, {minute}, {time_zone}, {hour24}')],
                   [sg.Text('AM:'), sg.Push(),  sg.Input(key='timeDisplayAM', size=(30, 1))],
-                  [sg.Text('PM:'), sg.Push(), sg.Input(key='timeDisplayPM', size=(30, 1))]
-              ], size=(379, 100))],
+                  [sg.Text('PM:'), sg.Push(), sg.Input(key='timeDisplayPM', size=(30, 1))],
+                  [sg.Checkbox('Send Time parameters to avatar (Uses vrcosc parameters)', default=False, key='useTimeParameters')]
+              ], size=(379, 130))],
   ]
   song_conf_layout = [[sg.Column([
     [sg.Column([
@@ -835,7 +841,7 @@ def uiThread():
                   [sg.Text('Amount of frames to wait before the song name disappears')],
                   [sg.Slider(range=(1, 5), default_value=2, resolution=1, orientation='horizontal', size=(40, 15), key="songChangeTicks", trough_color=scrollbarBackgroundColor)]
               ], size=(379, 220))],
-  ], background_color=accentColor)]]
+  ], background_color=accentColor, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, size=(440, 300),)]]
   cpu_conf_layout = [
     [sg.Column([
                   [sg.Text('Template to use for CPU display.\nVariables: {cpu_percent}')],
@@ -913,18 +919,18 @@ def uiThread():
   new_behavior_layout = [
     [   
           sg.TabGroup([[
-                  sg.Tab('❔Misc.', [[sg.Column(misc_conf_layout, background_color=accentColor)]], background_color=accentColor),
-                  sg.Tab('💬Text', [[sg.Column(text_conf_layout, background_color=accentColor)]], background_color=accentColor),
-                  sg.Tab('🕒Time', [[sg.Column(time_conf_layout, background_color=accentColor)]], background_color=accentColor),
+                  sg.Tab('❔Misc.', [[sg.Column(misc_conf_layout, background_color=accentColor, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, size=(440, 300),)]], background_color=accentColor),
+                  sg.Tab('💬Text', [[sg.Column(text_conf_layout, background_color=accentColor, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, size=(440, 300),)]], background_color=accentColor),
+                  sg.Tab('🕒Time', [[sg.Column(time_conf_layout, background_color=accentColor, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, size=(440, 300),)]], background_color=accentColor),
                   sg.Tab('🎵Song', song_conf_layout, background_color=accentColor),
-                  sg.Tab('⏱️CPU', [[sg.Column(cpu_conf_layout, background_color=accentColor)]], background_color=accentColor),
-                  sg.Tab('🚦RAM', [[sg.Column(ram_conf_layout, background_color=accentColor)]], background_color=accentColor),
-                  sg.Tab('⏳GPU', [[sg.Column(gpu_conf_layout, background_color=accentColor)]], background_color=accentColor),
+                  sg.Tab('⏱️CPU', [[sg.Column(cpu_conf_layout, background_color=accentColor, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, size=(440, 300),)]], background_color=accentColor),
+                  sg.Tab('🚦RAM', [[sg.Column(ram_conf_layout, background_color=accentColor, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, size=(440, 300),)]], background_color=accentColor),
+                  sg.Tab('⏳GPU', [[sg.Column(gpu_conf_layout, background_color=accentColor, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, size=(440, 300),)]], background_color=accentColor),
                   sg.Tab('💓HR', [[sg.Column(hr_conf_layout, background_color=accentColor, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, size=(440, 300),)]], background_color=accentColor),
-                  sg.Tab('🔇Mute', [[sg.Column(mute_conf_layout, background_color=accentColor)]], background_color=accentColor),
-                  sg.Tab('⌚Play Time', [[sg.Column(playTime_conf_layout, background_color=accentColor)]], background_color=accentColor),
-                  sg.Tab('⌨STT', [[sg.Text('Coming Soon')]], background_color=accentColor),
-                  sg.Tab('☵Divider', [[sg.Column(divider_conf_layout, background_color=accentColor)]], background_color=accentColor),
+                  sg.Tab('🔇Mute', [[sg.Column(mute_conf_layout, background_color=accentColor, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, size=(440, 300),)]], background_color=accentColor),
+                  sg.Tab('⌚Play Time', [[sg.Column(playTime_conf_layout, background_color=accentColor, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, size=(440, 300),)]], background_color=accentColor),
+                  sg.Tab('⌨STT', [[sg.Text('Coming Soon')]]),
+                  sg.Tab('☵Divider', [[sg.Column(divider_conf_layout, background_color=accentColor, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, size=(440, 300),)]], background_color=accentColor),
               ]], 
               key='behaviorTabs', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True, size=(440, 300), font=('Arial', 11, 'normal'), tab_background_color=tabBackgroundColor, tab_border_width=0, title_color=tabTextColor, 
           )
@@ -1020,7 +1026,7 @@ def uiThread():
               ] , expand_x=True, expand_y=True, background_color=accentColor)]]
   
   menu_def = [['&File', ['A&pply', '&Reset', '---', 'Open Config File', '---','E&xit', 'Re&start' ]],
-          ['&Help', ['&About', '---', 'Submit Feedback', '---', 'Open &Github Page', '&Check For Updates', '&FAQ']]]
+          ['&Help', ['&About', '---', 'Submit Feedback', '---', 'Open &Github Page', '&Check For Updates', '&FAQ', '---', 'Discord']]]
   topMenuBar = sg.Menu(menu_def, key="menuBar")
   right_click_menu = ['&Right', ['Copy', 'Paste']]
   layout = [
@@ -1097,6 +1103,7 @@ def uiThread():
     window['timeDisplayAM'].update(value="{hour}:{minute} AM")
     window['timeDisplayPM'].update(value="{hour}:{minute} PM")
     window['showSongInfo'].update(value=True)
+    window['useTimeParameters'].update(value=False)
     #Disc Spotify
     global spotifyAccessToken
     global spotifyRefreshToken
@@ -1143,6 +1150,8 @@ def uiThread():
     global spotify_client_id
     
     global layoutUpdate
+    
+    global useTimeParameters
     
     if os.path.isfile('please-do-not-delete.txt'):
       try:
@@ -1199,6 +1208,7 @@ def uiThread():
         window['timeDisplayPM'].update(value=timeDisplayPM)
         window['showSongInfo'].update(value=showSongInfo)
         window['spotify_client_id'].update(value=spotify_client_id)
+        window['useTimeParameters'].update(value=useTimeParameters)
         
         if spotifyLinkStatus != 'Unlinked':
           window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
@@ -1318,9 +1328,10 @@ def uiThread():
           timeDisplayPM = values['timeDisplayPM']
           showSongInfo = values['showSongInfo']
           spotify_client_id = values['spotify_client_id']
+          useTimeParameters = values['useTimeParameters']
           with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
             try:
-              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode, sendBlank, suppressDuplicates, sendASAP,useMediaManager, useSpotifyApi, spotifySongDisplay, spotifyAccessToken, spotifyRefreshToken, usePulsoid, useHypeRate, hypeRateKey, hypeRateSessionId, timeDisplayPM, timeDisplayAM, showSongInfo, spotify_client_id]))
+              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode, sendBlank, suppressDuplicates, sendASAP,useMediaManager, useSpotifyApi, spotifySongDisplay, spotifyAccessToken, spotifyRefreshToken, usePulsoid, useHypeRate, hypeRateKey, hypeRateSessionId, timeDisplayPM, timeDisplayAM, showSongInfo, spotify_client_id, useTimeParameters]))
             except Exception as e:
               sg.popup('Error saving config to file:\n'+str(e))
           
@@ -1358,6 +1369,8 @@ def uiThread():
             sg.Popup('Error opening config file: '+e)
         else:
           sg.Popup('Error opening config file: File not found')
+      if event == 'Discord':
+        webbrowser.open('https://discord.com/invite/qeBTyA8uqX')
       if event == 'Submit Feedback':
         webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/issues')
       if event == 'afk':
@@ -1585,6 +1598,11 @@ def uiThread():
             spotifyLinkStatus = 'Linked to '+linkedUserName
             window['spotifyLinkStatus'].update(text_color='green')
             window['linkSpotify'].update(text='Unlink Spotify 🔗', button_color= "#c68341")
+            useMediaManager = False
+            useSpotifyApi = True
+            window['useSpotifyApi'].update(value=True)
+            window['useMediaManager'].update(value=False)
+            window.write_event_value('Apply', '')
         else:    
           spotifyAccessToken = ''
           spotifyRefreshToken = ''
@@ -1598,19 +1616,25 @@ def uiThread():
           window['spotifyLinkStatus'].update(text_color='orange')
           window['linkSpotify'].update(text="Link Spotify 🔗", button_color="#00a828")
       if event == 'spotifyApiError':
-        window['useSpotifyApi'].update(value=False)
-        window['useMediaManager'].update(value=True)
-        useSpotifyApi = False
-        useMediaManager = True
-        spotifyLinkStatus = 'Error - Please Relink!'
-        spotifyAccessToken = ''
-        spotifyRefreshToken = ''
-        window.write_event_value('Apply', '')
-        outputLog("Spotify api fetch error! Please relink!\nFull Error: "+str(values[event]))
-        window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
-        window['spotifyLinkStatus'].update(text_color='red')
-        window['linkSpotify'].update(text='Relink Spotify ⚠️', button_color= "red")
-        sg.popup('Spotify api fetch error!\nAutomatically reverted to using Windows Now Playing\nPlease relink spotify in the behavior tab to continue...\nFull Error: '+str(values[event]))
+        retryError = "No"
+        if useSpotifyApi:
+          retryError = sg.popup_yes_no('A Spotify fetch error has occurred, would you like to retry?\n\nThis could be caused by an internet connection issue.')
+        if retryError == "Yes":
+          pass
+        else:
+          window['useSpotifyApi'].update(value=False)
+          window['useMediaManager'].update(value=True)
+          useSpotifyApi = False
+          useMediaManager = True
+          spotifyLinkStatus = 'Error - Please Relink!'
+          spotifyAccessToken = ''
+          spotifyRefreshToken = ''
+          window.write_event_value('Apply', '')
+          outputLog("Spotify api fetch error! Please relink!\nFull Error: "+str(values[event]))
+          window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
+          window['spotifyLinkStatus'].update(text_color='red')
+          window['linkSpotify'].update(text='Relink Spotify ⚠️', button_color= "red")
+          sg.popup('Spotify api fetch error!\nAutomatically reverted to using Windows Now Playing\nPlease relink spotify in the behavior tab to continue...\nFull Error: '+str(values[event]))
       if event == 'sendDebug':
         try:
           valueToSend = eval("values['debugType'](values['debugValue'])")
@@ -1645,6 +1669,8 @@ def uiThread():
           pass
       if event == 'client_id_help':
         webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/wiki/Spotify-Client-ID')
+      if event == 'Restart':
+        sg.popup('Implementing this would take way too long.')
   window.close()
   playMsg = False
   run = False
@@ -2203,6 +2229,35 @@ if __name__ == "__main__":
           break
         time.sleep(.1)
 
+def timeParameterUpdate():
+  while run:
+    global useTimeParameters
+    if useTimeParameters:
+      now = datetime.now()
+      hour = now.strftime("%H")
+      minute = now.strftime("%M")
+      second = now.strftime("%S")
+      isPm = False
+      if int(hour) >= 12:
+          hour = int(hour)-12
+          if int(hour) == 0:
+            hour = 12    
+            isPm = True
+      else:
+          if int(hour) == 0:
+            hour = 12  
+          isPm = False
+      try:
+        client.send_message("/avatar/parameters/Hours", int(hour))
+        client.send_message("/avatar/parameters/Minutes", int(minute))
+        client.send_message("/avatar/parameters/Seconds", int(second))
+        client.send_message("/avatar/parameters/Period", isPm)
+      except Exception as e:
+        outputLog("Error sending time parameters:\n"+str(e))
+    time.sleep(1)
+
+
+
 def hrConnectionThread():
   while run:
     global hrConnected
@@ -2550,6 +2605,8 @@ def vrcRunningCheck():
     if not pid_check(vrcPID): 
       vrcPID = None
       for proc in psutil.process_iter():
+          if not run:
+            break
           if "VRChat.exe" in proc.name():
               vrcPID = proc.pid
               break
@@ -2565,6 +2622,8 @@ msgThread.start()
 mainUI = Thread(target=uiThread)
 mainUI.start()
 update_checker(False)
+timeParameterThread = Thread(target=timeParameterUpdate).start()
+
 while run:
   msgPlayCheck()
   afkCheck()
