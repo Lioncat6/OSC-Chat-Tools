@@ -71,7 +71,10 @@ All keyboard shortcuts can be rebound
     - https://pulsoid.net/ui/keys - If you have a BRO Subscription
  - Paste the copied token into the behavior tab under the `💓HR` section
 
-# Guide - Last update 1.5.6
+# Guides: (More Coming Soon)
+ - Connecting Pulsoid: https://github.com/Lioncat6/OSC-Chat-Tools/wiki/Connecting-to-Pulsoid
+
+# Video Guide - Last update 1.5.6
  - https://www.youtube.com/watch?v=8D23oUzb-0Q
 
 # Coming soon:
