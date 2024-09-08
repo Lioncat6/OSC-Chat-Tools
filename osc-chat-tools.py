@@ -302,6 +302,9 @@ def outputLog(text):
         with queue_lock:
             message_queue.sort(key=lambda x: x[0])
             for message in message_queue:
+                if logOutput:
+                  with open('OCT_debug_log.txt', 'a+', encoding="utf-8") as f:
+                    f.write("\n"+ str(message[0]) + " " + message[1])
                 windowAccess.write_event_value('outputSend', str(message[0]) + " " + message[1])
                 try:
                   windowAccess['output'].Widget.see('end')
@@ -1029,7 +1032,7 @@ def uiThread():
               [sg.Multiline('', disabled=True, key='output', size=(53, 30), background_color='DarkSlateGrey', text_color='white', expand_x=True, expand_y=True)]
               ] , expand_x=True, expand_y=True, background_color=accentColor)]]
   
-  menu_def = [['&File', ['A&pply', '&Reset', '---', 'Open Config File', '---','E&xit', 'Re&start' ]],
+  menu_def = [['&File', ['A&pply', '&Reset', '---', 'Open Config File', 'Open Debug Log', '---','E&xit', 'Re&start' ]],
           ['&Help', ['&About', '---', 'Submit Feedback', '---', 'Open &Github Page', '&Check For Updates', '&FAQ', '---', 'Discord']]]
   topMenuBar = sg.Menu(menu_def, key="menuBar")
   right_click_menu = ['&Right', ['Copy', 'Paste']]
@@ -1373,6 +1376,14 @@ def uiThread():
             sg.Popup('Error opening config file: '+e)
         else:
           sg.Popup('Error opening config file: File not found')
+      if event == 'Open Debug Log':
+        if os.path.isfile('OCT_debug_log.txt'):
+          try:
+            os.system("start "+ 'OCT_debug_log.txt')
+          except Exception as e:
+            sg.Popup('Error opening debug log: '+e)
+        else:
+          sg.Popup('Error opening debug log: File not found')
       if event == 'Discord':
         webbrowser.open('https://discord.com/invite/qeBTyA8uqX')
       if event == 'Submit Feedback':
@@ -1452,9 +1463,7 @@ def uiThread():
         else:
           new_text = current_text + '\n' + values[event]
         window['output'].update(new_text)
-        if logOutput:
-          with open('OCT_debug_log.txt', 'a+', encoding="utf-8") as f:
-            f.write("\n"+values[event])
+        
       if event == 'listenError':
         outputLog(f'listenError {str(values[event])}')
         oscListen = False
