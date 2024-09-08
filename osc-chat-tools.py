@@ -1565,7 +1565,7 @@ def uiThread():
       if event == 'linkSpotify':
         if "Unlinked" in spotifyLinkStatus or "Error" in spotifyLinkStatus:
           linking_layout = [[sg.Text('')],[sg.Text('Linking Spotify...')],[sg.Button('Cancel')]]
-          spotify_link_window = sg.Window('Linking Spotify...', linking_layout, size=(300, 90), element_justification='center', no_titlebar=True, modal=True)
+          spotify_link_window = sg.Window('Linking Spotify...', linking_layout, size=(300, 90), element_justification='center', no_titlebar=True, keep_on_top=True)
           global linkedUserName
           linkedUserName = 'Canceled'
           def spotifyLinkManager():
