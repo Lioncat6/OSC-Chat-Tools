@@ -1651,7 +1651,6 @@ def uiThread():
                   window['useSpotifyApi'].update(value=True)
                   window['useMediaManager'].update(value=False)
                   window.write_event_value('Apply', '')
-                  print("bbb")
                   isError = False
                   isLink = False
                 except Exception as e:
@@ -1684,7 +1683,6 @@ def uiThread():
           elif linkedUserName == 'Canceled':
             pass
           elif isLink:
-            print("aaa")
             window['spotifyLinkStatus'].update(value='Linked to '+linkedUserName)
             spotifyLinkStatus = 'Linked to '+linkedUserName
             window['spotifyLinkStatus'].update(text_color='green')
