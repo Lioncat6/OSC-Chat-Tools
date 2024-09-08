@@ -11,6 +11,9 @@ OCT Is a standalone program used for interacting with Vrchat's OSC to send chat 
  - Message me on discord @lioncat6
  - Create an issue https://github.com/Lioncat6/OSC-Chat-Tools/issues
 
+# Guides: (More Coming Soon)
+https://github.com/Lioncat6/OSC-Chat-Tools/wiki
+
 # Features
  - Fully customizable layout with divider and newline toggles
  - Animated text
@@ -70,9 +73,6 @@ All keyboard shortcuts can be rebound
     - [OCT Pulsoid App link](https://pulsoid.net/oauth2/authorize?response_type=token&client_id=8070496f-f886-4030-8340-96d1d68b25cb&redirect_uri=&scope=data:heart_rate:read&state=&response_mode=web_page)
     - https://pulsoid.net/ui/keys - If you have a BRO Subscription
  - Paste the copied token into the behavior tab under the `💓HR` section
-
-# Guides: (More Coming Soon)
- - Connecting Pulsoid: https://github.com/Lioncat6/OSC-Chat-Tools/wiki/Connecting-to-Pulsoid
 
 # Video Guide - Last update 1.5.6
  - https://www.youtube.com/watch?v=8D23oUzb-0Q
