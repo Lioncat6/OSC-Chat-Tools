@@ -134,6 +134,7 @@ useTimeParameters = False
 
 ###########Program Variables (not in conf)######### 
 
+code_verifier = '' #for manual code entry
 
 layoutStorage = ''
 
@@ -1572,9 +1573,11 @@ def uiThread():
         window['usePulsoid'].update(value=True)
         window['useHypeRate'].update(value=False)
       if event == 'linkSpotify':
+        isError = True
+        isLink = True
         if "Unlinked" in spotifyLinkStatus or "Error" in spotifyLinkStatus:
-          linking_layout = [[sg.Text('')],[sg.Text('Linking Spotify...')],[sg.Button('Cancel')]]
-          spotify_link_window = sg.Window('Linking Spotify...', linking_layout, size=(300, 90), element_justification='center', no_titlebar=True, keep_on_top=True)
+          linking_layout = [[sg.Text('')],[sg.Text('Linking Spotify...')],[sg.Button('Cancel'), sg.Button('Manual Code Entry')]]
+          spotify_link_window = sg.Window('Linking Spotify...', linking_layout, size=(300, 90), element_justification='center', no_titlebar=True, modal=True)
           global linkedUserName
           linkedUserName = 'Canceled'
           def spotifyLinkManager():
@@ -1594,19 +1597,94 @@ def uiThread():
               cancelLink = True
               linking = False
               break
+            elif event == 'Manual Code Entry':
+              manualCode = ''
+              manualOverrideLayout = [[sg.Text('')],[sg.Text('Manual Code Entry')],[sg.Input(key='manualCode', size=(30, 1))],[sg.Button('Enter'), sg.Button('Cancel')]]
+              manualOverrideWindow = sg.Window('Manual Code Entry', manualOverrideLayout, size=(300, 120), element_justification='center', no_titlebar=False, modal=True,)
+              while linking:
+                event, values = manualOverrideWindow.read()
+                if event == 'Cancel':
+                  break
+                if event == 'Enter':
+                  manualCode = values["manualCode"]
+                  break
+              manualOverrideWindow.close()
+              if manualCode:
+                try:
+                  def getAccessToken(code):
+                    token_url = 'https://accounts.spotify.com/api/token'
+                    data = {
+                        'grant_type': 'authorization_code',
+                        'code': code,
+                        'redirect_uri': spotify_redirect_uri,
+                        'client_id': spotify_client_id,      
+                        'code_verifier': code_verifier
+                    }
+                    response = requests.post(token_url, data=data)
+                    if response.status_code != 200:
+                      raise Exception('Access token fetch error '+str(response.status_code)+' : '+response.text)
+                    spotifyRefreshToken = response.json().get('refresh_token')
+                    return response.json().get('access_token')
+                  
+                  spotifyAccessToken = getAccessToken(manualCode)
+                  
+                  def get_profile(accessToken):
+                      headers = {
+                          'Authorization': 'Bearer ' + accessToken,
+                      }
+
+                      response = requests.get('https://api.spotify.com/v1/me', headers=headers)
+                      if response.status_code != 200:
+                        raise Exception('Profile fetch error '+str(response.status_code)+' : '+response.text)
+                      data = response.json()
+                      return data
+                  profile = get_profile(spotifyAccessToken)
+                  nameToReturn = profile.get('display_name')
+                  sg.popup("Spotify linked to "+nameToReturn+" successfully via manual code entry!")
+                  outputLog("Spotify linked to "+nameToReturn+" successfully via manual code entry!")
+                  window['spotifyLinkStatus'].update(value='Linked to '+nameToReturn)
+                  spotifyLinkStatus = 'Linked to '+nameToReturn
+                  window['spotifyLinkStatus'].update(text_color='green')
+                  window['linkSpotify'].update(text='Unlink Spotify 🔗', button_color= "#c68341")
+                  useMediaManager = False
+                  useSpotifyApi = True
+                  window['useSpotifyApi'].update(value=True)
+                  window['useMediaManager'].update(value=False)
+                  window.write_event_value('Apply', '')
+                  print("bbb")
+                  isError = False
+                  isLink = False
+                except Exception as e:
+                  linkedUserName = "Error"
+                  useSpotifyApi = False
+                  window['spotifyLinkStatus'].update(value='Authentication Error')
+                  spotifyLinkStatus = 'Authentication Error'
+                  window['spotifyLinkStatus'].update(text_color='red')
+                  window['linkSpotify'].update(text='Relink Spotify ⚠️', button_color= "red")
+                  cancelLink = True
+                  sg.popup("Manual Linking Error "+ str(e))
+                  outputLog("Manual Linking Error "+ str(e))
+              else:
+                isLink = False
+                linkedUserName = 'Canceled'
+                cancelLink = True
+                sg.popup("Canceled!")
+                break
             else:
               linking = False
               break
+          
           spotify_link_window.close()
           window.write_event_value('Apply', '')
-          if linkedUserName == 'Error':
+          if linkedUserName == 'Error' and isError:
             window['spotifyLinkStatus'].update(value='Authentication Error')
             spotifyLinkStatus = 'Authentication Error'
             window['spotifyLinkStatus'].update(text_color='red')
             window['linkSpotify'].update(text='Relink Spotify ⚠️', button_color= "red")
           elif linkedUserName == 'Canceled':
             pass
-          else:
+          elif isLink:
+            print("aaa")
             window['spotifyLinkStatus'].update(value='Linked to '+linkedUserName)
             spotifyLinkStatus = 'Linked to '+linkedUserName
             window['spotifyLinkStatus'].update(text_color='green')
@@ -1634,7 +1712,7 @@ def uiThread():
           retryError = sg.popup_yes_no('A Spotify fetch error has occurred, would you like to retry?\n\nThis could be caused by an internet connection issue.')
         if retryError == "Yes":
           pass
-        else:
+        elif useSpotifyApi:
           window['useSpotifyApi'].update(value=False)
           window['useMediaManager'].update(value=True)
           useSpotifyApi = False
@@ -2418,10 +2496,8 @@ def linkSpotify():
   global NameToReturn
   global spotifyAccessToken
   global spotifyRefreshToken
+  global code_verifier
   
-  app = Flask(__name__)
-  server = make_server('127.0.0.1', 8000, app)
-
   code_verifier = base64.urlsafe_b64encode(os.urandom(40)).decode('utf-8')
   code_verifier = code_verifier.rstrip('=')
 
@@ -2441,6 +2517,9 @@ def linkSpotify():
   spotify_auth_url = requests.Request('GET', auth_url, params=params).prepare().url
   
   outputLog("Attempting to open url: \n"+spotify_auth_url)
+  
+  app = Flask(__name__)
+  server = make_server('127.0.0.1', 8000, app)
   
   @app.route('/callback')
 
