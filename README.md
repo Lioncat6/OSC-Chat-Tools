@@ -12,7 +12,7 @@ OCT Is a standalone program used for interacting with Vrchat's OSC to send chat 
  - Create an issue https://github.com/Lioncat6/OSC-Chat-Tools/issues
 
 # Guides: (More Coming Soon)
-https://github.com/Lioncat6/OSC-Chat-Tools/wiki
+ - https://github.com/Lioncat6/OSC-Chat-Tools/wiki#oct-guides
 
 # Features
  - Fully customizable layout with divider and newline toggles
