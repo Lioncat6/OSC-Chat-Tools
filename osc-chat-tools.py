@@ -2439,7 +2439,9 @@ def linkSpotify():
       'code_challenge': code_challenge
   }
   spotify_auth_url = requests.Request('GET', auth_url, params=params).prepare().url
-
+  
+  outputLog("Attempting to open url: \n"+spotify_auth_url)
+  
   @app.route('/callback')
 
 
@@ -2503,7 +2505,6 @@ def linkSpotify():
         outputLog('Spotify Link Error: '+str(e))
         return """<!DOCTYPE html> <html> <head> <title>OSC Chat Tools | Spotify Authorization</title> <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/Lioncat6/OSC-Chat-Tools/main/oscicon.ico"> </head> <body> <style> body { font-family: sans-serif; background-color: darkslategrey; color: whitesmoke; } .mainbox { position: absolute; left: 50%; top: 50%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%); } h1 { text-align: center; } p { text-align: center; } img { display: block; margin-left: auto; margin-right: auto; width: 50%; } </style> <div class="mainbox"> <img src="https://raw.githubusercontent.com/Lioncat6/OSC-Chat-Tools/main/oscicon.ico"> <h1 class="maintext">Authorization Failed</h1><p class="subtext">If you did not cancel the authentication at the previous screen please submit a bug report at <a href='https://github.com/Lioncat6/OSC-Chat-Tools/issues'>https://github.com/Lioncat6/OSC-Chat-Tools/issues</a></p><div><p>Full error:<b style="color:red;"> """+str(e)+""" </b></p></div> </div> </body> </html>"""
   
-  outputLog("Attempting to open url: \n"+spotify_auth_url)
   webbrowser.open_new(spotify_auth_url)
   
   def spotifyLinkCancelCheck():
