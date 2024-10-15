@@ -62,7 +62,7 @@ OCT Is a standalone program used for interacting with Vrchat's OSC to send chat 
 
 ### Side note... the windows now playing song functionality will show whatever the last thing you were listening to was... including any website or video you were watching... So be careful.
 
-# Keyboard Shortcuts 
+# Keyboard Shortcuts
 All keyboard shortcuts can be rebound
 - **`P`** Toggle Chatbox
 - **`end`** Toggle AFK
@@ -78,12 +78,10 @@ All keyboard shortcuts can be rebound
  - https://www.youtube.com/watch?v=8D23oUzb-0Q
 
 # Coming soon:
+ - Code refactor (In the works)
  - Modular plugins system to replace hardcoded objects
- - Make the program install instead of being standalone to enable mods and assets and to improve boot time
- - Switch to a different ui, probably some sort of electron app rather than a python based one
- - Heartrate data through stronmo (Cheaper alternative to Pulsoid)
+ - Switch to a different ui, most likely to py-qt
  - Speech To Text (Almost Done!)
- - GPU Stats
  - Framerate
  - Ping
  - VR/Desktop Display
