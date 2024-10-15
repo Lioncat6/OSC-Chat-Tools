@@ -40,28 +40,32 @@ run = True
 playMsg = True
 version = "1.5.13"
 
-#conf variables
-
-message_delay = 1.5 # in conf
+#Deprecated Variables
 topTextToggle = False #Deprecated, only in use for converting old save files
 topTimeToggle = False #Deprecated, only in use for converting old save files
 topSongToggle = False #Deprecated, only in use for converting old save files
 topCPUToggle = False #Deprecated, only in use for converting old save files
 topRAMToggle = False #Deprecated, only in use for converting old save files
 topNoneToggle = True #Deprecated, only in use for converting old save files
+topHRToggle = False #Deprecated, only in use for converting old save files
 
+bottomHRToggle = False #Deprecated, only in use for converting old save files
 bottomTextToggle = False #Deprecated, only in use for converting old save files
 bottomTimeToggle = False #Deprecated, only in use for converting old save files
 bottomSongToggle = False #Deprecated, only in use for converting old save files
 bottomCPUToggle = False #Deprecated, only in use for converting old save files
 bottomRAMToggle = False #Deprecated, only in use for converting old save files
 bottomNoneToggle = True #Deprecated, only in use for converting old save files
+
+hideMiddle = False #Deprecated, only in use for converting old save files
+
+#conf variables
+message_delay = 1.5 # in conf
 messageString = '' #in conf
 FileToRead = '' #in conf
 scrollText = False #in conf
 scrollTexTSpeed = 6
 hideSong = False #in conf
-hideMiddle = False #Deprecated, only in use for converting old save files
 hideOutside = True #in conf
 showPaused = True #in conf
 songDisplay = ' 🎵\'{title}\' ᵇʸ {artist}🎶' #in conf
@@ -73,8 +77,6 @@ keybind_afk = 'end' #in conf
 topBar = '╔═════════════╗' #in conf
 middleBar = '╠═════════════╣' #in conf
 bottomBar = '╚═════════════╝' #in conf
-topHRToggle = False #Deprecated, only in use for converting old save files
-bottomHRToggle = False #Deprecated, only in use for converting old save files
 avatarHR = False #in conf
 blinkOverride = False #in conf
 blinkSpeed  = .5 #in conf
@@ -91,12 +93,9 @@ oscForewordAddress = '127.0.0.1' #in conf
 oscForewordPort = '9002' #in conf
 oscListen = False #in conf
 oscForeword = False #in conf
-
 logOutput = False  #in conf
-
 layoutString = '' #in conf
 verticalDivider = "〣" #in conf
-
 cpuDisplay = 'ᴄᴘᴜ: {cpu_percent}%'#in conf
 ramDisplay = 'ʀᴀᴍ: {ram_percent}%  ({ram_used}/{ram_total})'#in conf
 gpuDisplay = 'ɢᴘᴜ: {gpu_percent}%'#in conf
@@ -104,13 +103,10 @@ hrDisplay = '💓 {hr}'#in conf
 playTimeDisplay = '⏳{hours}:{remainder_minutes}'#in conf
 mutedDisplay = 'Muted 🔇'#in conf
 unmutedDisplay = '🔊'#in conf
- 
 darkMode = True #in conf
-
 sendBlank = True
 suppressDuplicates = False
 sendASAP = False
-
 useMediaManager = True
 useSpotifyApi = False
 spotifySongDisplay =  '🎵\'{title}\' ᵇʸ {artist}🎶 『{song_progress}/{song_length}』'
@@ -1037,6 +1033,12 @@ def uiThread():
           ['&Help', ['&About', '---', 'Submit Feedback', '---', 'Open &Github Page', '&Check For Updates', '&FAQ', '---', 'Discord']]]
   topMenuBar = sg.Menu(menu_def, key="menuBar")
   right_click_menu = ['&Right', ['Copy', 'Paste']]
+  
+  spotifyLogo = sg.Text("Spotify", font=('Arial', 11, 'bold'), key='spotifyIcon', visible=False)
+  
+  if(os.path.isfile("./assets/spotify.png")):
+    spotifyLogo = sg.Image("./assets/spotify.png", key='spotifyIcon', visible=False)
+  
   layout = [
       [[topMenuBar]],
       [   
@@ -1052,7 +1054,7 @@ def uiThread():
               key='mainTabs', tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True, size=(440, 300), font=('Arial', 11, 'normal'), tab_background_color=tabBackgroundColor, tab_border_width=0, title_color=tabTextColor
           )
       ],
-      [sg.Button('Apply', tooltip='Apply all changes to options'), sg.Button('Reset'), sg.Text(" Version "+str(version), key='versionText'), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru'), sg.Checkbox('AFK', default=False, key='afk', enable_events= True, background_color='#cb7cef'), sg.Push(), sg.Text("⏸️", key='spotifyPlayStatus', font = ('Helvetica', 11), visible=False, pad=(0, 0)), sg.Text("---", key='spotifySongName', enable_events=True, font = ('Helvetica', 11, 'underline'), visible=False, pad=(0, 0)), sg.Text("『00:00/00:00』", key='spotifyDuration', font = ('Helvetica', 11), visible=False, pad=(0, 0)), sg.Image("./assets/spotify.png", key='spotifyIcon', visible=False)]]
+      [sg.Button('Apply', tooltip='Apply all changes to options'), sg.Button('Reset'), sg.Text(" Version "+str(version), key='versionText'), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru'), sg.Checkbox('AFK', default=False, key='afk', enable_events= True, background_color='#cb7cef'), sg.Push(), sg.Text("⏸️", key='spotifyPlayStatus', font = ('Helvetica', 11), visible=False, pad=(0, 0)), sg.Text("---", key='spotifySongName', enable_events=True, font = ('Helvetica', 11, 'underline'), visible=False, pad=(0, 0)), sg.Text("『00:00/00:00』", key='spotifyDuration', font = ('Helvetica', 11), visible=False, pad=(0, 0)), spotifyLogo]]
 
   window = sg.Window('OSC Chat Tools', layout,
                   default_element_size=(12, 1), resizable=True, finalize= True, size=(900, 620), right_click_menu=right_click_menu, icon="osc-chat-tools.exe", titlebar_icon="osc-chat-tools.exe")
@@ -2643,8 +2645,11 @@ def runmsg():
     client.send_message("/chatbox/input", [ "", True, False])
     
 def msgPlayCheck():
-  if keyboard.is_pressed(keybind_run):
-    msgPlayToggle()
+  try:
+    if keyboard.is_pressed(keybind_run):
+      msgPlayToggle()
+  except:
+    pass
 
 def msgPlayToggle():
   global playMsg
@@ -2661,8 +2666,11 @@ def afkCheck():
   global isAfk
   global afk
   if useAfkKeybind:
-    if keyboard.is_pressed(keybind_afk):
-      afkToggle()
+    try:
+      if keyboard.is_pressed(keybind_afk):
+        afkToggle()
+    except:
+      pass
   elif isAfk:
     afk = True
   else:
@@ -2716,7 +2724,3 @@ mainUI.start()
 update_checker(False)
 timeParameterThread = Thread(target=timeParameterUpdate).start()
 
-while run:
-  msgPlayCheck()
-  afkCheck()
-  time.sleep(.01)
