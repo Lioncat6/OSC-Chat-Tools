@@ -41,23 +41,23 @@ playMsg = True
 version = "1.5.14"
 
 #Deprecated Variables
-topTextToggle = False #Deprecated, only in use for converting old save files
-topTimeToggle = False #Deprecated, only in use for converting old save files
-topSongToggle = False #Deprecated, only in use for converting old save files
-topCPUToggle = False #Deprecated, only in use for converting old save files
-topRAMToggle = False #Deprecated, only in use for converting old save files
-topNoneToggle = True #Deprecated, only in use for converting old save files
-topHRToggle = False #Deprecated, only in use for converting old save files
+deprecated_topTextToggle = False #Deprecated, only in use for converting old save files
+deprecated_topTimeToggle = False #Deprecated, only in use for converting old save files
+deprecated_topSongToggle = False #Deprecated, only in use for converting old save files
+deprecated_topCPUToggle = False #Deprecated, only in use for converting old save files
+deprecated_topRAMToggle = False #Deprecated, only in use for converting old save files
+deprecated_topNoneToggle = True #Deprecated, only in use for converting old save files
+deprecated_topHRToggle = False #Deprecated, only in use for converting old save files
 
-bottomHRToggle = False #Deprecated, only in use for converting old save files
-bottomTextToggle = False #Deprecated, only in use for converting old save files
-bottomTimeToggle = False #Deprecated, only in use for converting old save files
-bottomSongToggle = False #Deprecated, only in use for converting old save files
-bottomCPUToggle = False #Deprecated, only in use for converting old save files
-bottomRAMToggle = False #Deprecated, only in use for converting old save files
-bottomNoneToggle = True #Deprecated, only in use for converting old save files
+deprecated_bottomHRToggle = False #Deprecated, only in use for converting old save files
+deprecated_bottomTextToggle = False #Deprecated, only in use for converting old save files
+deprecated_deprecated_bottomTimeToggle = False #Deprecated, only in use for converting old save files
+deprecated_bottomSongToggle = False #Deprecated, only in use for converting old save files
+deprecated_bottomCPUToggle = False #Deprecated, only in use for converting old save files
+deprecated_bottomRAMToggle = False #Deprecated, only in use for converting old save files
+deprecated_bottomNoneToggle = True #Deprecated, only in use for converting old save files
 
-hideMiddle = False #Deprecated, only in use for converting old save files
+deprecated_hideMiddle = False #Deprecated, only in use for converting old save files
 
 #conf variables
 message_delay = 1.5 # in conf
@@ -402,8 +402,8 @@ def mediaIs(state):
     return int(wmc.GlobalSystemMediaTransportControlsSessionPlaybackStatus[state]) == session.get_playback_info().playback_status
   
 confDataDict = { #this dictionary will always exclude position 0 which is the config version!
-  "1.4.1" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt'],
-  "1.4.20" : ['confVersion', 'topTextToggle', 'topTimeToggle', 'topSongToggle', 'topCPUToggle', 'topRAMToggle', 'topNoneToggle', 'bottomTextToggle', 'bottomTimeToggle', 'bottomSongToggle', 'bottomCPUToggle', 'bottomRAMToggle', 'bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'topHRToggle', 'bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput'],
+  "1.4.1" : ['confVersion', 'deprecated_topTextToggle', 'deprecated_topTimeToggle', 'deprecated_topSongToggle', 'deprecated_topCPUToggle', 'deprecated_topRAMToggle', 'deprecated_topNoneToggle', 'deprecated_bottomTextToggle', 'deprecated_deprecated_bottomTimeToggle', 'deprecated_bottomSongToggle', 'deprecated_bottomCPUToggle', 'deprecated_bottomRAMToggle', 'deprecated_bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'deprecated_hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'deprecated_topHRToggle', 'deprecated_bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt'],
+  "1.4.20" : ['confVersion', 'deprecated_topTextToggle', 'deprecated_topTimeToggle', 'deprecated_topSongToggle', 'deprecated_topCPUToggle', 'deprecated_topRAMToggle', 'deprecated_topNoneToggle', 'deprecated_bottomTextToggle', 'deprecated_deprecated_bottomTimeToggle', 'deprecated_bottomSongToggle', 'deprecated_bottomCPUToggle', 'deprecated_bottomRAMToggle', 'deprecated_bottomNoneToggle', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'deprecated_hideMiddle', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'deprecated_topHRToggle', 'deprecated_bottomHRToggle', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput'],
   "1.5.0" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay'],
   "1.5.1" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode'],
   "1.5.2" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode'],
@@ -447,27 +447,27 @@ if os.path.isfile('please-do-not-delete.txt'):
       outputLog('Config File Load Error! Not Updating Values...\n'+str(e))
   if confVersion == "1.4.1" or confVersion ==  "1.4.20":
     outputLog("Converting old layout system, please update your config by pressing apply!")
-    if topTextToggle:
+    if deprecated_topTextToggle:
       layoutString = layoutString + '{text(0)}'
-    if topTimeToggle:
+    if deprecated_topTimeToggle:
       layoutString = layoutString + '{time(0)}'
-    if topSongToggle:
+    if deprecated_topSongToggle:
       layoutString = layoutString + '{song(0)}'
-    if topCPUToggle:
+    if deprecated_topCPUToggle:
       layoutString = layoutString + '{cpu(0)}'
-    if topRAMToggle:
+    if deprecated_topRAMToggle:
       layoutString = layoutString + '{ram(0)}'
-    if not hideMiddle and (topTextToggle or topTimeToggle or topSongToggle or topCPUToggle or topRAMToggle) and (bottomTextToggle or bottomTimeToggle or bottomSongToggle or bottomCPUToggle or bottomRAMToggle):
+    if not deprecated_hideMiddle and (deprecated_topTextToggle or deprecated_topTimeToggle or deprecated_topSongToggle or deprecated_topCPUToggle or deprecated_topRAMToggle) and (deprecated_bottomTextToggle or deprecated_deprecated_bottomTimeToggle or deprecated_bottomSongToggle or deprecated_bottomCPUToggle or deprecated_bottomRAMToggle):
       layoutString = layoutString + '{div(0)}'
-    if bottomTextToggle:
+    if deprecated_bottomTextToggle:
       layoutString = layoutString + '{text(0)}'
-    if bottomTimeToggle:
+    if deprecated_deprecated_bottomTimeToggle:
       layoutString = layoutString + '{time(0)}'
-    if bottomSongToggle:
+    if deprecated_bottomSongToggle:
       layoutString = layoutString + '{song(0)}'
-    if bottomCPUToggle:
+    if deprecated_bottomCPUToggle:
       layoutString = layoutString + '{cpu(0)}'
-    if bottomRAMToggle:
+    if deprecated_bottomRAMToggle:
       layoutString = layoutString + '{ram(0)}'
       
 forewordServerLastUsed = oscForeword
@@ -640,7 +640,7 @@ def uiThread():
   global FileToRead
   global scrollText
   global hideSong
-  global hideMiddle
+  global deprecated_hideMiddle
   global hideOutside
   global showPaused
   global songDisplay
