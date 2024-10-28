@@ -132,6 +132,8 @@ removeParenthesis = False
 
 ###########Program Variables (not in conf)######### 
 
+previousSongTitle = '' #used to prevent song title from updating when not changed to allow tooltip to appear.
+
 current_tab = 'layout'
 
 code_verifier = '' #for manual code entry
@@ -716,6 +718,8 @@ def uiThread():
   
   global removeParenthesis
   
+  global previousSongTitle
+  
   if darkMode:
     bgColor = '#333333'
     accentColor = '#4d4d4d'
@@ -1064,7 +1068,7 @@ def uiThread():
               key='mainTabs', enable_events=True, tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True, size=(440, 300), font=('Arial', 11, 'normal'), tab_background_color=tabBackgroundColor, tab_border_width=0, title_color=tabTextColor
           )
       ],
-      [sg.Button('Apply', tooltip='Apply all changes to options'), sg.Button('Reset'), sg.Text(" Version "+str(version), key='versionText'), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru'), sg.Checkbox('AFK', default=False, key='afk', enable_events= True, background_color='#cb7cef'), sg.Push(), sg.Text("⏸️", key='spotifyPlayStatus', font = ('Helvetica', 11), visible=False, pad=(0, 0)), sg.Text("---", key='spotifySongName', enable_events=True, font = ('Helvetica', 11, 'underline'), visible=False, pad=(0, 0)), sg.Text("『00:00/00:00』", key='spotifyDuration', font = ('Helvetica', 11), visible=False, pad=(0, 0)), spotifyLogo]]
+      [sg.Button('Apply', tooltip='Apply all changes to options'), sg.Button('Reset', tooltip='Resets all variables to their default values'), sg.Text(" Version "+str(version), key='versionText'), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru', tooltip='Toggles the run state of OCT'), sg.Checkbox('AFK', default=False, key='afk', enable_events= True, background_color='#cb7cef', tooltip='Toggles AFK message, can be set to automatic in the options tab'), sg.Push(), sg.Text("⏸️", key='spotifyPlayStatus', font = ('Helvetica', 11), visible=False, pad=(0, 0)), sg.Text("---", key='spotifySongName', enable_events=True, font = ('Helvetica', 11, 'underline'), visible=False, pad=(0, 0)), sg.Text("『00:00/00:00』", key='spotifyDuration', font = ('Helvetica', 11), visible=False, pad=(0, 0)), spotifyLogo]]
 
   window = sg.Window('OSC Chat Tools', layout,
                   default_element_size=(12, 1), resizable=True, finalize= True, size=(900, 620), right_click_menu=right_click_menu, icon="osc-chat-tools.exe", titlebar_icon="osc-chat-tools.exe")
@@ -1764,11 +1768,19 @@ def uiThread():
             window['spotifyPlayStatus'].update(value='▶️', visible=True)
           else:
             window['spotifyPlayStatus'].update(value='⏸️', visible=True)
-          window['spotifySongName'].update(value=nameToDisplay, visible=True)
+          songTitleObject = window['spotifySongName']
+          if (nameToDisplay+str(useSpotifyApi) != previousSongTitle):
+            songTitleObject.update(value=nameToDisplay, visible=True)
+            if useSpotifyApi:
+              songTitleObject.set_tooltip(nameToDisplay+' | Click to open in spotify')
+              songTitleObject.set_cursor(cursor='center_ptr')
+            previousSongTitle = nameToDisplay+str(useSpotifyApi)
           if useSpotifyApi:
             window['spotifyDuration'].update(value=f'『{elapsedTime}/{duration}』', visible=True)
             window['spotifyIcon'].update(visible=True)
           else:
+            songTitleObject.set_tooltip(nameToDisplay)
+            songTitleObject.set_cursor(cursor='arrow')
             window['spotifyDuration'].update(visible=False)
             window['spotifyIcon'].update(visible=False)
       if event == 'spotifySongName':
