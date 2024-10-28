@@ -130,6 +130,8 @@ useTimeParameters = False
 
 ###########Program Variables (not in conf)######### 
 
+current_tab = 'layout'
+
 code_verifier = '' #for manual code entry
 
 layoutStorage = ''
@@ -629,7 +631,8 @@ def uiThread():
   global scrollbarBackgroundColor
   global tabBackgroundColor
   global tabTextColor
-
+  global current_tab
+  
   global version
   global msgOutput
   global message_delay
@@ -1044,15 +1047,15 @@ def uiThread():
       [[topMenuBar]],
       [   
           sg.TabGroup([[
-                  sg.Tab('🧩Layout', new_layout_layout, background_color=accentColor),
-                  sg.Tab('🤖Behavior', new_behavior_layout, background_color=accentColor),
-                  sg.Tab('📺Preview', preview_layout, background_color=accentColor),
-                  #sg.Tab('⌨Keybindings', keybindings_layout, background_color=accentColor),
-                  sg.Tab('💻Options', options_layout, background_color=accentColor),
-                  sg.Tab('📲OSC Options', osc_layout, background_color=accentColor),
-                  sg.Tab('💾Output', output_layout, background_color=accentColor)
+                  sg.Tab('🧩Layout', new_layout_layout, background_color=accentColor, key='layout'),
+                  sg.Tab('🤖Behavior', new_behavior_layout, background_color=accentColor, key='behavior'),
+                  sg.Tab('📺Preview', preview_layout, background_color=accentColor, key='preview'),
+                  #sg.Tab('⌨Keybindings', keybindings_layout, background_color=accentColor, key='keybindings'),
+                  sg.Tab('💻Options', options_layout, background_color=accentColor, key='options'),
+                  sg.Tab('📲OSC Options', osc_layout, background_color=accentColor, key='osc'),
+                  sg.Tab('💾Output', output_layout, background_color=accentColor, key='output')
               ]], 
-              key='mainTabs', tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True, size=(440, 300), font=('Arial', 11, 'normal'), tab_background_color=tabBackgroundColor, tab_border_width=0, title_color=tabTextColor
+              key='mainTabs', enable_events=True, tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True, size=(440, 300), font=('Arial', 11, 'normal'), tab_background_color=tabBackgroundColor, tab_border_width=0, title_color=tabTextColor
           )
       ],
       [sg.Button('Apply', tooltip='Apply all changes to options'), sg.Button('Reset'), sg.Text(" Version "+str(version), key='versionText'), sg.Checkbox('Run?', default=True, key='runThing', enable_events= True, background_color='peru'), sg.Checkbox('AFK', default=False, key='afk', enable_events= True, background_color='#cb7cef'), sg.Push(), sg.Text("⏸️", key='spotifyPlayStatus', font = ('Helvetica', 11), visible=False, pad=(0, 0)), sg.Text("---", key='spotifySongName', enable_events=True, font = ('Helvetica', 11, 'underline'), visible=False, pad=(0, 0)), sg.Text("『00:00/00:00』", key='spotifyDuration', font = ('Helvetica', 11), visible=False, pad=(0, 0)), spotifyLogo]]
@@ -1239,7 +1242,12 @@ def uiThread():
     while run:
       if run:
         try:
-          window['messagePreviewFill'].update(value=msgOutput.replace("\v", "\n"))
+          if current_tab == 'preview':
+            window['messagePreviewFill'].update(value=msgOutput.replace("\v", "\n"))
+            if sendSkipped:
+              window['sentCountdown'].update('Last sent: '+str(round(sentTime, 1)) +"/"+ "30" +" [Skipped Send]")
+            else:
+              window['sentCountdown'].update('Last sent: '+str(round(sentTime, 1)) +"/"+ str(message_delay))
           window['runThing'].update(value=playMsg)
           window['afk'].update(value=afk)   
           layoutStorageAccess = window['layoutStorage'].get()
@@ -1247,11 +1255,7 @@ def uiThread():
             layoutPreviewBuilder(layoutStorageAccess, window)
             layoutUpdate = layoutStorageAccess
           if playMsg:
-            sentTime = sentTime + 0.1    
-          if sendSkipped:
-            window['sentCountdown'].update('Last sent: '+str(round(sentTime, 1)) +"/"+ "30" +" [Skipped Send]")
-          else:
-            window['sentCountdown'].update('Last sent: '+str(round(sentTime, 1)) +"/"+ str(message_delay))
+            sentTime = sentTime + 0.1       
           if not playMsg or not 'song(' in layoutString or not showSongInfo:
             window['spotifyPlayStatus'].update(visible=False)
             window['spotifySongName'].update(visible=False)
@@ -1281,6 +1285,8 @@ def uiThread():
       if event == 'Open File':
           message_file_path = sg.popup_get_file('Select a File', title='Select a File')
           window['message_file_path_display'].update(value=message_file_path)
+      if event == 'mainTabs':
+          current_tab = values['mainTabs']
       if event == 'Apply':
           confVersion = version
           message_delay = values['msgDelay']
