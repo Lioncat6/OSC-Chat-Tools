@@ -1224,6 +1224,7 @@ def uiThread():
         window['spotify_client_id'].update(value=spotify_client_id)
         window['useTimeParameters'].update(value=useTimeParameters)
         
+        
         if spotifyLinkStatus != 'Unlinked':
           window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
           if 'Error' in spotifyLinkStatus and not 'Linked' in spotifyLinkStatus:   
@@ -1236,6 +1237,9 @@ def uiThread():
             window['spotifyLinkStatus'].update(text_color='green')
             window['linkSpotify'].update(text='Unlink Spotify 🔗', button_color= "#c68341")
           window.write_event_value('Apply', '')    
+        #Making sure the layout updates at least once.
+        layoutStorageAccess = window['layoutStorage'].get()
+        layoutPreviewBuilder(layoutStorageAccess, window)
       except Exception as e:
         outputLog('Failed to update UI\n'+str(e))
         pass
@@ -1835,7 +1839,7 @@ if __name__ == "__main__":
     global oscListen
     global useForewordMemory
     global windowAccess
-    time.sleep(.1)
+    time.sleep(.5)
     listen_socket = None
     forward_sockets = []
     while run:
@@ -2730,4 +2734,3 @@ mainUI = Thread(target=uiThread)
 mainUI.start()
 update_checker(False)
 timeParameterThread = Thread(target=timeParameterUpdate).start()
-
