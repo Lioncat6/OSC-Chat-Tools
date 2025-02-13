@@ -38,7 +38,7 @@ from tendo import singleton
 
 run = True
 playMsg = True
-version = "1.5.15"
+version = "1.5.69.42"
 
 #Deprecated Variables
 deprecated_topTextToggle = False #Deprecated, only in use for converting old save files
@@ -110,25 +110,21 @@ sendASAP = False
 useMediaManager = True
 useSpotifyApi = False
 spotifySongDisplay =  '🎵\'{title}\' ᵇʸ {artist}🎶 『{song_progress}/{song_length}』'
-
 spotifyAccessToken = ''
 spotifyRefreshToken = ''
 spotify_client_id = '915e1de141b3408eb430d25d0d39b380'
-
 pulsoidToken = '' 
 usePulsoid = True
 useHypeRate = False
 hypeRateKey = 'FIrXkWWlf57iHjMu0x3lEMNst8IDIzwUA2UD6lmSxL4BqBUTYw8LCwQlM2n5U8RU' #<- my personal token that may or may not be working depending on how the hyperate gods are feeling today
 hypeRateSessionId = ''
-
 timeDisplayAM = "{hour}:{minute} AM"
 timeDisplayPM = "{hour}:{minute} PM"
-
 showSongInfo = True
-
 useTimeParameters = False
-
 removeParenthesis = False
+timerDisplay = "{hours}:{minutes}:{seconds}"
+timerEndStamp = int(datetime.now().timestamp() * 1000)
 
 ###########Program Variables (not in conf)######### 
 
@@ -428,8 +424,8 @@ confDataDict = { #this dictionary will always exclude position 0 which is the co
   "1.5.12" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo', 'spotify_client_id', 'useTimeParameters'],
   "1.5.13" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo', 'spotify_client_id', 'useTimeParameters'],
   "1.5.14" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo', 'spotify_client_id', 'useTimeParameters'],
-  "1.5.15" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo', 'spotify_client_id', 'useTimeParameters', 'removeParenthesis']
-  
+  "1.5.15" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo', 'spotify_client_id', 'useTimeParameters', 'removeParenthesis'],
+  "1.5.69.42" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo', 'spotify_client_id', 'useTimeParameters', 'removeParenthesis', 'timerDisplay', 'timerEndStamp']
 }
 
 if os.path.isfile('please-do-not-delete.txt'):
@@ -491,7 +487,8 @@ layoutDisplayDict = {
     "hr(" : "💓Heart Rate",
     "mute(" : "🔇Mute Status",
     "stt(" : "⌨Speech To Text",
-    "div(" : "☵Divider"
+    "div(" : "☵Divider",
+    "timer(" : "⏲️Timer",
                       }
 def layoutPreviewBuilder(layout, window):
   def returnDisp(a):
@@ -720,6 +717,8 @@ def uiThread():
   
   global previousSongTitle
   
+  global timerDisplay
+  global timerEndStamp
   if darkMode:
     bgColor = '#333333'
     accentColor = '#4d4d4d'
@@ -768,6 +767,7 @@ def uiThread():
                 [sg.Text('⌚Play Time', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Show Play Time', ), sg.Push(), sg.Button('Add to Layout',  key='addPlaytime')],
                 [sg.Text('⌨️STT', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Speech recognition object', ), sg.Push(), sg.Button('Coming Soon', disabled=True, key='addSTT')],
                 [sg.Text('☵Divider', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Horizontal Divider', ), sg.Push(), sg.Button('Add to Layout',  key='addDiv')],
+                [sg.Text('⏲️Timer', font=('Arial', 12, 'bold')), sg.Push(), sg.Text('Countdown Timer', ), sg.Push(), sg.Button('Add to Layout',  key='addTimer')],
                 
                 ],size=(350, 520), scrollable=True, vertical_scroll_only=True, element_justification='center'), sg.Column([
                   [sg.Text('Arrange Elements', font=('Arial', 12, 'bold'))],
@@ -934,6 +934,18 @@ def uiThread():
                   [sg.Checkbox('Remove outside dividers', default=True, key='hideOutside', enable_events= True)],
                 ], size=(379, 270))],
   ]
+  timer_conf_layout = [
+    [sg.Column([
+      [sg.Text('Template to use for Timer display.\nVariables: {hours}, {minutes}, {seconds}')],
+      [sg.Input(key='timerDisplay', size=(50, 1))],
+      [sg.Text('Current Remaining Time:'), sg.Text('00:00:00', key='currentTimer')],
+      [sg.Text('Add Time:')],
+      [sg.Text('Hours:'), sg.Input(key='addHours', size=(5, 1)), sg.Button('Add', key='hoursAdd')],
+      [sg.Text('Minutes:'), sg.Input(key='addMinutes', size=(5, 1)), sg.Button('Add', key='minutesAdd')],
+      [sg.Text('Seconds:'), sg.Input(key='addSeconds', size=(5, 1)), sg.Button('Add', key='secondsAdd')],
+      [sg.Button('Reset Timer', key='resetTimer')]
+    ], size=(379, 250))]
+  ]
   new_behavior_layout = [
     [   
           sg.TabGroup([[
@@ -949,6 +961,7 @@ def uiThread():
                   sg.Tab('⌚Play Time', [[sg.Column(playTime_conf_layout, background_color=accentColor, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, size=(440, 300),)]], background_color=accentColor),
                   sg.Tab('⌨STT', [[sg.Text('Coming Soon')]]),
                   sg.Tab('☵Divider', [[sg.Column(divider_conf_layout, background_color=accentColor, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, size=(440, 300),)]], background_color=accentColor),
+                  sg.Tab('⏲️Timer', [[sg.Column(timer_conf_layout, background_color=accentColor, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, size=(440, 300),)]], background_color=accentColor),
               ]], 
               key='behaviorTabs', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True, size=(440, 300), font=('Arial', 11, 'normal'), tab_background_color=tabBackgroundColor, tab_border_width=0, title_color=tabTextColor, 
           )
@@ -1043,6 +1056,11 @@ def uiThread():
               [sg.Multiline('', disabled=True, key='output', size=(53, 30), background_color='DarkSlateGrey', text_color='white', expand_x=True, expand_y=True)]
               ] , expand_x=True, expand_y=True, background_color=accentColor)]]
   
+  help_layout = [[sg.Column(
+              [[sg.Text('Help', background_color=accentColor, font=('Arial', 12, 'bold'))],
+              [sg.Button('Open Wiki', key='wiki')]
+              ] , expand_x=True, expand_y=True, background_color=accentColor)]]
+  
   menu_def = [['&File', ['A&pply', '&Reset', '---', 'Open Config File', 'Open Debug Log', '---','E&xit', 'Re&start' ]],
           ['&Help', ['&About', '---', 'Submit Feedback', '---', 'Open &Github Page', '&Check For Updates', '&FAQ', '---', 'Discord']]]
   topMenuBar = sg.Menu(menu_def, key="menuBar")
@@ -1063,7 +1081,8 @@ def uiThread():
                   #sg.Tab('⌨Keybindings', keybindings_layout, background_color=accentColor, key='keybindings'),
                   sg.Tab('💻Options', options_layout, background_color=accentColor, key='options'),
                   sg.Tab('📲OSC Options', osc_layout, background_color=accentColor, key='osc'),
-                  sg.Tab('💾Output', output_layout, background_color=accentColor, key='output')
+                  sg.Tab('💾Output', output_layout, background_color=accentColor, key='output'),
+                  sg.Tab('❓Help', help_layout, background_color=accentColor, key='help')
               ]], 
               key='mainTabs', enable_events=True, tab_location='lefttop', selected_title_color='white', selected_background_color='gray', expand_x=True, expand_y=True, size=(440, 300), font=('Arial', 11, 'normal'), tab_background_color=tabBackgroundColor, tab_border_width=0, title_color=tabTextColor
           )
@@ -1074,6 +1093,7 @@ def uiThread():
                   default_element_size=(12, 1), resizable=True, finalize= True, size=(900, 620), right_click_menu=right_click_menu, icon="osc-chat-tools.exe", titlebar_icon="osc-chat-tools.exe")
   window.set_min_size((500, 350))
   def resetVars():
+    global timerEndStamp
     window['messageInput'].update(value='OSC Chat Tools\nBy Lioncat6')
     window['msgDelay'].update(value=1.5)
     window['songDisplay'].update(value=' 🎵\'{title}\' ᵇʸ {artist}🎶')
@@ -1129,6 +1149,11 @@ def uiThread():
     window['showSongInfo'].update(value=True)
     window['useTimeParameters'].update(value=False)
     window['removeParenthesis'].update(value=False)
+    window['timerDisplay'].update(value="{hours}:{minutes}:{seconds}")
+    window['addHours'].update(value="")
+    window['addMinutes'].update(value="")
+    window['addSeconds'].update(value="")
+    timerEndStamp = int(datetime.now().timestamp() * 1000)
     #Disc Spotify
     global spotifyAccessToken
     global spotifyRefreshToken
@@ -1173,8 +1198,10 @@ def uiThread():
     global timeDisplayPM
     global showSongInfo
     global spotify_client_id
-    
+    global timerDisplay
+    global timerEndStamp
     global layoutUpdate
+    global timerVar
     
     global useTimeParameters
     global removeParenthesis
@@ -1235,7 +1262,7 @@ def uiThread():
         window['spotify_client_id'].update(value=spotify_client_id)
         window['useTimeParameters'].update(value=useTimeParameters)
         window['removeParenthesis'].update(value=removeParenthesis)
-        
+        window['timerDisplay'].update(value=timerDisplay)
         if spotifyLinkStatus != 'Unlinked':
           window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
           if 'Error' in spotifyLinkStatus and not 'Linked' in spotifyLinkStatus:   
@@ -1263,6 +1290,12 @@ def uiThread():
               window['sentCountdown'].update('Last sent: '+str(round(sentTime, 1)) +"/"+ "30" +" [Skipped Send]")
             else:
               window['sentCountdown'].update('Last sent: '+str(round(sentTime, 1)) +"/"+ str(message_delay))
+          if current_tab == 'behavior' and 'timer(' in layoutString:
+            timerVar = timerEndStamp - int(time.time() * 1000)
+            if timerVar < 0:
+              timerVar = 0
+            window['currentTimer'].update(value=f"{timerVar // 3600000:02}:{(timerVar // 60000) % 60:02}:{(timerVar // 1000) % 60:02}")
+            
           window['runThing'].update(value=playMsg)
           window['afk'].update(value=afk)   
           layoutStorageAccess = window['layoutStorage'].get()
@@ -1292,17 +1325,16 @@ def uiThread():
       #print(event, values)
       if event == sg.WIN_CLOSED or event == "Exit":
           break
-      
-      if event == 'Reset':
+      elif event == 'Reset':
           answer = sg.popup_yes_no("Are you sure?\nThis will erase all of your entered text and reset the configuration file!")
           if answer == "Yes":
             resetVars()
-      if event == 'Open File':
+      elif event == 'Open File':
           message_file_path = sg.popup_get_file('Select a File', title='Select a File')
           window['message_file_path_display'].update(value=message_file_path)
-      if event == 'mainTabs':
+      elif event == 'mainTabs':
           current_tab = values['mainTabs']
-      if event == 'Apply':
+      elif event == 'Apply':
           confVersion = version
           message_delay = values['msgDelay']
           messageString = values['messageInput']
@@ -1362,22 +1394,23 @@ def uiThread():
           spotify_client_id = values['spotify_client_id']
           useTimeParameters = values['useTimeParameters']
           removeParenthesis = values['removeParenthesis']
+          timerDisplay = values['timerDisplay']
           try:
             with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
-              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode, sendBlank, suppressDuplicates, sendASAP,useMediaManager, useSpotifyApi, spotifySongDisplay, spotifyAccessToken, spotifyRefreshToken, usePulsoid, useHypeRate, hypeRateKey, hypeRateSessionId, timeDisplayPM, timeDisplayAM, showSongInfo, spotify_client_id, useTimeParameters, removeParenthesis]))
+              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode, sendBlank, suppressDuplicates, sendASAP,useMediaManager, useSpotifyApi, spotifySongDisplay, spotifyAccessToken, spotifyRefreshToken, usePulsoid, useHypeRate, hypeRateKey, hypeRateSessionId, timeDisplayPM, timeDisplayAM, showSongInfo, spotify_client_id, useTimeParameters, removeParenthesis, timerDisplay, timerEndStamp]))
           except Exception as e:
             sg.popup('Error saving config to file:\n'+str(e))
           
-      if event == 'Check For Updates':
+      elif event == 'Check For Updates':
         update_checker(True)
-      if event == 'Open Github Page':
+      elif event == 'Open Github Page':
         webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools')
-      if event == 'About':
+      elif event == 'About':
         about_popop_layout =  [[sg.Text('OSC Chat Tools by', font=('Arial', 11, 'bold'), pad=(0, 20)), sg.Text('Lioncat6', font=('Arial', 12, 'bold'))],[sg.Text('Modules Used:',font=('Arial', 11, 'bold'))], [sg.Text('- PySimpleGUI\n - argparse\n - datetime\n - pythonosc (udp_client)\n - keyboard\n - asyncio\n - psutil\n - webbrowser\n - winsdk (windows.media.control)\n - websocket-client\n - pyperclip')], [sg.Button('Ok')]]
         about_window = sg.Window('About', about_popop_layout, keep_on_top=True)
         event, values = about_window.read()
         about_window.close()
-      if event =='manualHelp':
+      elif event =='manualHelp':
         manual_help_layout =  [[sg.Column([
           [sg.Text('Manual Editing Guide', font=('Arial', 11, 'bold'))],
           [sg.Text('Warning: Manually editing the layout can cause errors if done incorrectly!', text_color='#e60000')],
@@ -1392,9 +1425,9 @@ def uiThread():
         manual_help_window = sg.Window('About', manual_help_layout, keep_on_top=True)
         event, values = manual_help_window.read()
         manual_help_window.close()
-      if event == 'runThing':
+      elif event == 'runThing':
         msgPlayToggle()
-      if event == 'Open Config File':
+      elif event == 'Open Config File':
         if os.path.isfile('please-do-not-delete.txt'):
           try:
             os.system("start "+ 'please-do-not-delete.txt')
@@ -1402,7 +1435,7 @@ def uiThread():
             sg.Popup('Error opening config file: '+e)
         else:
           sg.Popup('Error opening config file: File not found')
-      if event == 'Open Debug Log':
+      elif event == 'Open Debug Log':
         if os.path.isfile('OCT_debug_log.txt'):
           try:
             os.system("start "+ 'OCT_debug_log.txt')
@@ -1410,13 +1443,13 @@ def uiThread():
             sg.Popup('Error opening debug log: '+e)
         else:
           sg.Popup('Error opening debug log: File not found')
-      if event == 'Discord':
+      elif event == 'Discord':
         webbrowser.open('https://discord.com/invite/qeBTyA8uqX')
-      if event == 'Submit Feedback':
+      elif event == 'Submit Feedback':
         webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/issues')
-      if event == 'afk':
+      elif event == 'afk':
         afk = values['afk']
-      if event == 'run_binding':
+      elif event == 'run_binding':
         run_binding_layout = [[sg.Text('Press any key to bind to \'Toggle Run\'')],[sg.Text('', key='preview_bind')],[sg.Button('Ok', disabled=True, key='Ok'), sg.Button('Cancel', disabled=True, key='Cancel')]]
         run_binding_window = sg.Window('Bind \'Toggle Run\'', run_binding_layout, size=(300, 90), element_justification='center', no_titlebar=True, modal=True)
         def checkPressThread():
@@ -1429,11 +1462,11 @@ def uiThread():
           event, values = run_binding_window.read()
           if event == 'Cancel':
             break
-          if event == 'Ok':
+          elif event == 'Ok':
             window['keybind_run'].update(value=run_binding_window['preview_bind'].get())
             break
         run_binding_window.close()
-      if event == 'afk_binding':
+      elif event == 'afk_binding':
         run_binding_layout = [[sg.Text('Press any key to bind to \'Toggle Afk\'')],[sg.Text('', key='preview_bind')],[sg.Button('Ok', disabled=True, key='Ok'), sg.Button('Cancel', disabled=True, key='Cancel')]]
         run_binding_window = sg.Window('Bind \'Toggle Afk\'', run_binding_layout, size=(300, 90), element_justification='center', no_titlebar=True, modal=True)
         def checkPressThread():
@@ -1446,20 +1479,20 @@ def uiThread():
           event, values = run_binding_window.read()
           if event == 'Cancel':
             break
-          if event == 'Ok':
+          elif event == 'Ok':
             window['keybind_afk'].update(value=run_binding_window['preview_bind'].get())
             break
         run_binding_window.close()
-      if event == 'mediaManagerError':
+      elif event == 'mediaManagerError':
         sg.popup_error('Media Manager Failure. Please restart your system.\n\nIf this problem persists, please report an issue on github: https://github.com/Lioncat6/OSC-Chat-Tools/issues.\nFull Error:\n'+str(values[event]), keep_on_top="True")
         break
-      if event == 'heartRateError':
+      elif event == 'heartRateError':
         playMsg = False
         sg.popup('Heart Rate Error:\nAre you connected to the internet?\nPlease double check your token, key, or session id in the behavior tab and then toggle run to try again.\n\nIf this problem persists, please report an issue on github: https://github.com/Lioncat6/OSC-Chat-Tools/issues')
-      if event == 'scrollError':
+      elif event == 'scrollError':
         playMsg = False
         sg.popup('File Read Error: Please make sure you have a file selected to scroll though in the behavior tab, then toggle Run to try again!\nFull Error:\n' + str(values[event]), keep_on_top="True")
-      if event == 'updateAvailable':
+      elif event == 'updateAvailable':
         update_available_layout = [
               [sg.Column([
                 [sg.Text('A new update is available!')],
@@ -1473,16 +1506,16 @@ def uiThread():
           if event == sg.WIN_CLOSED or event == 'Close':
             updateWindow.close()
             break
-          if event == 'Download':
+          elif event == 'Download':
             webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/releases/latest')
-      if event == 'markOutOfDate':
+      elif event == 'markOutOfDate':
         if not "Update" in window['versionText'].get():
           window['versionText'].update(value=window['versionText'].get()+" - New Update Available")
-      if event == 'popup':
+      elif event == 'popup':
         sg.popup(values['popup'])
-      if event == 'FAQ':
+      elif event == 'FAQ':
         webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/wiki/FAQ')
-      if event == 'outputSend':
+      elif event == 'outputSend':
         current_text = values['output']
         if current_text == '':
           new_text = values[event]
@@ -1490,7 +1523,7 @@ def uiThread():
           new_text = current_text + '\n' + values[event]
         window['output'].update(new_text)
         
-      if event == 'listenError':
+      elif event == 'listenError':
         outputLog(f'listenError {str(values[event])}')
         oscListen = False
         oscForeword = False
@@ -1505,26 +1538,28 @@ def uiThread():
           sg.popup("You have reached the limit of objects in the layout.\nYou can still add more in the manual edit section,\nhowever the UI will not reflect it")
       if event == 'addText':
         layoutStorageAdd("text(0)")
-      if event == 'addTime':
+      elif event == 'addTime':
         layoutStorageAdd("time(0)")
-      if event == 'addSong':
+      elif event == 'addSong':
         layoutStorageAdd("song(0)")
-      if event == 'addCPU':
+      elif event == 'addCPU':
         layoutStorageAdd("cpu(0)")
-      if event == 'addRAM':
+      elif event == 'addRAM':
         layoutStorageAdd("ram(0)")
-      if event == 'addGPU':
+      elif event == 'addGPU':
         layoutStorageAdd("gpu(0)")
-      if event == 'addHR':
+      elif event == 'addHR':
         layoutStorageAdd("hr(0)")
-      if event == 'addMute':
+      elif event == 'addMute':
         layoutStorageAdd("mute(0)")
-      if event == 'addSTT':
+      elif event == 'addSTT':
         layoutStorageAdd("stt(0)")
-      if event == 'addDiv':
+      elif event == 'addDiv':
         layoutStorageAdd("div(0)")
-      if event == 'addPlaytime':
+      elif event == 'addPlaytime':
         layoutStorageAdd("playtime(0)")
+      elif event == 'addTimer':
+        layoutStorageAdd("timer(0)")
       def layoutMove(pos, up):
         layList = ast.literal_eval("["+window['layoutStorage'].get().replace("{", "\"").replace("}", "\",")[:-1]+"]")
         pos = pos-1
@@ -1554,11 +1589,11 @@ def uiThread():
             listMod = ast.literal_eval("["+window['layoutStorage'].get().replace("{", "\"").replace("}", "\",")[:-1]+"]")
             del listMod[x-1]
             window['layoutStorage'].update(value=str(listMod).replace("[", "").replace("\']", "}").replace("\"]", "}").replace("\",", "}").replace("\',", "}").replace("\"", "{").replace("\'", "{").replace("]", ""))
-          if event == "up"+str(x):
+          elif event == "up"+str(x):
             layoutMove(x, True)
-          if event == "down"+str(x):
+          elif event == "down"+str(x):
             layoutMove(x, False)
-          if event == "divider"+str(x) or event == "newLine"+str(x):
+          elif event == "divider"+str(x) or event == "newLine"+str(x):
             if values['divider'+str(x)] and values['newLine'+str(x)]:
               toggleValues(x, 3)
             elif values['divider'+str(x)] and (not values['newLine'+str(x)]):
@@ -1571,13 +1606,13 @@ def uiThread():
           pass
       if event == 'Copy':
         keyboard.press_and_release('ctrl+c')
-      if event == 'Paste':
+      elif event == 'Paste':
         keyboard.press_and_release('ctrl+v')
-      if event == 'getPulsoidToken':
+      elif event == 'getPulsoidToken':
         webbrowser.open('https://pulsoid.net/oauth2/authorize?response_type=token&client_id=8070496f-f886-4030-8340-96d1d68b25cb&redirect_uri=&scope=data:heart_rate:read&state=&response_mode=web_page')
-      if event == 'getHypeRateKey':
+      elif event == 'getHypeRateKey':
         webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/wiki/HypeRate-Keys')
-      if event == 'useSpotifyApi':
+      elif event == 'useSpotifyApi':
         if spotifyAccessToken != '':
           window['useSpotifyApi'].update(value=True)
           window['useMediaManager'].update(value=False)
@@ -1587,17 +1622,17 @@ def uiThread():
       if event == 'useMediaManager':
         window['useMediaManager'].update(value=True)
         window['useSpotifyApi'].update(value=False)
-      if event == 'useHypeRate':
+      elif event == 'useHypeRate':
         if hypeRateSessionId != '':
           window['useHypeRate'].update(value=True)
           window['usePulsoid'].update(value=False)
         else:
           sg.popup('Please add a hyperate session id first!')
           window['useHypeRate'].update(value=False)
-      if event == 'usePulsoid':
+      elif event == 'usePulsoid':
         window['usePulsoid'].update(value=True)
         window['useHypeRate'].update(value=False)
-      if event == 'linkSpotify':
+      elif event == 'linkSpotify':
         isError = True
         isLink = True
         if "Unlinked" in spotifyLinkStatus or "Error" in spotifyLinkStatus:
@@ -1729,7 +1764,7 @@ def uiThread():
           window['spotifyLinkStatus'].update(value=spotifyLinkStatus)
           window['spotifyLinkStatus'].update(text_color='orange')
           window['linkSpotify'].update(text="Link Spotify 🔗", button_color="#00a828")
-      if event == 'spotifyApiError':
+      elif event == 'spotifyApiError':
         retryError = "No"
         if useSpotifyApi:
           retryError = sg.popup_yes_no('A Spotify fetch error has occurred, would you like to retry?\n\nThis could be caused by an internet connection issue.')
@@ -1749,14 +1784,14 @@ def uiThread():
           window['spotifyLinkStatus'].update(text_color='red')
           window['linkSpotify'].update(text='Relink Spotify ⚠️', button_color= "red")
           sg.popup('Spotify api fetch error!\nAutomatically reverted to using Windows Now Playing\nPlease relink spotify in the behavior tab to continue...\nFull Error: '+str(values[event]))
-      if event == 'sendDebug':
+      elif event == 'sendDebug':
         try:
           valueToSend = eval("values['debugType'](values['debugValue'])")
           client.send_message(values['debugPath'], valueToSend)
           outputLog(f"{values['debugPath']} => {values['debugValue']} | {type(valueToSend)}")
         except Exception as e:
           outputLog(f"Error sending debug command for reason: {e}")
-      if event == 'updateSpotifySongName':
+      elif event == 'updateSpotifySongName':
         if showSongInfo:
           nameToDisplay = values[event][0] + ' ᵇʸ ' +values[event][4]
           playPause = values[event][1]
@@ -1783,15 +1818,37 @@ def uiThread():
             songTitleObject.set_cursor(cursor='arrow')
             window['spotifyDuration'].update(visible=False)
             window['spotifyIcon'].update(visible=False)
-      if event == 'spotifySongName':
+      elif event == 'spotifySongName':
         try:
           if spotifySongUrl != '':
             webbrowser.open(spotifySongUrl)
         except Exception as e:
-          pass
-      if event == 'client_id_help':
+            pass
+      elif event == 'client_id_help':
         webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/wiki/Spotify-Client-ID')
-      if event == 'Restart':
+      elif event == 'hoursAdd':
+        try:
+          timerEndStamp += int(values['addHours']) * 3600000
+          window['addHours'].update(value="")
+        except ValueError:
+          sg.popup('Please enter a valid number for hours.')
+      elif event == 'minutesAdd':
+        try:
+          timerEndStamp += int(values['addMinutes']) * 60000
+          window['addMinutes'].update(value="")
+        except ValueError:
+          sg.popup('Please enter a valid number for minutes.')
+      elif event == 'secondsAdd':
+        try:
+          timerEndStamp += int(values['addSeconds']) * 1000
+          window['addSeconds'].update(value="")
+        except ValueError:
+          sg.popup('Please enter a valid number for seconds.')
+      elif event == 'resetTimer':
+        timerEndStamp = int(datetime.now().timestamp() * 1000)
+      elif event == 'wiki':
+        webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/wiki')
+      elif event == 'Restart':
         sg.popup('Implementing this would take way too long.')
   window.close()
   playMsg = False
@@ -2145,6 +2202,19 @@ if __name__ == "__main__":
             return(checkData(letsGetThatTime, data))
           def text(data=0):
             return(checkData(a.replace("\\n", "\v").replace("\\v", "\v"), data))
+          def timer(data=0):
+            global timerEndStamp
+            global timerDisplay
+            global timerVar
+            current_time = int(datetime.now().timestamp() * 1000)
+            timerVar = timerEndStamp - current_time
+            if (timerVar < 0):
+              timerVar = 0
+              timerEndStamp = int(datetime.now().timestamp() * 1000)
+            hours, remainder = divmod(timerVar // 1000, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            formatted_timer = timerDisplay.format_map(defaultdict(str, hours=f"{hours:02}", minutes=f"{minutes:02}", seconds=f"{seconds:02}"))
+            return checkData(formatted_timer, data)
           def song(data=0):
             global songInfo
             global useSpotifyApi
