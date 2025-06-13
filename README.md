@@ -8,11 +8,14 @@ OCT Is a standalone program used for interacting with Vrchat's OSC to send chat 
 
 # Having Issues? 
  - Read the [FAQ](https://github.com/Lioncat6/OSC-Chat-Tools/wiki/FAQ)
- - Message me on discord @lioncat6
+ - Message me on discord https://discord.gg/invite/hWCuPXvq66
  - Create an issue https://github.com/Lioncat6/OSC-Chat-Tools/issues
 
 # Guides: (More Coming Soon)
- - https://github.com/Lioncat6/OSC-Chat-Tools/wiki#oct-guides
+ - [Quick Start Guide](https://github.com/Lioncat6/OSC-Chat-Tools/wiki/OCT-Quick-Start-Guide)
+ - [Connecting to Spotify](https://github.com/Lioncat6/OSC-Chat-Tools/wiki/Connecting-to-Spotify)
+   - [Obtaining a Spotify client ID](https://github.com/Lioncat6/OSC-Chat-Tools/wiki/Spotify-Client-ID)
+ - [Connecting to Pulsoid](https://github.com/Lioncat6/OSC-Chat-Tools/wiki/Connecting-to-Pulsoid)
 
 # Features
  - Fully customizable layout with divider and newline toggles
