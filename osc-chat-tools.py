@@ -2248,6 +2248,8 @@ if __name__ == "__main__":
                         windowAccess.write_event_value('mediaManagerError', e)
                     except:
                       pass
+              if removeParenthesis:
+                title = re.sub(r' ?\([^)]*\)', '', title)
               if mediaPlaying or (not showPaused):
                 songInfo = songDisplay.format_map(defaultdict(str, artist=artist,title=title,album_title=album_title, album_artist=album_artist))
               else:
