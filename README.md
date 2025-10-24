@@ -1,5 +1,5 @@
 # OSC Chat Tools 
-An osc script I made for Vrchat. Now with UI!
+An OSC script I made for VRChat. Now with UI!
 - Feature Requests are encouraged. You need something added? Let me know
 
 ![Preview](https://raw.githubusercontent.com/Lioncat6/OSC-Chat-Tools/main/preview.png)
@@ -41,7 +41,7 @@ OCT Is a standalone program used for interacting with Vrchat's OSC to send chat 
 (Not recommended cause things might be broken before release)
  - Install python [https://www.python.org/downloads/](https://www.python.org/downloads/)
  - Install all of the required Python modules (`pip install {module name}`):
-   - PySimpleGUI
+   - FreeSimpleGUI
    - argparse
    - datetime
    - python-osc
