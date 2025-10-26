@@ -1,4 +1,4 @@
-pip install PySimpleGUI
+pip install FreeSimpleGUI
 pip install argparse
 pip install datetime
 pip install python-osc
