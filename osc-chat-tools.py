@@ -1,5 +1,6 @@
 import os
 import time
+import sys
 import threading
 from threading import Thread, Lock
 import ast
@@ -364,6 +365,67 @@ def update_checker(a):
         outputLog('Update Checking Error occurred:', response.status_code)
   except Exception as e:
     outputLog('Update Checking Error occurred: '+ str(e))
+
+def download_and_update(release_data):
+    try:
+        # Find the .exe asset in the release
+        asset = None
+        for a in release_data.get('assets', []):
+            if a.get('name', '').endswith('.exe'):
+                asset = a
+                break
+
+        if not asset:
+            outputLog("No .exe found in the latest release assets.")
+            sg.popup_error("Update failed: Could not find an executable in the latest release.")
+            return
+
+
+        download_url = asset['browser_download_url']
+        file_name = asset['name']
+
+        outputLog(f"Downloading update from: {download_url}")
+        response = requests.get(download_url, stream=True)
+        response.raise_for_status()
+
+        # Save to a temporary file
+        temp_file_path = os.path.join(os.path.dirname(sys.executable), "new_" + file_name)
+        with open(temp_file_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        
+        outputLog(f"Update downloaded to {temp_file_path}")
+
+        # Create a simple updater script
+        updater_script_path = os.path.join(os.path.dirname(sys.executable), 'updater.bat')
+        current_exe_path = sys.executable
+        
+        # The updater script will:
+        # 1. Kill the current running process.
+        # 2. Wait a moment for file handles to be released.
+        # 3. Replace the old executable with the new one.
+        # 4. Start the new version.
+        # 5. Delete itself.
+        with open(updater_script_path, 'w') as f:
+            f.write(f'@echo off\n')
+            f.write(f'title OSC Chat Tools Updater\n')
+            f.write(f'echo Waiting for OSC Chat Tools to close...\n')
+            f.write(f'taskkill /F /IM "{os.path.basename(current_exe_path)}" /T > NUL\n')
+            f.write(f'timeout /t 3 /nobreak > NUL\n')
+            f.write(f'echo Replacing executable and cleaning up...\n')
+            f.write(f'del "{current_exe_path}"\n')
+            f.write(f'rename "{temp_file_path}" "{os.path.basename(current_exe_path)}"\n')
+            f.write(f'echo Update complete. Starting new version...\n')
+            f.write(f'start "OSC Chat Tools" "{current_exe_path}"\n')
+            f.write(f'(goto) 2>nul & del "%~f0"\n')
+
+        # Register the updater to run on exit
+        import atexit
+        atexit.register(lambda: os.startfile(updater_script_path))
+        outputLog("Update will be installed on exit.")
+    except Exception as e:
+        outputLog(f"Failed to download or prepare update: {str(e)}")
+        sg.popup_error(f"Failed to download or prepare update:\n{e}")
 
 async def get_media_info():
     sessions = await MediaManager.request_async()
@@ -1511,17 +1573,26 @@ def uiThread():
               [sg.Column([
                 [sg.Text('A new update is available!')],
                 [sg.Text(values['updateAvailable']+" > " + version.replace('v', ''))],
-                [sg.Text("\nYou can disable this popup in the options tab")]
+                [sg.Text("\nYou can disable this popup in the options tab.")],
+                [sg.Text("The application will restart to apply the update.")]
               ], element_justification='center')],
-              [sg.Button("Close"), sg.Button("Download")]]
+              [sg.Button("Close"), sg.Button("Download and Install")]]
         updateWindow = sg.Window('Update Available!', update_available_layout, finalize=True)
         while run:
-          event, values = updateWindow.read()
-          if event == sg.WIN_CLOSED or event == 'Close':
+          win_event, win_values = updateWindow.read()
+          if win_event == sg.WIN_CLOSED or win_event == 'Close':
             updateWindow.close()
             break
-          elif event == 'Download':
-            webbrowser.open('https://github.com/Lioncat6/OSC-Chat-Tools/releases/latest')
+          elif win_event == 'Download and Install':
+            response = requests.get('https://api.github.com/repos/Lioncat6/OSC-Chat-Tools/releases/latest')
+            if response.ok:
+                download_and_update(response.json()) # This will register the update script to run on exit
+                updateWindow.close()
+                window.write_event_value('Exit', '') # Send the exit event to the main window
+            else:
+                sg.popup("Could not fetch release information for update.")
+                updateWindow.close()
+            break # Exit the update window loop
       elif event == 'markOutOfDate':
         if not "Update" in window['versionText'].get():
           window['versionText'].update(value=window['versionText'].get()+" - New Update Available")
