@@ -2453,9 +2453,9 @@ def timeParameterUpdate():
       isPm = False
       if int(hour) >= 12:
           hour = int(hour)-12
+          isPm = True
           if int(hour) == 0:
-            hour = 12    
-            isPm = True
+            hour = 12
       else:
           if int(hour) == 0:
             hour = 12  
