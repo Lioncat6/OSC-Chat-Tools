@@ -30,7 +30,60 @@ from werkzeug.serving import make_server
 import hashlib
 import base64
 #import GPUtil
-from pynvml import *
+_pynvml_available = False
+try:
+    from pynvml import *
+    _pynvml_available = True
+except Exception:
+    pass
+
+# pyamdgpuinfo: Linux AMD only (requires libdrm headers, won't build on Windows)
+_pyamdgpuinfo_available = False
+if os.name != 'nt':
+    try:
+        import pyamdgpuinfo
+        _pyamdgpuinfo_available = True
+    except Exception:
+        pass
+
+# wmi: Windows AMD/Intel via WDDM performance counters (same source as Task Manager)
+_wmi_available = False
+_wmi_module = None
+_pythoncom = None
+if os.name == 'nt':
+    try:
+        import wmi as _wmi_module
+        _wmi_available = True
+    except Exception:
+        pass
+    try:
+        import pythoncom as _pythoncom
+    except Exception:
+        pass
+
+# Thread-local storage so each thread gets its own COM-apartment WMI connection.
+_wmi_tls = threading.local()
+def _get_wmi_perf_conn():
+    """Lazily create and cache a per-thread WMI connection for GPU performance counter queries.
+    WMI connections are COM apartment objects and must not be shared across threads.
+    pythoncom.CoInitialize() must be called on every new thread before WMI can be used."""
+    if not _wmi_available:
+        return None
+    conn = getattr(_wmi_tls, 'conn', None)
+    if conn is None:
+        try:
+            # COM must be initialised on this thread before creating a WMI connection.
+            # Without this, WMI raises a COM error on non-main threads (silent except → None).
+            if _pythoncom is not None:
+                try:
+                    _pythoncom.CoInitialize()
+                except Exception:
+                    pass
+            _wmi_tls.conn = _wmi_module.WMI(namespace='root\\cimv2')
+            conn = _wmi_tls.conn
+        except Exception:
+            pass
+    return conn
 
 from tendo import singleton
 
@@ -99,6 +152,8 @@ verticalDivider = "〣" #in conf
 cpuDisplay = 'ᴄᴘᴜ: {cpu_percent}%'#in conf
 ramDisplay = 'ʀᴀᴍ: {ram_percent}%  ({ram_used}/{ram_total})'#in conf
 gpuDisplay = 'ɢᴘᴜ: {gpu_percent}%'#in conf
+gpuIndex = "0" #in conf - "0","1",... for specific GPU by index, "combined" for average of all GPUs
+_gpu_index_to_display = {}  # maps raw index ("0","1",...,"combined") -> display string for the combo
 hrDisplay = '💓 {hr}'#in conf
 playTimeDisplay = '⏳{hours}:{remainder_minutes}'#in conf
 mutedDisplay = 'Muted 🔇'#in conf
@@ -427,7 +482,8 @@ confDataDict = { #this dictionary will always exclude position 0 which is the co
   "1.5.15" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo', 'spotify_client_id', 'useTimeParameters', 'removeParenthesis'],
   "1.5.69.42" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo', 'spotify_client_id', 'useTimeParameters', 'removeParenthesis', 'timerDisplay', 'timerEndStamp'],
   "1.5.70" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo', 'spotify_client_id', 'useTimeParameters', 'removeParenthesis', 'timerDisplay', 'timerEndStamp'],
-  "1.5.71" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo', 'spotify_client_id', 'useTimeParameters', 'removeParenthesis', 'timerDisplay', 'timerEndStamp']
+  "1.5.71" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo', 'spotify_client_id', 'useTimeParameters', 'removeParenthesis', 'timerDisplay', 'timerEndStamp'],
+  "1.5.72" : ['confVersion', 'message_delay', 'messageString', 'FileToRead', 'scrollText', 'hideSong', 'hideOutside', 'showPaused', 'songDisplay', 'showOnChange', 'songChangeTicks', 'minimizeOnStart', 'keybind_run', 'keybind_afk','topBar', 'middleBar', 'bottomBar', 'pulsoidToken', 'avatarHR', 'blinkOverride', 'blinkSpeed', 'useAfkKeybind', 'toggleBeat', 'updatePrompt', 'oscListenAddress', 'oscListenPort', 'oscSendAddress', 'oscSendPort', 'oscForewordAddress', 'oscForeword', 'oscListen', 'oscForeword', 'logOutput', 'layoutString', 'verticalDivider','cpuDisplay', 'ramDisplay', 'gpuDisplay', 'hrDisplay', 'playTimeDisplay', 'mutedDisplay', 'unmutedDisplay', 'darkMode', 'sendBlank', 'suppressDuplicates', 'sendASAP', 'useMediaManager', 'useSpotifyApi', 'spotifySongDisplay', 'spotifyAccessToken', 'spotifyRefreshToken', 'usePulsoid', 'useHypeRate', 'hypeRateKey', 'hypeRateSessionId','timeDisplayPM', 'timeDisplayAM', 'showSongInfo', 'spotify_client_id', 'useTimeParameters', 'removeParenthesis', 'timerDisplay', 'timerEndStamp', 'gpuIndex']
 }
 
 if os.path.isfile('please-do-not-delete.txt'):
@@ -476,6 +532,435 @@ if os.path.isfile('please-do-not-delete.txt'):
       layoutString = layoutString + '{ram(0)}'
       
 forewordServerLastUsed = oscForeword
+
+
+# ---------------------------------------------------------------------------
+# Unified GPU abstraction
+#   Vendors:  nvidia (pynvml)  |  wmi (Windows AMD/Intel)
+#             amd (pyamdgpuinfo, Linux)  |  amd_sysfs (Linux fallback)
+#   Selection: '0','1',… = specific GPU by flat index  |  'combined' = average
+# ---------------------------------------------------------------------------
+_gpu_list = []
+_nvml_session_active = False  # pynvml: initialised once, kept open for the process lifetime
+_RE_ENGTYPE = re.compile(r'engtype_(\w+)')  # precompiled — used every tick in WMI GPU util query
+
+
+def _nvml_ensure_init():
+    """Initialise pynvml once and keep the session open.  Safe to call many times."""
+    global _nvml_session_active
+    if _pynvml_available and not _nvml_session_active:
+        try:
+            nvmlInit()
+            _nvml_session_active = True
+        except Exception:
+            pass
+
+
+def _read_vram_from_registry(gpu_name):
+    """Return the true 64-bit VRAM total in bytes for *gpu_name* from the Windows
+    Display Class registry key.  Win32_VideoController.AdapterRAM is a UINT32 and
+    silently overflows for cards with > 4 GB VRAM; the registry stores a QWORD.
+    Returns 0 if the value cannot be found."""
+    vram_bytes = 0
+    try:
+        import winreg, struct
+        _reg_class = r'SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}'
+        def _norm(s):
+            return re.sub(r'[^a-z0-9 ]', '', (s or '').lower())
+        name_n = _norm(gpu_name)
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, _reg_class) as base:
+            sub_i = 0
+            while vram_bytes == 0:
+                try:
+                    sub_name = winreg.EnumKey(base, sub_i)
+                    sub_i += 1
+                    with winreg.OpenKey(base, sub_name) as sub:
+                        try:
+                            desc, _ = winreg.QueryValueEx(sub, 'DriverDesc')
+                            # Match loosely so "(TM)" / "(R)" trademark variants still match.
+                            if name_n in _norm(desc) or _norm(desc) in name_n:
+                                for val in ('HardwareInformation.MemorySize', 'qwMemorySize'):
+                                    try:
+                                        mem, _ = winreg.QueryValueEx(sub, val)
+                                        vram_bytes = (
+                                            struct.unpack('<Q', mem.ljust(8, b'\x00')[:8])[0]
+                                            if isinstance(mem, bytes) else int(mem)
+                                        )
+                                        break
+                                    except Exception:
+                                        pass
+                        except Exception:
+                            pass
+                except OSError:
+                    break
+    except Exception:
+        pass
+    return vram_bytes
+
+
+def _dxgi_get_adapter_vram_map():
+    """Return {adapter_description: dedicated_video_memory_bytes} for every
+    physical DXGI adapter on Windows.  IDXGIAdapter::GetDesc exposes
+    DedicatedVideoMemory as a 64-bit SIZE_T straight from the GPU driver —
+    accurate for AMD, Intel and NVIDIA regardless of registry quirks.
+    Returns an empty dict on any failure or on non-Windows platforms."""
+    if os.name != 'nt':
+        return {}
+    try:
+        import ctypes
+        from ctypes import Structure, POINTER, byref, cast, c_uint, c_int, c_void_p, c_wchar
+
+        SIZE_T = ctypes.c_size_t
+        DWORD  = ctypes.c_ulong
+        LONG   = ctypes.c_long
+
+        class _LUID(Structure):
+            _fields_ = [('LowPart', DWORD), ('HighPart', LONG)]
+
+        class _DXGI_ADAPTER_DESC(Structure):
+            _fields_ = [
+                ('Description',           c_wchar * 128),
+                ('VendorId',              c_uint),
+                ('DeviceId',              c_uint),
+                ('SubSysId',              c_uint),
+                ('Revision',              c_uint),
+                ('DedicatedVideoMemory',  SIZE_T),
+                ('DedicatedSystemMemory', SIZE_T),
+                ('SharedSystemMemory',    SIZE_T),
+                ('AdapterLuid',           _LUID),
+            ]
+
+        # IID_IDXGIFactory = {7b7166ec-21c7-44ae-b21a-c9ae321ae369}
+        IID = (ctypes.c_ubyte * 16)(
+            0xec,0x66,0x71,0x7b, 0xc7,0x21, 0xae,0x44,
+            0xb2,0x1a,0xc9,0xae,0x32,0x1a,0xe3,0x69,
+        )
+        factory = c_void_p()
+        if ctypes.windll.dxgi.CreateDXGIFactory(byref(IID), byref(factory)) < 0:
+            return {}
+        if not factory.value:
+            return {}
+
+        # IDXGIFactory vtable (inherits IUnknown[0-2] + IDXGIObject[3-6]):
+        #   [7] EnumAdapters(self, UINT, IDXGIAdapter**) -> HRESULT
+        #   [2] Release
+        vtbl_f      = cast(factory, POINTER(POINTER(c_void_p)))[0]
+        EnumAdapters = ctypes.WINFUNCTYPE(c_int, c_void_p, c_uint, POINTER(c_void_p))(vtbl_f[7])
+        Release_f    = ctypes.WINFUNCTYPE(c_uint, c_void_p)(vtbl_f[2])
+
+        vram_map = {}
+        for i in range(32):   # 32 = generous upper bound; loop breaks on first failure
+            adapter = c_void_p()
+            hr = EnumAdapters(factory, i, byref(adapter))
+            if hr < 0 or not adapter.value:
+                break
+            # IDXGIAdapter vtable:
+            #   [8] GetDesc(self, DXGI_ADAPTER_DESC*) -> HRESULT
+            #   [2] Release
+            vtbl_a    = cast(adapter, POINTER(POINTER(c_void_p)))[0]
+            GetDesc   = ctypes.WINFUNCTYPE(c_int, c_void_p, POINTER(_DXGI_ADAPTER_DESC))(vtbl_a[8])
+            Release_a = ctypes.WINFUNCTYPE(c_uint, c_void_p)(vtbl_a[2])
+            desc = _DXGI_ADAPTER_DESC()
+            if GetDesc(adapter, byref(desc)) == 0:
+                name = desc.Description.strip()
+                mem  = int(desc.DedicatedVideoMemory)
+                # Skip software / WARP adapters (no dedicated VRAM)
+                if name and mem > 0:
+                    # Keep the largest value if the same name appears twice
+                    if mem > vram_map.get(name, 0):
+                        vram_map[name] = mem
+            Release_a(adapter)
+
+        Release_f(factory)
+        return vram_map
+    except Exception:
+        return {}
+
+
+def _match_dxgi_vram(dxgi_map, gpu_name):
+    """Return the DedicatedVideoMemory bytes for *gpu_name* by fuzzy-matching
+    against the DXGI adapter description strings in *dxgi_map*.
+    Returns 0 if no match is found."""
+    def _norm(s):
+        return re.sub(r'[^a-z0-9]', '', (s or '').lower())
+    name_n = _norm(gpu_name)
+    best   = 0
+    for dxgi_name, vram in dxgi_map.items():
+        d_n = _norm(dxgi_name)
+        if name_n == d_n or name_n in d_n or d_n in name_n:
+            best = max(best, vram)
+    return best
+
+
+def _build_gpu_list():
+    """Detect all GPUs and populate *_gpu_list*.
+    Each entry dict contains:
+      name (str), vendor (str), index (int), phys_idx (int|None),
+      sysfs_path (str|None), vram_total_bytes (int)
+    """
+    global _gpu_list
+    _gpu_list = []
+    nvidia_count = 0
+
+    # ── NVIDIA via pynvml ──────────────────────────────────────────────────────
+    if _pynvml_available:
+        try:
+            _nvml_ensure_init()
+            count = nvmlDeviceGetCount()
+            for i in range(count):
+                handle = nvmlDeviceGetHandleByIndex(i)
+                name = nvmlDeviceGetName(handle)
+                if isinstance(name, bytes):
+                    name = name.decode('utf-8')
+                vram_total = nvmlDeviceGetMemoryInfo(handle).total
+                _gpu_list.append({
+                    'name': f'GPU {len(_gpu_list)}: {name}',
+                    'vendor': 'nvidia',
+                    'index': i,
+                    'phys_idx': i,
+                    'sysfs_path': None,
+                    'vram_total_bytes': vram_total,
+                    'nvml_handle': handle,  # cached — avoids per-tick handle lookup
+                })
+                nvidia_count += 1
+        except Exception:
+            pass
+
+    # ── Windows: AMD / Intel via WMI ──────────────────────────────────────────
+    # Names and VRAM totals come from Win32_VideoController / registry / DXGI.
+    # Utilisation comes from GPU performance counters (same as Task Manager).
+    if _wmi_available and os.name == 'nt':
+        # Build the DXGI vram map once — most reliable total source:
+        # IDXGIAdapter::GetDesc.DedicatedVideoMemory is a 64-bit SIZE_T from
+        # the driver; it is not affected by the AMD registry 4 GB bug.
+        _dxgi_map = _dxgi_get_adapter_vram_map()
+        try:
+            c = _wmi_module.WMI()
+            wmi_non_nvidia_idx = 0
+            for vc in c.Win32_VideoController():
+                name = vc.Name or 'Unknown GPU'
+                # NVIDIA is handled by pynvml; skip software / virtual adapters.
+                if 'nvidia' in name.lower():
+                    continue
+                pnp = vc.PNPDeviceID or ''
+                if not pnp.upper().startswith('PCI\\'):
+                    continue  # e.g. Meta Virtual Monitor, Remote Desktop Display
+                phys_idx = nvidia_count + wmi_non_nvidia_idx
+                # Priority: DXGI (64-bit, driver-accurate) > registry > Capacity counter
+                vram_total_bytes = _match_dxgi_vram(_dxgi_map, name)
+                if not vram_total_bytes:
+                    vram_total_bytes = _read_vram_from_registry(name)
+                # GPULocalAdapterMemory.Capacity as a last resort / sanity check
+                try:
+                    perf_conn = _get_wmi_perf_conn()
+                    if perf_conn:
+                        phys_flt = f'phys_{phys_idx}'
+                        for _loc in perf_conn.Win32_PerfFormattedData_GPUPerformanceCounters_GPULocalAdapterMemory():
+                            if phys_flt in (_loc.Name or ''):
+                                cap = int(getattr(_loc, 'Capacity', 0) or 0)
+                                if cap > vram_total_bytes:
+                                    vram_total_bytes = cap
+                                break
+                except Exception:
+                    pass
+                _gpu_list.append({
+                    'name': f'GPU {len(_gpu_list)}: {name}',
+                    'vendor': 'wmi',
+                    'index': wmi_non_nvidia_idx,
+                    'phys_idx': phys_idx,
+                    'sysfs_path': None,
+                    'vram_total_bytes': vram_total_bytes,
+                })
+                wmi_non_nvidia_idx += 1
+        except Exception:
+            pass
+
+    # ── Linux: AMD via pyamdgpuinfo ───────────────────────────────────────────
+    if _pyamdgpuinfo_available and os.name != 'nt':
+        try:
+            for i in range(pyamdgpuinfo.get_gpu_count()):
+                amd_gpu = pyamdgpuinfo.get_gpu(i)
+                try:
+                    name = amd_gpu.query_name()
+                except Exception:
+                    name = f'AMD GPU {i}'
+                try:
+                    vram_total = amd_gpu.query_vram_total()
+                except Exception:
+                    vram_total = 0
+                _gpu_list.append({
+                    'name': f'GPU {len(_gpu_list)}: {name}',
+                    'vendor': 'amd',
+                    'index': i,
+                    'phys_idx': None,
+                    'sysfs_path': None,
+                    'vram_total_bytes': vram_total,
+                })
+        except Exception:
+            pass
+
+    # ── Linux: AMD sysfs fallback (only when pyamdgpuinfo found nothing) ──────
+    amd_found = any(g['vendor'] in ('amd', 'amd_sysfs') for g in _gpu_list)
+    if not amd_found and os.path.isdir('/sys/class/drm'):
+        try:
+            sysfs_idx = 0
+            for card in sorted(os.listdir('/sys/class/drm')):
+                busy_path = f'/sys/class/drm/{card}/device/gpu_busy_percent'
+                if not os.path.isfile(busy_path):
+                    continue
+                vram_total = 0
+                mem_total_path = f'/sys/class/drm/{card}/device/mem_info_vram_total'
+                if os.path.isfile(mem_total_path):
+                    try:
+                        with open(mem_total_path, 'r') as _f:
+                            vram_total = int(_f.read().strip())
+                    except Exception:
+                        pass
+                _gpu_list.append({
+                    'name': f'GPU {len(_gpu_list)}: AMD GPU ({card})',
+                    'vendor': 'amd_sysfs',
+                    'index': sysfs_idx,
+                    'phys_idx': None,
+                    'sysfs_path': busy_path,
+                    'vram_sysfs_path': f'/sys/class/drm/{card}/device/mem_info_vram_used',
+                    'vram_total_bytes': vram_total,
+                })
+                sysfs_idx += 1
+        except Exception:
+            pass
+
+# Build once at startup
+_build_gpu_list()
+
+
+def _query_gpu_util(entry):
+    """Return *(gpu_percent, vram_percent)* for the given GPU entry dict.
+    Both values are integers in [0, 100].  Returns (0, 0) on any error."""
+    vendor = entry.get('vendor', '')
+    idx    = entry.get('index', 0)
+
+    # ── NVIDIA via pynvml ──────────────────────────────────────────────────────
+    if vendor == 'nvidia' and _pynvml_available:
+        try:
+            handle = entry.get('nvml_handle')
+            if handle is None:
+                _nvml_ensure_init()
+                handle = nvmlDeviceGetHandleByIndex(idx)
+            util     = nvmlDeviceGetUtilizationRates(handle)
+            mem_info = nvmlDeviceGetMemoryInfo(handle)
+            gpu_pct  = int(util.gpu)
+            # util.memory is memory-bus bandwidth utilisation, NOT VRAM occupancy.
+            # nvmlDeviceGetMemoryInfo gives actual bytes used / total for real VRAM %.
+            vram_pct = min(100, round(mem_info.used * 100 / mem_info.total)) if mem_info.total > 0 else 0
+            return gpu_pct, vram_pct
+        except Exception:
+            return 0, 0
+
+    # ── Windows: AMD / Intel via WMI ──────────────────────────────────────────
+    if vendor == 'wmi' and _wmi_available:
+        try:
+            phys_idx    = entry.get('phys_idx', idx)
+            phys_filter = f'phys_{phys_idx}'
+            conn        = _get_wmi_perf_conn()
+            if conn is None:
+                return 0, 0
+
+            # GPU utilisation: accumulate per engine-type, then take the maximum.
+            # This mirrors Task Manager's per-engine view and captures AMD workloads
+            # spread across Compute / Video engines, not just the 3D engine.
+            engine_utils = {}
+            for inst in conn.Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine():
+                inst_name = inst.Name or ''
+                if phys_filter not in inst_name:
+                    continue
+                m = _RE_ENGTYPE.search(inst_name)
+                if m:
+                    etype = m.group(1)
+                    engine_utils[etype] = engine_utils.get(etype, 0) + int(inst.UtilizationPercentage or 0)
+            gpu_pct = min(100, max(engine_utils.values())) if engine_utils else 0
+
+            # VRAM utilisation
+            # vram_total is seeded from the entry (registry / Capacity at build
+            # time) but we also refresh Capacity live — AMD drivers sometimes
+            # report a small D3D-pool size in the registry while Capacity holds
+            # the correct full physical VRAM.  Taking the max ensures we always
+            # divide against the real card size, not a truncated pool value.
+            vram_total = entry.get('vram_total_bytes', 0)
+            vram_used  = 0
+            vram_pct   = 0
+            # Primary: GPULocalAdapterMemory — read Capacity + CurrentUsage together.
+            try:
+                for loc in conn.Win32_PerfFormattedData_GPUPerformanceCounters_GPULocalAdapterMemory():
+                    if phys_filter in (loc.Name or ''):
+                        cap = int(getattr(loc, 'Capacity', 0) or 0)
+                        if cap > vram_total:
+                            vram_total = cap
+                            entry['vram_total_bytes'] = vram_total  # persist — avoids redundant comparison each tick
+                        vram_used = int(getattr(loc, 'CurrentUsage', 0) or 0)
+                        break
+            except Exception:
+                pass
+            # Fallback: GPUAdapterMemory.DedicatedUsage
+            if vram_used == 0:
+                try:
+                    for mem in conn.Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory():
+                        if phys_filter in (mem.Name or ''):
+                            vram_used = int(getattr(mem, 'DedicatedUsage', 0) or 0)
+                            if vram_used > 0:
+                                break
+                except Exception:
+                    pass
+            if vram_total > 0 and vram_used > 0:
+                vram_pct = min(100, round(vram_used * 100 / vram_total))
+            return gpu_pct, vram_pct
+        except Exception:
+            return 0, 0
+
+    # ── Linux: AMD via pyamdgpuinfo ───────────────────────────────────────────
+    if vendor == 'amd' and _pyamdgpuinfo_available:
+        try:
+            amd_gpu  = pyamdgpuinfo.get_gpu(idx)
+            gpu_pct  = round(amd_gpu.query_gpu_utilization() * 100)
+            vram_pct = 0
+            try:
+                vram_used  = amd_gpu.query_vram_usage()
+                vram_total = entry.get('vram_total_bytes') or amd_gpu.query_vram_total()
+                if vram_total > 0:
+                    vram_pct = min(100, round(vram_used * 100 / vram_total))
+            except Exception:
+                pass
+            return gpu_pct, vram_pct
+        except Exception:
+            return 0, 0
+
+    # ── Linux: AMD sysfs fallback ─────────────────────────────────────────────
+    if vendor == 'amd_sysfs':
+        try:
+            with open(entry['sysfs_path'], 'r') as _f:
+                gpu_pct = int(_f.read().strip())
+            vram_pct       = 0
+            vram_used_path = entry.get('vram_sysfs_path', '')
+            vram_total     = entry.get('vram_total_bytes', 0)
+            if vram_used_path and vram_total > 0 and os.path.isfile(vram_used_path):
+                try:
+                    with open(vram_used_path, 'r') as _f:
+                        vram_used = int(_f.read().strip())
+                    vram_pct = min(100, round(vram_used * 100 / vram_total))
+                except Exception:
+                    pass
+            return gpu_pct, vram_pct
+        except Exception:
+            return 0, 0
+
+    return 0, 0
+
+
+def getGPUNames():
+    """Rebuild and return displayable GPU names for all detected GPUs."""
+    _build_gpu_list()
+    if not _gpu_list:
+        return []
+    return [g['name'] for g in _gpu_list]
 
 
 layoutDisplayDict = {
@@ -627,6 +1112,14 @@ except Exception as e:
     spotifyRefreshToken = ''
     outputLog("Spotify token load error! Please relink!\nFull Error: "+str(e))
 def uiThread():
+  # WMI (used for AMD/Intel GPU detection) requires COM to be initialised
+  # in every thread that uses it. uiThread runs on a background thread so we
+  # must call CoInitialize here before any WMI call is made.
+  if _pythoncom is not None:
+    try:
+      _pythoncom.CoInitialize()
+    except Exception:
+      pass
   global fontColor
   global bgColor
   global accentColor
@@ -685,6 +1178,7 @@ def uiThread():
   global cpuDisplay
   global ramDisplay
   global gpuDisplay
+  global gpuIndex
   global hrDisplay
   global playTimeDisplay
   global mutedDisplay
@@ -875,11 +1369,32 @@ def uiThread():
               ], size=(379, 80))],
   ]
   
+  _gpu_names = getGPUNames()
+  _gpu_count = len(_gpu_names)
+  _gpu_index_to_display.clear()
+  for _i, _n in enumerate(_gpu_names):
+    _gpu_index_to_display[str(_i)] = _n
+  _gpu_index_to_display['combined'] = 'combined'
+  _gpu_options = [_gpu_index_to_display[str(_i)] for _i in range(_gpu_count)] + ['combined']
+  if _gpu_names:
+    _gpu_names_text = '\n'.join(_gpu_names)
+  elif not _pynvml_available and not _wmi_available and not _pyamdgpuinfo_available:
+    _gpu_names_text = 'No GPU libraries found.\nWindows: pip install wmi\nNVIDIA:  pip install pynvml\nLinux AMD: pip install pyamdgpuinfo'
+  elif os.name == 'nt' and not _wmi_available:
+    _gpu_names_text = 'WMI not installed.\nRun: pip install wmi'
+  else:
+    _gpu_names_text = 'No GPUs detected.'
+  _gpu_default = _gpu_index_to_display.get(gpuIndex, _gpu_index_to_display.get('0', 'combined'))
   gpu_conf_layout = [
     [sg.Column([
-                  [sg.Text('Template to use for GPU display.\nVariables: {gpu_percent}')],
-                  [sg.Input(key='gpuDisplay', size=(50, 1))]
-              ], size=(379, 80))],
+                  [sg.Text('Template to use for GPU display.\nVariables: {gpu_percent}, {vram_percent}')],
+                  [sg.Input(key='gpuDisplay', size=(50, 1))],
+                  [sg.Text('GPU Selection:')],
+                  [sg.Combo(_gpu_options, default_value=_gpu_default, key='gpuIndex', size=(48, 1), readonly=True)],
+                  [sg.Text('   combined = average of all GPUs', font=('Arial', 9))],
+                  [sg.Text('Detected GPUs:')],
+                  [sg.Text(_gpu_names_text, key='gpuListDisplay')]
+              ], size=(379, 240))],
   ]
   hr_conf_layout = [
     [sg.Column([
@@ -1143,6 +1658,7 @@ def uiThread():
     window['cpuDisplay'].update(value='ᴄᴘᴜ: {cpu_percent}%')
     window['ramDisplay'].update(value='ʀᴀᴍ: {ram_percent}%  ({ram_used}/{ram_total})')
     window['gpuDisplay'].update(value='ɢᴘᴜ: {gpu_percent}%')
+    window['gpuIndex'].update(value=_gpu_index_to_display.get('0', 'combined'))
     window['hrDisplay'].update(value='💓 {hr}')
     window['playTimeDisplay'].update(value='⏳{hours}:{remainder_minutes}')
     window['mutedDisplay'].update(value='Muted 🔇')
@@ -1255,6 +1771,7 @@ def uiThread():
         window['cpuDisplay'].update(value=cpuDisplay)
         window['ramDisplay'].update(value=ramDisplay)
         window['gpuDisplay'].update(value=gpuDisplay)
+        window['gpuIndex'].update(value=_gpu_index_to_display.get(gpuIndex, gpuIndex))
         window['hrDisplay'].update(value=hrDisplay)
         window['playTimeDisplay'].update(value=playTimeDisplay)
         window['mutedDisplay'].update(value=mutedDisplay)
@@ -1387,6 +1904,9 @@ def uiThread():
           cpuDisplay = values['cpuDisplay']
           ramDisplay = values['ramDisplay']
           gpuDisplay = values['gpuDisplay']
+          _raw_gpu_val = values['gpuIndex']
+          _gpu_display_to_index = {v: k for k, v in _gpu_index_to_display.items()}
+          gpuIndex = _gpu_display_to_index.get(_raw_gpu_val, _raw_gpu_val)
           hrDisplay = values['hrDisplay']
           playTimeDisplay = values['playTimeDisplay']
           mutedDisplay = values['mutedDisplay']
@@ -1411,7 +1931,7 @@ def uiThread():
           timerDisplay = values['timerDisplay']
           try:
             with open('please-do-not-delete.txt', 'w', encoding="utf-8") as f:
-              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode, sendBlank, suppressDuplicates, sendASAP,useMediaManager, useSpotifyApi, spotifySongDisplay, spotifyAccessToken, spotifyRefreshToken, usePulsoid, useHypeRate, hypeRateKey, hypeRateSessionId, timeDisplayPM, timeDisplayAM, showSongInfo, spotify_client_id, useTimeParameters, removeParenthesis, timerDisplay, timerEndStamp]))
+              f.write(str([confVersion, message_delay, messageString, FileToRead, scrollText, hideSong, hideOutside, showPaused, songDisplay, showOnChange, songChangeTicks, minimizeOnStart, keybind_run, keybind_afk,topBar, middleBar, bottomBar, pulsoidToken, avatarHR, blinkOverride, blinkSpeed, useAfkKeybind, toggleBeat, updatePrompt, oscListenAddress, oscListenPort, oscSendAddress, oscSendPort, oscForewordAddress, oscForeword, oscListen, oscForeword, logOutput, layoutString, verticalDivider,cpuDisplay, ramDisplay, gpuDisplay, hrDisplay, playTimeDisplay, mutedDisplay, unmutedDisplay, darkMode, sendBlank, suppressDuplicates, sendASAP,useMediaManager, useSpotifyApi, spotifySongDisplay, spotifyAccessToken, spotifyRefreshToken, usePulsoid, useHypeRate, hypeRateKey, hypeRateSessionId, timeDisplayPM, timeDisplayAM, showSongInfo, spotify_client_id, useTimeParameters, removeParenthesis, timerDisplay, timerEndStamp, gpuIndex]))
           except Exception as e:
             sg.popup('Error saving config to file:\n'+str(e))
           
@@ -2151,6 +2671,7 @@ if __name__ == "__main__":
     global cpuDisplay
     global ramDisplay
     global gpuDisplay
+    global gpuIndex
     global hrDisplay
     global playTimeDisplay
     global mutedDisplay
@@ -2361,20 +2882,24 @@ if __name__ == "__main__":
             ramDat = ramDisplay.format_map(defaultdict(str, ram_percent=ram_percent, ram_available=ram_available, ram_total=ram_total, ram_used=ram_used))
             return (checkData(ramDat, data))
           def gpu(data=0):
-            try:
-              nvmlInit()
-              handle = nvmlDeviceGetHandleByIndex(0)
-              info = nvmlDeviceGetUtilizationRates(handle)
-              #print(info)
-              gpu_percent = info.gpu
-              vram_percent = info.memory
-              nvmlShutdown()
-            except:
-              gpu_percent = "0"
-              vram_percent = "0"
-            #gpu_percent = str(round((GPUtil.getGPUs()[0].load*100), 1))
-            #gpu_percent = "0"
-            gpuDat = gpuDisplay.format_map(defaultdict(str, gpu_percent=gpu_percent, vram_percent=vram_percent))
+            _idx   = str(gpuIndex).strip().lower()
+            _count = len(_gpu_list)
+            if _count == 0:
+              gpuDat = gpuDisplay.format_map(defaultdict(str, gpu_percent=0, vram_percent=0))
+            elif _idx == 'combined':
+              total_gpu, total_vram = 0, 0
+              for _entry in _gpu_list:
+                _g, _v = _query_gpu_util(_entry)
+                total_gpu  += _g
+                total_vram += _v
+              gpu_percent  = round(total_gpu  / _count)
+              vram_percent = round(total_vram / _count)
+              gpuDat = gpuDisplay.format_map(defaultdict(str, gpu_percent=gpu_percent, vram_percent=vram_percent))
+            else:
+              _flat_idx = min(int(_idx) if _idx.isdigit() else 0, _count - 1)
+              _entry    = _gpu_list[_flat_idx]
+              gpu_percent, vram_percent = _query_gpu_util(_entry)
+              gpuDat = gpuDisplay.format_map(defaultdict(str, gpu_percent=gpu_percent, vram_percent=vram_percent))
             return (checkData(gpuDat, data))
           def hr(data=0):
             hr = str(heartRate)
