@@ -51,8 +51,12 @@ OCT Is a standalone program used for interacting with Vrchat's OSC to send chat 
    - winsdk
    - websocket-client
    - pyperclip
+   - requests
+   - flask
    - pynvml
+   - wmi *(Windows — required for AMD/Intel GPU support)*
    - tendo
+   - pyamdgpuinfo *(Linux only — required for AMD GPU support on Linux)*
  - In a command prompt window in the folder the `osc-chat-tools.py` is located in:
  - `pip install PyInstaller`
  - `python -m PyInstaller -wF --icon=oscicon.ico --clean osc-chat-tools.py`
