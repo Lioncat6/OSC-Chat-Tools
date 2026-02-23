@@ -177,7 +177,9 @@ isPat = False
 
 vrcPID = None
 
-playTimeDat = time.mktime(time.localtime(psutil.Process(vrcPID).create_time()))
+if vrcPID is not None:
+    playTimeDat = time.mktime(time.localtime(psutil.Process(vrcPID).create_time()))
+  # old implementation had a possible TypeError here if vrcPID was None, but this should never be the case now since I set it to None explicitly and check for that before trying to use it.
 
 lastSent = ''
 sentTime = 0
@@ -255,10 +257,11 @@ def usingEarmuffs_handler(unused_address, args):
     
 def vr_handler(unused_address, args):# The game never sends this value from what I've seen
     global isVR
-    if args ==1:
-        isVR == True
+    if args == 1:
+        isVR = True
     else:
-        isVR == False
+        isVR = False
+    # This was a comparison, not an assignment, which is probably why this didn't work.
     #print('isVR', isVR)
     outputLog(f'isVR {isVR}')
 
@@ -1546,10 +1549,15 @@ def uiThread():
         sg.popup('Please make sure no other program is listening to the osc and try re-enabling osc Listen/Foreword options.\n\nOSC Listen and Foreword have been disabled to this won\'t happen on startup')
         window.write_event_value('Apply', '')
       def layoutStorageAdd(a):
-        if len(ast.literal_eval("["+window['layoutStorage'].get().replace("{", "\"").replace("}", "\",")[:-1]+"]")) < 15:
-          window['layoutStorage'].update(value=values['layoutStorage']+" {"+a+"}")
-        else:
-          sg.popup("You have reached the limit of objects in the layout.\nYou can still add more in the manual edit section,\nhowever the UI will not reflect it")
+        try:
+          current = window['layoutStorage'].get()
+          parsed = ast.literal_eval("["+current.replace("{", "\"").replace("}", "\",")[:-1]+"]") if current.strip() else []
+          if len(parsed) < 15:
+            window['layoutStorage'].update(value=current+" {"+a+"}")
+          else:
+            sg.popup("You have reached the limit of objects in the layout.\nYou can still add more in the manual edit section,\nhowever the UI will not reflect it")
+        except Exception as e:
+          sg.popup("Layout parse error: "+str(e))
       if event == 'addText':
         layoutStorageAdd("text(0)")
       elif event == 'addTime':
@@ -2382,8 +2390,6 @@ if __name__ == "__main__":
               hr = "-"
             hrInfo = hrDisplay.format_map(defaultdict(str, hr=hr))
             return (checkData(hrInfo, data))
-          def mute(data=0):
-            return (checkData("Coming Soon", data))
           def stt(data=0):
             return (checkData("Coming Soon", data))
           def div(data=0):
@@ -2549,15 +2555,17 @@ def hrConnectionThread():
                 client.send_message("/avatar/parameters/isHRBeat", False)
                 if blinkOverride:
                   time.sleep(blinkSpeed)
-                if heartRate == '':
-                  heartRate = 0
+                try:
+                  hr_val = int(heartRate) if heartRate else 0
+                except (ValueError, TypeError):
+                  hr_val = 0
+                if hr_val <= 0:
+                  heartRate = 1
+                  hr_val = 1
+                if 60 / hr_val > 5:
+                  time.sleep(1)
                 else:
-                  if int(heartRate) <= 0:
-                    heartRate = 1
-                  if 60/int(heartRate) > 5:
-                    time.sleep(1)
-                  else:
-                    time.sleep(60/int(heartRate))
+                  time.sleep(60 / hr_val)
           blinkHRThread = Thread(target=blinkHR)
           blinkHRThread.start()
           #print('Pulsoid Connection Started...')
@@ -2773,16 +2781,19 @@ def msgPlayCheck():
   except:
     pass
 
+_toggle_lock = Lock()
+# adding a lock to prevent multiple threads from toggling playMsg at the same time, which can cause issues
 def msgPlayToggle():
-  global playMsg
-  if playMsg:
-      playMsg = False
-      time.sleep(.5)
-  else:
-    playMsg = True  
-    msgThread = Thread(target=runmsg)
-    msgThread.start()
-    time.sleep(.5) 
+    global playMsg
+    with _toggle_lock:
+        if playMsg:
+            playMsg = False
+            time.sleep(.5)
+        else:
+            playMsg = True  
+            msgThread = Thread(target=runmsg)
+            msgThread.start()
+            time.sleep(.5)
     
 def afkCheck():
   global isAfk
@@ -2833,7 +2844,8 @@ def vrcRunningCheck():
               vrcPID = proc.pid
               break
           time.sleep(.01)
-      playTimeDat = time.mktime(time.localtime(psutil.Process(vrcPID).create_time()))
+      if vrcPID is not None:
+        playTimeDat = time.mktime(time.localtime(psutil.Process(vrcPID).create_time()))
     time.sleep(1)
 
 
