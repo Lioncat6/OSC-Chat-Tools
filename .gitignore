@@ -3,3 +3,4 @@ please-do-not-delete.txt
 /dist/
 osc-chat-tools.spec
 OCT_debug_log.txt
+/__pycache__/
