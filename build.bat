@@ -10,4 +10,6 @@ pip install websocket-client
 pip install PyInstaller
 pip install pyperclip
 pip install pynvml
+pip install tendo
+pip install flask
 python -m PyInstaller -wF --icon=oscicon.ico --clean osc-chat-tools.py
