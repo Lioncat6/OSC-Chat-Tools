@@ -97,6 +97,8 @@ oscForewordAddress = '127.0.0.1' #in conf
 oscForewordPort = '9002' #in conf
 oscListen = False #in conf
 oscForeword = False #in conf
+client = None
+dispatcher = None
 logOutput = False  #in conf
 layoutString = '' #in conf
 verticalDivider = "〣" #in conf
@@ -1929,400 +1931,373 @@ def processMessage(a):
     returnList.append(messageString)
   return returnList
 
-if __name__ == "__main__":
-  def oscClientDef():
-    global client
-    while run:
-      parser2 = argparse.ArgumentParser()
-      parser2.add_argument("--ip", default=oscSendAddress,
-          help="The ip of the OSC server")
-      parser2.add_argument("--port", type=int, default=oscSendPort,
-          help="The port the OSC server is listening on")
-      args2 = parser2.parse_args()                                                                                        
-
-      client = udp_client.SimpleUDPClient(args2.ip, args2.port)
-      time.sleep(.5)
-  oscClientDefThread = Thread(target=oscClientDef)
-  oscClientDefThread.start()
-
-  dispatcher = Dispatcher()
-  dispatcher.map("/avatar/parameters/AFK", afk_handler)
-  dispatcher.map("/avatar/parameters/VRMode", vr_handler) # The game never sends this value from what I've seen
-  dispatcher.map("/avatar/parameters/MuteSelf", mute_handler)
-  #dispatcher.map("/avatar/parameters/InStation", inSeat_handler)
-  #dispatcher.map("/avatar/parameters/Voice", volume_handler)
-  #dispatcher.map("/avatar/parameters/Earmuffs", usingEarmuffs_handler)
-  dispatcher.map("/avatar/parameters/Boop", boop_handler)
-  dispatcher.map("/avatar/parameters/boop", boop_handler)
-  dispatcher.map("/avatar/parameters/Booped", boop_handler)
-  dispatcher.map("/avatar/parameters/Contact/Receiver/Boop", boop_handler)
-  dispatcher.map("/avatar/parameters/HeadPat", pat_handler)
-  dispatcher.map("/avatar/parameters/Pat", pat_handler)
-  dispatcher.map("/avatar/parameters/PatBool", pat_handler)
-  dispatcher.map("/avatar/parameters/Headpat", pat_handler)
-  dispatcher.map("/avatar/parameters/Contact/Receiver/Pat", pat_handler)
-
-  def oscForwardingManager():
-    global runForewordServer
-    global oscListenAddressMemory
-    global oscListenPortMemory
-    global oscForewordAddressMemory
-    global oscForewordPortMemory
-    global oscForeword
-    global oscListen
-    global useForewordMemory
-    global windowAccess
+def oscClientDef():
+  global client
+  while run:
+    try:
+      port = int(oscSendPort)
+    except (TypeError, ValueError):
+      port = 9000
+    try:
+      client = udp_client.SimpleUDPClient(str(oscSendAddress), port)
+    except Exception:
+      pass
     time.sleep(.5)
-    listen_socket = None
-    forward_sockets = []
-    while run:
-        global runForewordServer
-        global oscListenAddressMemory
-        global oscListenPortMemory
-        global oscForewordAddressMemory
-        global oscForewordPortMemory
-        global oscForeword
-        global oscListen
-        global useForewordMemory
-        global windowAccess
-        # Create a socket to listen for incoming data
-        def create_sockets():
-            nonlocal listen_socket
-            global runForewordServer
-            global oscListenAddressMemory
-            global oscListenPortMemory
-            global oscForewordAddressMemory
-            global oscForewordPortMemory
-            global oscForeword
-            global oscListen
-            global useForewordMemory
-            global windowAccess
-            try:
-                listen_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                listen_socket.bind((oscListenAddress, int(oscListenPort)))
-                listen_socket.settimeout(.5)
-            except Exception as err:
-                def WaitThread(err):
-                    while windowAccess == None:
-                        time.sleep(.1)
-                        pass
-                    windowAccess.write_event_value('listenError', str(err))
-                updatePromptWaitThreadHandler = Thread(target=WaitThread, args=(err,)).start()
 
-        # Set the IP addresses and port numbers to forward data to
-        if oscForeword:
-            forward_addresses = [
-                ('127.0.0.1', 61394), #for the listen server
-                (oscForewordAddress, int(oscForewordPort)),
-            ]
-        else:
-            forward_addresses = [
-                ('127.0.0.1', 61394) #for the listen server
-            ]
-
-        def dataSender():
-            global runForewordServer
-            global oscListenAddressMemory
-            global oscListenPortMemory
-            global oscForewordAddressMemory
-            global oscForewordPortMemory
-            global oscForeword
-            global oscListen
-            global useForewordMemory
-            global windowAccess
-            nonlocal forward_sockets
-            runForewordServer = True
-            #print('Starting Forwarding server on '+str(forward_addresses))
-            create_sockets()
-            outputLog('Starting Forwarding server on '+str(forward_addresses))
-            oscListenAddressMemory = oscListenAddress
-            oscListenPortMemory = oscListenPort
-            oscForewordPortMemory = oscForewordPort
-            oscForewordAddressMemory = oscForewordAddress
-            useForewordMemory = oscForeword
-            forward_sockets = [
-              socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-              for _ in forward_addresses
-            ]
-            while run and runForewordServer:
-                try:
-                    data, addr = listen_socket.recvfrom(1024)
-
-                    # Forward the data to each forward socket
-                    if 'Contact' in str(data):
-                      print(data)
-                    for forward_socket, (ip, port) in zip(forward_sockets, forward_addresses):
-                        forward_socket.sendto(data, (ip, port))
-                except Exception as e:
-                  time.sleep(.01)
-                  pass
-                
-
-        if oscForeword:
-            if not runForewordServer:
-              if forewordServerLastUsed != oscForeword:
-                outputLog("Foreword Server Toggled On... Waiting For Listen Server To Change Ports...")
-                time.sleep(3)
-              else:
-                dataSenderThread = Thread(target=dataSender)
-                dataSenderThread.start()
-        time.sleep(.1)
-        if oscListenAddressMemory != oscListenAddress or oscListenPortMemory != oscListenPort or oscForewordPortMemory != oscForewordPort or oscForewordAddressMemory != oscForewordAddress or useForewordMemory != oscForeword or useForewordMemory != oscForeword:
-            if oscForeword:
-                #print('Foreword/Listen Server Config Updated, Restarting Forwarding Server...\n')
-                outputLog('Foreword/Listen Server Config Updated, Restarting Forwarding Server...\n')
-                runForewordServer = False
-                time.sleep(.5)
-                if not runForewordServer:
-                    dataSenderThread = Thread(target=dataSender)
-                    dataSenderThread.start()
-        if runForewordServer and not(oscForeword):
-            if listen_socket is not None:
-                listen_socket.close()
-            for forward_socket in forward_sockets:
-                forward_socket.close()
-            runForewordServer = False
-            #print('No OSC Foreword/Listening Options are selected, stopping Forwarding Server...')
-            outputLog('No OSC Foreword/Listening Options are selected, stopping Forwarding Server...')
-        time.sleep(.5)
-
-    # Close all sockets on shutdown
-    if listen_socket is not None:
-        listen_socket.close()
-    for forward_socket in forward_sockets:
-        forward_socket.close()
-  oscForwardingManagerThread = Thread(target=oscForwardingManager)
-  oscForwardingManagerThread.start()
-  def oscListenServerManager():
-      global oscListenAddress
-      global oscListenPort
+def oscForwardingManager():
+  global runForewordServer
+  global oscListenAddressMemory
+  global oscListenPortMemory
+  global oscForewordAddressMemory
+  global oscForewordPortMemory
+  global oscForeword
+  global oscListen
+  global useForewordMemory
+  global windowAccess
+  time.sleep(.5)
+  listen_socket = None
+  forward_sockets = []
+  while run:
+      global runForewordServer
+      global oscListenAddressMemory
+      global oscListenPortMemory
+      global oscForewordAddressMemory
+      global oscForewordPortMemory
+      global oscForeword
       global oscListen
-      global isListenServerRunning
-      global forewordServerLastUsed
-      while run:
-          if oscListen:
-              parser = argparse.ArgumentParser()
-              if oscForeword:
-                parser.add_argument("--ip",
-                  default='127.0.0.1', help="The ip to listen on")
-                parser.add_argument("--port",
-                    type=int, default=61394, help="The port to listen on")
-              else:
-                parser.add_argument("--ip",
-                  default=oscListenAddress, help="The ip to listen on")
-                parser.add_argument("--port",
-                    type=int, default=oscListenPort, help="The port to listen on")
-              args = parser.parse_args()
-              def listenServerThread():
-                  global isListenServerRunning
-                  global oscListenAddress
-                  global oscListenPort
-                  global listenServer
-                  try:
-                      if oscForeword:
-                        location = "127.0.0.1:61394"
-                      else:
-                        location = f"{str(oscListenAddress)}:{str(oscListenPort)}"
-                      outputLog('Attempting To Start Listen Server on '+location)
-                      listenServer = osc_server.ThreadingOSCUDPServer(
-                          (args.ip, args.port), dispatcher)
-                      #print("Osc Listen Server Serving on {}".format(listenServer.server_address))
-                      outputLog("Osc Listen Server Serving on {}".format(listenServer.server_address))
-                      sockett = listenServer.socket
-                      sockett.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                      
-                      isListenServerRunning = True
-                      
-                      listenServer.serve_forever()           
-                  except Exception as e:
-                      #print('Osc Listen Server Failed to Start, Retying...'+str(e))
-                      outputLog(f'Osc Listen Server Failed to Start, Retying...\nPlease make sure another program isn\'t using {location}\n'+str(e))
+      global useForewordMemory
+      global windowAccess
+      # Create a socket to listen for incoming data
+      def create_sockets():
+          nonlocal listen_socket
+          global runForewordServer
+          global oscListenAddressMemory
+          global oscListenPortMemory
+          global oscForewordAddressMemory
+          global oscForewordPortMemory
+          global oscForeword
+          global oscListen
+          global useForewordMemory
+          global windowAccess
+          try:
+              listen_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+              listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+              listen_socket.bind((oscListenAddress, int(oscListenPort)))
+              listen_socket.settimeout(.5)
+          except Exception as err:
+              def WaitThread(err):
+                  while windowAccess == None:
+                      time.sleep(.1)
                       pass
+                  windowAccess.write_event_value('listenError', str(err))
+              updatePromptWaitThreadHandler = Thread(target=WaitThread, args=(err,)).start()
 
-              if not isListenServerRunning:
-                  oscServerThread = Thread(target=listenServerThread)
-                  oscServerThread.start()
-          if not oscListen and isListenServerRunning:
-            #print('No OSC Listen Options are Selected, Shutting Down OSC Listen Server...')
-            outputLog('No OSC Listen Options are Selected, Shutting Down OSC Listen Server...')
-            isListenServerRunning = False
+      # Set the IP addresses and port numbers to forward data to
+      if oscForeword:
+          forward_addresses = [
+              ('127.0.0.1', 61394), #for the listen server
+              (oscForewordAddress, int(oscForewordPort)),
+          ]
+      else:
+          forward_addresses = [
+              ('127.0.0.1', 61394) #for the listen server
+          ]
+
+      def dataSender():
+          global runForewordServer
+          global oscListenAddressMemory
+          global oscListenPortMemory
+          global oscForewordAddressMemory
+          global oscForewordPortMemory
+          global oscForeword
+          global oscListen
+          global useForewordMemory
+          global windowAccess
+          nonlocal forward_sockets
+          runForewordServer = True
+          #print('Starting Forwarding server on '+str(forward_addresses))
+          create_sockets()
+          outputLog('Starting Forwarding server on '+str(forward_addresses))
+          oscListenAddressMemory = oscListenAddress
+          oscListenPortMemory = oscListenPort
+          oscForewordPortMemory = oscForewordPort
+          oscForewordAddressMemory = oscForewordAddress
+          useForewordMemory = oscForeword
+          forward_sockets = [
+            socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            for _ in forward_addresses
+          ]
+          while run and runForewordServer:
+              try:
+                  data, addr = listen_socket.recvfrom(1024)
+
+                  # Forward the data to each forward socket
+                  if 'Contact' in str(data):
+                    print(data)
+                  for forward_socket, (ip, port) in zip(forward_sockets, forward_addresses):
+                      forward_socket.sendto(data, (ip, port))
+              except Exception as e:
+                time.sleep(.01)
+                pass
+
+
+      if oscForeword:
+          if not runForewordServer:
+            if forewordServerLastUsed != oscForeword:
+              outputLog("Foreword Server Toggled On... Waiting For Listen Server To Change Ports...")
+              time.sleep(3)
+            else:
+              dataSenderThread = Thread(target=dataSender)
+              dataSenderThread.start()
+      time.sleep(.1)
+      if oscListenAddressMemory != oscListenAddress or oscListenPortMemory != oscListenPort or oscForewordPortMemory != oscForewordPort or oscForewordAddressMemory != oscForewordAddress or useForewordMemory != oscForeword or useForewordMemory != oscForeword:
+          if oscForeword:
+              #print('Foreword/Listen Server Config Updated, Restarting Forwarding Server...\n')
+              outputLog('Foreword/Listen Server Config Updated, Restarting Forwarding Server...\n')
+              runForewordServer = False
+              time.sleep(.5)
+              if not runForewordServer:
+                  dataSenderThread = Thread(target=dataSender)
+                  dataSenderThread.start()
+      if runForewordServer and not(oscForeword):
+          if listen_socket is not None:
+              listen_socket.close()
+          for forward_socket in forward_sockets:
+              forward_socket.close()
+          runForewordServer = False
+          #print('No OSC Foreword/Listening Options are selected, stopping Forwarding Server...')
+          outputLog('No OSC Foreword/Listening Options are selected, stopping Forwarding Server...')
+      time.sleep(.5)
+
+  # Close all sockets on shutdown
+  if listen_socket is not None:
+      listen_socket.close()
+  for forward_socket in forward_sockets:
+      forward_socket.close()
+def oscListenServerManager():
+    global oscListenAddress
+    global oscListenPort
+    global oscListen
+    global isListenServerRunning
+    global forewordServerLastUsed
+    while run:
+        if oscListen:
+            if oscForeword:
+              listen_ip = '127.0.0.1'
+              listen_port = 61394
+            else:
+              listen_ip = str(oscListenAddress)
+              try:
+                listen_port = int(oscListenPort)
+              except (TypeError, ValueError):
+                listen_port = 9001
+            def listenServerThread():
+                global isListenServerRunning
+                global oscListenAddress
+                global oscListenPort
+                global listenServer
+                try:
+                    if oscForeword:
+                      location = "127.0.0.1:61394"
+                    else:
+                      location = f"{str(oscListenAddress)}:{str(oscListenPort)}"
+                    outputLog('Attempting To Start Listen Server on '+location)
+                    listenServer = osc_server.ThreadingOSCUDPServer(
+                        (listen_ip, listen_port), dispatcher)
+                    #print("Osc Listen Server Serving on {}".format(listenServer.server_address))
+                    outputLog("Osc Listen Server Serving on {}".format(listenServer.server_address))
+                    sockett = listenServer.socket
+                    sockett.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+                    isListenServerRunning = True
+
+                    listenServer.serve_forever()
+                except Exception as e:
+                    #print('Osc Listen Server Failed to Start, Retying...'+str(e))
+                    outputLog(f'Osc Listen Server Failed to Start, Retying...\nPlease make sure another program isn\'t using {location}\n'+str(e))
+                    pass
+
+            if not isListenServerRunning:
+                oscServerThread = Thread(target=listenServerThread)
+                oscServerThread.start()
+        if not oscListen and isListenServerRunning:
+          #print('No OSC Listen Options are Selected, Shutting Down OSC Listen Server...')
+          outputLog('No OSC Listen Options are Selected, Shutting Down OSC Listen Server...')
+          isListenServerRunning = False
+          listenServer.shutdown()
+          listenServer.server_close()
+        if oscForeword != forewordServerLastUsed  and isListenServerRunning:
+          outputLog('Foreword Server Toggled, Restarting Listen Server...')
+          isListenServerRunning = False
+          try:
             listenServer.shutdown()
             listenServer.server_close()
-          if oscForeword != forewordServerLastUsed  and isListenServerRunning:
-            outputLog('Foreword Server Toggled, Restarting Listen Server...')
-            isListenServerRunning = False
-            try:
-              listenServer.shutdown()
-              listenServer.server_close()
-            except:
-              pass
-            forewordServerLastUsed = oscForeword
-          time.sleep(.5)
+          except:
+            pass
+          forewordServerLastUsed = oscForeword
+        time.sleep(.5)
 
-  oscServerManagerThread = Thread(target=oscListenServerManager)
-  oscServerManagerThread.start()
+def sendMsg(a):
+  global msgOutput
+  global message_delay
+  global messageString
+  global playMsg
+  global run
+  global songName
+  global songDisplay
+  global songChangeTicks
+  global tickCount
+  global topBar
+  global middleBar
+  global bottomBar
+  global pulsoidToken
+  global avatarHR
+  global blinkOverride
+  global blinkSpeed
+  global useAfkKeybind
+  global toggleBeat
+  global layoutString
+  global verticalDivider
+  global cpuDisplay
+  global ramDisplay
+  global gpuDisplay
+  global hrDisplay
+  global playTimeDisplay
+  global mutedDisplay
+  global unmutedDisplay
+  global playTimeDat
+  global timeDisplayAM
+  global timeDisplayPM
+  #stupid crap
+  global letsGetThatTime
+  global songInfo
+  global cpuDat
+  global ramDat
+  global hrInfo
+  global gpuDat
+  global lastSent
+  global sentTime
+  global sendSkipped
+  #end of stupid crap
+  global timeVar
+  timeVar = time.time()
+  if playMsg:
+    #message Assembler:
+    if not scrollText and not afk:
 
-  
-  
-  def sendMsg(a):
-    global msgOutput
-    global message_delay
-    global messageString
-    global playMsg
-    global run
-    global songName
-    global songDisplay
-    global songChangeTicks
-    global tickCount
-    global topBar
-    global middleBar
-    global bottomBar
-    global pulsoidToken
-    global avatarHR
-    global blinkOverride
-    global blinkSpeed
-    global useAfkKeybind
-    global toggleBeat
-    global layoutString
-    global verticalDivider
-    global cpuDisplay
-    global ramDisplay
-    global gpuDisplay
-    global hrDisplay
-    global playTimeDisplay
-    global mutedDisplay
-    global unmutedDisplay
-    global playTimeDat
-    global timeDisplayAM
-    global timeDisplayPM
-    #stupid crap
-    global letsGetThatTime
-    global songInfo
-    global cpuDat
-    global ramDat
-    global hrInfo
-    global gpuDat
-    global lastSent
-    global sentTime
-    global sendSkipped
-    #end of stupid crap
-    global timeVar
-    timeVar = time.time()
+      def msgGen(a):
+        global verticalDivider
+        global msgOutput
+        global spotifySongUrl
+        global songName
+        global tickCount
+        global timerEndStamp
+        global timerVar
+
+        def checkData(msg, data):
+          lf = "\v"
+          if data == 1 or data == 3:
+            msg = msg + " " + verticalDivider
+          if data == 2 or data == 3:
+            msg = msg + lf
+          return msg
+
+        plugin_context = {
+          "check_data": checkData,
+          "vertical_divider": verticalDivider,
+          "middle_bar": middleBar,
+          "muted_display": mutedDisplay,
+          "unmuted_display": unmutedDisplay,
+          "is_muted": isMute,
+          "time_display_am": timeDisplayAM,
+          "time_display_pm": timeDisplayPM,
+          "timer_display": timerDisplay,
+          "timer_end_stamp": timerEndStamp,
+          "song_display": songDisplay,
+          "spotify_song_display": spotifySongDisplay,
+          "show_paused": showPaused,
+          "hide_song": hideSong,
+          "show_on_change": showOnChange,
+          "song_change_ticks": songChangeTicks,
+          "song_name": songName,
+          "tick_count": tickCount,
+          "use_media_manager": useMediaManager,
+          "use_spotify_api": useSpotifyApi,
+          "spotify_play_state": spotifyPlayState,
+          "remove_parenthesis": removeParenthesis,
+          "window_access": windowAccess,
+          "output_log": outputLog,
+          "get_media_info": lambda: asyncio.run(get_media_info()),
+          "media_is": mediaIs,
+          "cpu_display": cpuDisplay,
+          "ram_display": ramDisplay,
+          "gpu_display": gpuDisplay,
+          "hr_display": hrDisplay,
+          "heart_rate": heartRate,
+          "play_time_display": playTimeDisplay,
+          "time_var": timeVar,
+          "play_time_dat": playTimeDat,
+          "vrc_pid": vrcPID,
+          "song_info": '',
+          "spotify_song_url": spotifySongUrl,
+        }
+
+        text = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("text", plugin_context, a, data)
+        time = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("time", plugin_context, a, data)
+        timer = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("timer", plugin_context, a, data)
+        song = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("song", plugin_context, a, data)
+        cpu = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("cpu", plugin_context, a, data)
+        ram = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("ram", plugin_context, a, data)
+        gpu = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("gpu", plugin_context, a, data)
+        hr = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("hr", plugin_context, a, data)
+        stt = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("stt", plugin_context, a, data)
+        div = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("div", plugin_context, a, data)
+        mute = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("mute", plugin_context, a, data)
+        playtime = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("playtime", plugin_context, a, data)
+
+        try:
+          msgOutput = eval("f'"f'{layoutString}'"'")
+        except Exception as e:
+          msgOutput = "Layout Error!\v"+str(e)
+
+        timerEndStamp = plugin_context["timer_end_stamp"]
+        timerVar = plugin_context.get("timer_var", 0)
+        songName = plugin_context["song_name"]
+        tickCount = plugin_context["tick_count"]
+        spotifySongUrl = plugin_context["spotify_song_url"]
+
+        if msgOutput[-len(verticalDivider+" "): ] == verticalDivider+" ":
+          msgOutput = msgOutput[:-len(verticalDivider+" ")-1]
+        if msgOutput[-len(middleBar+" "): ] == middleBar+" ":
+          msgOutput = msgOutput[:-len(middleBar+" ")]
+        if "\v " in msgOutput[-2:]:
+          msgOutput = msgOutput[:-2]
+        if "\v" in msgOutput[-2:]:
+          msgOutput = msgOutput[:-1]
+        if not hideOutside:
+          msgOutput = topBar + " " + msgOutput + " " + bottomBar
+        msgOutput = msgOutput.replace("\\n", "\v").replace("\\v", "\v")
+      msgGen(a)
+    elif afk:
+      msgOutput = topBar+a+bottomBar
+    else:
+      msgOutput = a
     if playMsg:
-      #message Assembler:
-      if not scrollText and not afk:
-        
-        def msgGen(a):
-          global verticalDivider
-          global msgOutput
-          global spotifySongUrl
-          global songName
-          global tickCount
-          global timerEndStamp
-          global timerVar
-
-          def checkData(msg, data):
-            lf = "\v"
-            if data == 1 or data == 3:
-              msg = msg + " " + verticalDivider
-            if data == 2 or data == 3:
-              msg = msg + lf
-            return msg
-
-          plugin_context = {
-            "check_data": checkData,
-            "vertical_divider": verticalDivider,
-            "middle_bar": middleBar,
-            "muted_display": mutedDisplay,
-            "unmuted_display": unmutedDisplay,
-            "is_muted": isMute,
-            "time_display_am": timeDisplayAM,
-            "time_display_pm": timeDisplayPM,
-            "timer_display": timerDisplay,
-            "timer_end_stamp": timerEndStamp,
-            "song_display": songDisplay,
-            "spotify_song_display": spotifySongDisplay,
-            "show_paused": showPaused,
-            "hide_song": hideSong,
-            "show_on_change": showOnChange,
-            "song_change_ticks": songChangeTicks,
-            "song_name": songName,
-            "tick_count": tickCount,
-            "use_media_manager": useMediaManager,
-            "use_spotify_api": useSpotifyApi,
-            "spotify_play_state": spotifyPlayState,
-            "remove_parenthesis": removeParenthesis,
-            "window_access": windowAccess,
-            "output_log": outputLog,
-            "get_media_info": lambda: asyncio.run(get_media_info()),
-            "media_is": mediaIs,
-            "cpu_display": cpuDisplay,
-            "ram_display": ramDisplay,
-            "gpu_display": gpuDisplay,
-            "hr_display": hrDisplay,
-            "heart_rate": heartRate,
-            "play_time_display": playTimeDisplay,
-            "time_var": timeVar,
-            "play_time_dat": playTimeDat,
-            "vrc_pid": vrcPID,
-            "song_info": '',
-            "spotify_song_url": spotifySongUrl,
-          }
-
-          text = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("text", plugin_context, a, data)
-          time = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("time", plugin_context, a, data)
-          timer = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("timer", plugin_context, a, data)
-          song = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("song", plugin_context, a, data)
-          cpu = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("cpu", plugin_context, a, data)
-          ram = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("ram", plugin_context, a, data)
-          gpu = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("gpu", plugin_context, a, data)
-          hr = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("hr", plugin_context, a, data)
-          stt = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("stt", plugin_context, a, data)
-          div = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("div", plugin_context, a, data)
-          mute = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("mute", plugin_context, a, data)
-          playtime = lambda data=0: CHATBOX_PLUGIN_REGISTRY.render("playtime", plugin_context, a, data)
-
-          try:
-            msgOutput = eval("f'"f'{layoutString}'"'")
-          except Exception as e:
-            msgOutput = "Layout Error!\v"+str(e)
-
-          timerEndStamp = plugin_context["timer_end_stamp"]
-          timerVar = plugin_context.get("timer_var", 0)
-          songName = plugin_context["song_name"]
-          tickCount = plugin_context["tick_count"]
-          spotifySongUrl = plugin_context["spotify_song_url"]
-
-          if msgOutput[-len(verticalDivider+" "): ] == verticalDivider+" ":
-            msgOutput = msgOutput[:-len(verticalDivider+" ")-1]
-          if msgOutput[-len(middleBar+" "): ] == middleBar+" ":
-            msgOutput = msgOutput[:-len(middleBar+" ")]
-          if "\v " in msgOutput[-2:]:
-            msgOutput = msgOutput[:-2]
-          if "\v" in msgOutput[-2:]:
-            msgOutput = msgOutput[:-1]
-          if not hideOutside:
-            msgOutput = topBar + " " + msgOutput + " " + bottomBar
-          msgOutput = msgOutput.replace("\\n", "\v").replace("\\v", "\v")
-        msgGen(a)
-      elif afk:
-        msgOutput = topBar+a+bottomBar
-      else:
-        msgOutput = a
-      if playMsg:
-        if (str(msgOutput) != lastSent) or (not suppressDuplicates) or sentTime > 30:
+      if (str(msgOutput) != lastSent) or (not suppressDuplicates) or sentTime > 30:
+        try:
           client.send_message("/chatbox/input", [ str(msgOutput), True, False])
-          lastSent = str(msgOutput)
-          sentTime = 0
-          sendSkipped = False
-        else:
-          sendSkipped = True
-      msgDelayMemory = message_delay
-      for x in range(int(message_delay*10)):
-        if not playMsg or not run or ((msgDelayMemory != message_delay) and sendASAP) or sendSkipped == True:
-          break
-        time.sleep(.1)
+        except Exception as e:
+          outputLog(f"Error sending OSC message: {e}")
+        lastSent = str(msgOutput)
+        sentTime = 0
+        sendSkipped = False
+      else:
+        sendSkipped = True
+    msgDelayMemory = message_delay
+    for x in range(int(message_delay*10)):
+      if not playMsg or not run or ((msgDelayMemory != message_delay) and sendASAP) or sendSkipped == True:
+        break
+      time.sleep(.1)
 
 def timeParameterUpdate():
   while run:
@@ -2648,7 +2623,10 @@ def runmsg():
       sendMsg('')
   textParseIterator = 0
   if sendBlank:
-    client.send_message("/chatbox/input", [ "", True, False])
+    try:
+      client.send_message("/chatbox/input", [ "", True, False])
+    except Exception:
+      pass
     
 def msgPlayCheck():
   try:
@@ -2726,6 +2704,36 @@ def vrcRunningCheck():
 
 
 def run_app():
+  global dispatcher
+
+  # OSC client thread
+  oscClientDefThread = Thread(target=oscClientDef)
+  oscClientDefThread.start()
+
+  # Dispatcher setup
+  dispatcher = Dispatcher()
+  dispatcher.map("/avatar/parameters/AFK", afk_handler)
+  dispatcher.map("/avatar/parameters/VRMode", vr_handler) # The game never sends this value from what I've seen
+  dispatcher.map("/avatar/parameters/MuteSelf", mute_handler)
+  #dispatcher.map("/avatar/parameters/InStation", inSeat_handler)
+  #dispatcher.map("/avatar/parameters/Voice", volume_handler)
+  #dispatcher.map("/avatar/parameters/Earmuffs", usingEarmuffs_handler)
+  dispatcher.map("/avatar/parameters/Boop", boop_handler)
+  dispatcher.map("/avatar/parameters/boop", boop_handler)
+  dispatcher.map("/avatar/parameters/Booped", boop_handler)
+  dispatcher.map("/avatar/parameters/Contact/Receiver/Boop", boop_handler)
+  dispatcher.map("/avatar/parameters/HeadPat", pat_handler)
+  dispatcher.map("/avatar/parameters/Pat", pat_handler)
+  dispatcher.map("/avatar/parameters/PatBool", pat_handler)
+  dispatcher.map("/avatar/parameters/Headpat", pat_handler)
+  dispatcher.map("/avatar/parameters/Contact/Receiver/Pat", pat_handler)
+
+  # OSC forwarding and listen server threads
+  oscForwardingManagerThread = Thread(target=oscForwardingManager)
+  oscForwardingManagerThread.start()
+  oscServerManagerThread = Thread(target=oscListenServerManager)
+  oscServerManagerThread.start()
+
   vrcRunningCheckThread = Thread(target=vrcRunningCheck)
   vrcRunningCheckThread.start()
   msgThread = Thread(target=runmsg)
