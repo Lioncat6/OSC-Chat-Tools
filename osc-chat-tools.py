@@ -43,7 +43,7 @@ class PDH_FMT_COUNTERVALUE_ITEM_W(ctypes.Structure):
 
 hardwareNames = {}
 def hardwareName(kind):
-  # CPU/GPU model from the registry, read once; GPU = adapter with the most VRAM so the iGPU loses
+  # CPU/GPU model without the brand, from the registry, read once; GPU = adapter with the most VRAM so the iGPU loses
   if kind not in hardwareNames:
     import winreg
     name = ''
@@ -69,7 +69,7 @@ def hardwareName(kind):
               pass
     except OSError:
       pass
-    hardwareNames[kind] = name
+    hardwareNames[kind] = ' '.join(re.sub(r'\((R|TM)\)|\b(AMD|Intel|NVIDIA)\b', '', name, flags=re.I).split())
   return hardwareNames[kind]
 
 pdhGpuQuery = None
