@@ -34,6 +34,73 @@ from pynvml import *
 
 from tendo import singleton
 
+import ctypes.wintypes as wt
+
+class PDH_FMT_COUNTERVALUE(ctypes.Structure):
+  _fields_ = [('CStatus', wt.DWORD), ('doubleValue', ctypes.c_double)]
+class PDH_FMT_COUNTERVALUE_ITEM_W(ctypes.Structure):
+  _fields_ = [('szName', wt.LPWSTR), ('FmtValue', PDH_FMT_COUNTERVALUE)]
+
+hardwareNames = {}
+def hardwareName(kind):
+  # CPU/GPU model from the registry, read once; GPU = adapter with the most VRAM so the iGPU loses
+  if kind not in hardwareNames:
+    import winreg
+    name = ''
+    try:
+      if kind == 'cpu':
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'HARDWARE\DESCRIPTION\System\CentralProcessor\0') as k:
+          name = re.sub(r'\s+\d+-Core Processor', '', winreg.QueryValueEx(k, 'ProcessorNameString')[0]).strip()
+      else:
+        best = -1
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}') as cls:
+          for i in range(winreg.QueryInfoKey(cls)[0]):
+            try:
+              with winreg.OpenKey(cls, winreg.EnumKey(cls, i)) as k:
+                desc = winreg.QueryValueEx(k, 'DriverDesc')[0]
+                try:
+                  mem = winreg.QueryValueEx(k, 'HardwareInformation.qwMemorySize')[0]
+                  mem = mem if isinstance(mem, int) else int.from_bytes(mem, 'little')
+                except OSError:
+                  mem = 0
+                if mem > best:
+                  best, name = mem, desc
+            except OSError:
+              pass
+    except OSError:
+      pass
+    hardwareNames[kind] = name
+  return hardwareNames[kind]
+
+pdhGpuQuery = None
+def pdhGpuPercent():
+  # Any GPU vendor: same counters as Task Manager, busiest adapter's 3D engine
+  global pdhGpuQuery
+  pdh = ctypes.windll.pdh
+  if pdhGpuQuery is None:
+    query, counter = wt.HANDLE(), wt.HANDLE()
+    pdh.PdhOpenQueryW(None, None, ctypes.byref(query))
+    if pdh.PdhAddEnglishCounterW(query, "\\GPU Engine(*engtype_3D)\\Utilization Percentage", None, ctypes.byref(counter)) != 0:
+      raise Exception('GPU Engine counters unavailable')
+    pdh.PdhCollectQueryData(query)
+    time.sleep(0.2)
+    pdhGpuQuery = (query, counter)
+  query, counter = pdhGpuQuery
+  pdh.PdhCollectQueryData(query)
+  size, count = wt.DWORD(0), wt.DWORD(0)
+  pdh.PdhGetFormattedCounterArrayW(counter, 0x200, ctypes.byref(size), ctypes.byref(count), None)
+  buf = (ctypes.c_byte * size.value)()
+  if pdh.PdhGetFormattedCounterArrayW(counter, 0x200, ctypes.byref(size), ctypes.byref(count), buf) != 0:
+    return 0
+  items = ctypes.cast(buf, ctypes.POINTER(PDH_FMT_COUNTERVALUE_ITEM_W))
+  adapters = defaultdict(float)
+  for i in range(count.value):
+    luid = re.search(r'luid_\w+?_phys', items[i].szName)
+    if luid and items[i].FmtValue.CStatus in (0, 1):
+      adapters[luid.group()] += items[i].FmtValue.doubleValue
+  return min(100, round(max(adapters.values(), default=0)))
+
+
 #importantest variables :)
 
 run = True
@@ -868,7 +935,7 @@ def uiThread():
   ], background_color=accentColor, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, size=(440, 300),)]]
   cpu_conf_layout = [
     [sg.Column([
-                  [sg.Text('Template to use for CPU display.\nVariables: {cpu_percent}')],
+                  [sg.Text('Template to use for CPU display.\nVariables: {cpu_percent}, {cpu_name}')],
                   [sg.Input(key='cpuDisplay', size=(50, 1))]
               ], size=(379, 80))],
   ] 
@@ -881,7 +948,7 @@ def uiThread():
   
   gpu_conf_layout = [
     [sg.Column([
-                  [sg.Text('Template to use for GPU display.\nVariables: {gpu_percent}')],
+                  [sg.Text('Template to use for GPU display.\nVariables: {gpu_percent}, {gpu_name}')],
                   [sg.Input(key='gpuDisplay', size=(50, 1))]
               ], size=(379, 80))],
   ]
@@ -2359,7 +2426,7 @@ if __name__ == "__main__":
                 return(checkData(songInfo, data))
           def cpu(data=0):
             cpu_percent = str(psutil.cpu_percent())
-            cpuDat = cpuDisplay.format_map(defaultdict(str, cpu_percent=cpu_percent))
+            cpuDat = cpuDisplay.format_map(defaultdict(str, cpu_percent=cpu_percent, cpu_name=hardwareName('cpu')))
             return (checkData(cpuDat, data))
           def ram(data=0): 
             psutilVirtualMemory = psutil.virtual_memory()
@@ -2379,11 +2446,14 @@ if __name__ == "__main__":
               vram_percent = info.memory
               nvmlShutdown()
             except:
-              gpu_percent = "0"
               vram_percent = "0"
+              try:
+                gpu_percent = pdhGpuPercent()
+              except:
+                gpu_percent = "0"
             #gpu_percent = str(round((GPUtil.getGPUs()[0].load*100), 1))
             #gpu_percent = "0"
-            gpuDat = gpuDisplay.format_map(defaultdict(str, gpu_percent=gpu_percent, vram_percent=vram_percent))
+            gpuDat = gpuDisplay.format_map(defaultdict(str, gpu_percent=gpu_percent, vram_percent=vram_percent, gpu_name=hardwareName('gpu')))
             return (checkData(gpuDat, data))
           def hr(data=0):
             hr = str(heartRate)
